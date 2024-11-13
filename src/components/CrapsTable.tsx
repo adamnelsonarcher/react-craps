@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
 import boardLayout from '../assets/just_text.png';
+import Dice from './Dice';
+import DiceHistory from './DiceHistory';
+import ChipStack from './ChipStack';
+
+// Add chip configuration
+const CHIPS_CONFIG = [
+  { value: 1, color: 'bg-chip-red', ringColor: 'border-red-300' },
+  { value: 5, color: 'bg-chip-blue', ringColor: 'border-blue-300' },
+  { value: 10, color: 'bg-chip-green', ringColor: 'border-green-300' },
+  { value: 25, color: 'bg-chip-black', ringColor: 'border-gray-400' },
+  { value: 100, color: 'bg-purple-700', ringColor: 'border-purple-300' },
+];
 
 interface BettingArea {
   id: string;
@@ -18,12 +30,33 @@ interface BettingAreaConfig {
   visible: boolean;
 }
 
-const CrapsTable: React.FC = () => {
+interface DiceRoll {
+  die1: number;
+  die2: number;
+  total: number;
+}
+
+interface Bet {
+  areaId: string;
+  amount: number;
+  color: string;
+  count: number;
+}
+
+interface CrapsTableProps {
+  selectedChipValue: number | null;
+}
+
+const CrapsTable: React.FC<CrapsTableProps> = ({ selectedChipValue }) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [clickLog, setClickLog] = useState<string[]>([]);
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
+  const [dice, setDice] = useState<{ die1: number; die2: number }>({ die1: 1, die2: 1 });
+  const [isRolling, setIsRolling] = useState(false);
+  const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
+  const [bets, setBets] = useState<Bet[]>([]);
 
   // Constants based on your measurements for 4
   const numberWidth = 29.92 - 21.67;  // ~8.25%
@@ -346,6 +379,41 @@ const CrapsTable: React.FC = () => {
     ));
   };
 
+  const handleAreaClick = (areaId: string) => {
+    if (!selectedChipValue) return;
+    
+    setBets(prev => {
+      const existingBet = prev.find(bet => bet.areaId === areaId);
+      if (existingBet) {
+        const newAmount = existingBet.amount + selectedChipValue;
+        // Find the optimal chip color for the new amount
+        const optimalChip = CHIPS_CONFIG
+          .slice()
+          .reverse()
+          .find(chip => newAmount >= chip.value) || CHIPS_CONFIG[0];
+        
+        return prev.map(bet => 
+          bet.areaId === areaId 
+            ? { 
+                ...bet, 
+                amount: newAmount,
+                color: optimalChip.color,
+                count: Math.min(5, Math.ceil(newAmount / optimalChip.value))
+              }
+            : bet
+        );
+      }
+      
+      // Add new bet
+      return [...prev, {
+        areaId,
+        amount: selectedChipValue,
+        color: CHIPS_CONFIG.find(c => c.value === selectedChipValue)?.color || 'bg-chip-red',
+        count: 1
+      }];
+    });
+  };
+
   return (
     <div className="relative w-full h-full">
       {/* Hover Indicator */}
@@ -397,13 +465,21 @@ const CrapsTable: React.FC = () => {
             onMouseEnter={() => setHoveredArea(area.id)}
             onMouseLeave={() => setHoveredArea(null)}
             onClick={(e) => {
+              e.stopPropagation();
               if (!showDevTools) {
-                e.stopPropagation();
-                console.log(`Clicked ${area.name}`);
+                handleAreaClick(area.id);
               }
-              // When dev tools are on, let the click propagate
             }}
-          />
+          >
+            {/* Render chip stack if there's a bet */}
+            {bets.find(bet => bet.areaId === area.id) && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <ChipStack 
+                  {...bets.find(bet => bet.areaId === area.id)!}
+                />
+              </div>
+            )}
+          </div>
         ))}
 
         {/* Dev Tools Overlay */}
@@ -432,8 +508,8 @@ const CrapsTable: React.FC = () => {
             </div>
           </>
         )}
-      </div>
-    </div>
+      </div>    
+    </div>      
   );
 };
 

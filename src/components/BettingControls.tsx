@@ -1,27 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-interface ChipProps {
+interface ChipConfig {
   value: number;
   color: string;
   ringColor: string;
 }
 
-const Chip: React.FC<ChipProps> = ({ value, color, ringColor }) => {
+interface ChipProps extends ChipConfig {
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+const Chip: React.FC<ChipProps> = ({ value, color, ringColor, isSelected, onClick }) => {
   return (
-    <div className={`relative group cursor-pointer`}>
+    <div className={`relative group cursor-pointer`} onClick={onClick}>
       {/* Main chip circle */}
       <div className={`chip w-20 h-20 ${color} 
                       flex items-center justify-center
-                      border-4 ${ringColor}
+                      border-4 ${isSelected ? 'border-gold' : ringColor}
                       shadow-lg hover:scale-110 active:scale-95
                       transition-all duration-150
-                      relative z-10`}>
-        {/* Dashed ring pattern */}
+                      relative z-10
+                      ${isSelected ? 'ring-4 ring-gold ring-opacity-50' : ''}`}>
         <div className="absolute inset-0 rounded-full
                       border-dashed border-2 border-white/20
                       rotate-45"></div>
         
-        {/* Value display */}
         <div className="flex flex-col items-center">
           <span className="text-2xl font-bold text-white drop-shadow-lg">
             ${value}
@@ -29,7 +33,6 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor }) => {
         </div>
       </div>
       
-      {/* Stacked chips effect */}
       <div className={`absolute -bottom-1 left-1 w-20 h-20 rounded-full ${color} 
                       opacity-40 -z-10 blur-[1px]`}></div>
       <div className={`absolute -bottom-2 left-2 w-20 h-20 rounded-full ${color} 
@@ -38,8 +41,13 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor }) => {
   );
 };
 
-const BettingControls: React.FC = () => {
-  const chips: ChipProps[] = [
+interface BettingControlsProps {
+  onChipSelect: (value: number) => void;
+  selectedChipValue: number | null;
+}
+
+const BettingControls: React.FC<BettingControlsProps> = ({ onChipSelect, selectedChipValue }) => {
+  const chipConfigs: ChipConfig[] = [
     { value: 1, color: 'bg-chip-red', ringColor: 'border-red-300' },
     { value: 5, color: 'bg-chip-blue', ringColor: 'border-blue-300' },
     { value: 10, color: 'bg-chip-green', ringColor: 'border-green-300' },
@@ -50,18 +58,23 @@ const BettingControls: React.FC = () => {
   return (
     <div className="bg-gray-800/50 rounded-lg p-6 flex flex-col gap-6 backdrop-blur-sm">
       <div className="grid grid-cols-3 gap-4 justify-items-center">
-        {chips.map((chipProps) => (
-          <Chip key={chipProps.value} {...chipProps} />
+        {chipConfigs.map((config) => (
+          <Chip 
+            key={config.value} 
+            {...config}
+            isSelected={selectedChipValue === config.value}
+            onClick={() => onChipSelect(config.value)}
+          />
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <button className="btn bg-green-600 text-white hover:bg-green-500 
-                          focus:ring-green-500 text-lg py-4">
-          Place Bet
+        <button className="btn bg-yellow-600 text-white hover:bg-yellow-500 
+                          focus:ring-yellow-500 text-lg py-4">
+          Undo Bet
         </button>
         <button className="btn bg-red-600 text-white hover:bg-red-500 
                           focus:ring-red-500 text-lg py-4">
-          Clear
+          Clear All
         </button>
       </div>
     </div>
