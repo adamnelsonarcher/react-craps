@@ -6,11 +6,12 @@ import ChipStack from './ChipStack';
 
 // Add chip configuration
 const CHIPS_CONFIG = [
-  { value: 1, color: 'bg-chip-red', ringColor: 'border-red-300' },
-  { value: 5, color: 'bg-chip-blue', ringColor: 'border-blue-300' },
-  { value: 10, color: 'bg-chip-green', ringColor: 'border-green-300' },
-  { value: 25, color: 'bg-chip-black', ringColor: 'border-gray-400' },
-  { value: 100, color: 'bg-purple-700', ringColor: 'border-purple-300' },
+  { value: 1, color: 'bg-white', ringColor: 'border-gray-300' },
+  { value: 5, color: 'bg-red-600', ringColor: 'border-red-300' },
+  { value: 10, color: 'bg-orange-500', ringColor: 'border-orange-300' },
+  { value: 25, color: 'bg-green-600', ringColor: 'border-green-300' },
+  { value: 50, color: 'bg-blue-600', ringColor: 'border-blue-300' },
+  { value: 100, color: 'bg-gray-900', ringColor: 'border-gray-400' },
 ];
 
 interface BettingArea {
@@ -503,11 +504,10 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
           >
             {/* Render chip stack if there's a bet */}
             {bets.find(bet => bet.areaId === area.id) && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <ChipStack 
-                  {...bets.find(bet => bet.areaId === area.id)!}
-                />
-              </div>
+              <ChipStack 
+                {...bets.find(bet => bet.areaId === area.id)!}
+                position={area.id.startsWith('place-') ? 'bottom' : 'center'}
+              />
             )}
           </div>
         ))}

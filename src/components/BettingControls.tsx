@@ -27,7 +27,8 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor, isSelected, onClic
                       rotate-45"></div>
         
         <div className="flex flex-col items-center">
-          <span className="text-2xl font-bold text-white drop-shadow-lg">
+          <span className={`text-2xl font-bold drop-shadow-lg
+                          ${color === 'bg-gray-200' ? 'text-black' : 'text-white'}`}>
             ${value}
           </span>
         </div>
@@ -55,11 +56,12 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   onClear
 }) => {
   const chipConfigs: ChipConfig[] = [
-    { value: 1, color: 'bg-chip-red', ringColor: 'border-red-300' },
-    { value: 5, color: 'bg-chip-blue', ringColor: 'border-blue-300' },
-    { value: 10, color: 'bg-chip-green', ringColor: 'border-green-300' },
-    { value: 25, color: 'bg-chip-black', ringColor: 'border-gray-400' },
-    { value: 100, color: 'bg-purple-700', ringColor: 'border-purple-300' },
+    { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-300' },
+    { value: 5, color: 'bg-red-600', ringColor: 'border-red-300' },
+    { value: 10, color: 'bg-orange-500', ringColor: 'border-orange-300' },
+    { value: 25, color: 'bg-green-600', ringColor: 'border-green-300' },
+    { value: 50, color: 'bg-blue-600', ringColor: 'border-blue-300' },
+    { value: 100, color: 'bg-gray-900', ringColor: 'border-gray-400' },
   ];
 
   return (
