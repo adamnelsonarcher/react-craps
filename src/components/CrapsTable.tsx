@@ -188,6 +188,116 @@ const CrapsTable: React.FC = () => {
           8.5% 2%          /* 13.88%, 3.92% */
         )`
       }
+    },
+    {
+      id: 'any-7',
+      name: 'Any 7',
+      style: {
+        top: '33.26%',
+        left: '67.22%',
+        width: '28.81%',
+        height: '5.51%'
+      }
+    },
+    {
+      id: 'hard-6',
+      name: 'Hard 6',
+      style: {
+        top: '39.68%',
+        left: '65.08%',
+        width: '15.89%',
+        height: '12.16%'
+      }
+    },
+    {
+      id: 'hard-10',
+      name: 'Hard 10',
+      style: {
+        top: '39.53%',
+        left: '81.58%',
+        width: '15.90%',
+        height: '12.16%'
+      }
+    },
+    {
+      id: 'hard-8',
+      name: 'Hard 8',
+      style: {
+        top: '51.91%',
+        left: '65.15%',
+        width: '15.75%',
+        height: '12.62%'
+      }
+    },
+    {
+      id: 'hard-4',
+      name: 'Hard 4',
+      style: {
+        top: '51.91%',
+        left: '81.51%',
+        width: '15.97%',
+        height: '12.46%'
+      }
+    },
+    {
+      id: 'roll-3',
+      name: 'Roll 3',
+      style: {
+        top: '64.44%',
+        left: '65.15%',
+        width: '10.55%',
+        height: '11.70%'
+      }
+    },
+    {
+      id: 'roll-2',
+      name: 'Roll 2',
+      style: {
+        top: '64.75%',
+        left: '76.31%',
+        width: '10.24%',
+        height: '11.24%'
+      }
+    },
+    {
+      id: 'roll-12',
+      name: 'Roll 12',
+      style: {
+        top: '64.60%',
+        left: '87.16%',
+        width: '10.17%',
+        height: '11.54%'
+      }
+    },
+    {
+      id: 'roll-11-1',
+      name: 'Roll 11',
+      style: {
+        top: '76.67%',
+        left: '65.00%',
+        width: '15.67%',
+        height: '12.77%'
+      }
+    },
+    {
+      id: 'roll-11-2',
+      name: 'Roll 11',
+      style: {
+        top: '76.52%',
+        left: '81.28%',
+        width: '16.12%',
+        height: '12.31%'
+      }
+    },
+    {
+      id: 'any-craps',
+      name: 'Any Craps',
+      style: {
+        top: '89.51%',
+        left: '65.15%',
+        width: '32.18%',
+        height: '7.72%'
+      }
     }
   ];
 
