@@ -1,0 +1,86 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.app-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  color: white;
+  padding: 1rem;
+}
+
+.game-header {
+  text-align: center;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.game-header h1 {
+  margin: 0;
+  color: #ffd700;
+  font-size: 2.5rem;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.player-info {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  color: #00ff00;
+}
+
+.game-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.game-controls {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1rem;
+}
+
+@media (max-width: 768px) {
+  .game-controls {
+    flex-direction: column;
+    align-items: center;
+  }
+}
