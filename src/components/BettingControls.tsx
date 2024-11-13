@@ -44,9 +44,16 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor, isSelected, onClic
 interface BettingControlsProps {
   onChipSelect: (value: number) => void;
   selectedChipValue: number | null;
+  onUndo: () => void;
+  onClear: () => void;
 }
 
-const BettingControls: React.FC<BettingControlsProps> = ({ onChipSelect, selectedChipValue }) => {
+const BettingControls: React.FC<BettingControlsProps> = ({ 
+  onChipSelect, 
+  selectedChipValue,
+  onUndo,
+  onClear
+}) => {
   const chipConfigs: ChipConfig[] = [
     { value: 1, color: 'bg-chip-red', ringColor: 'border-red-300' },
     { value: 5, color: 'bg-chip-blue', ringColor: 'border-blue-300' },
@@ -68,12 +75,18 @@ const BettingControls: React.FC<BettingControlsProps> = ({ onChipSelect, selecte
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <button className="btn bg-yellow-600 text-white hover:bg-yellow-500 
-                          focus:ring-yellow-500 text-lg py-4">
+        <button 
+          className="btn bg-yellow-600 text-white hover:bg-yellow-500 
+                     focus:ring-yellow-500 text-lg py-4"
+          onClick={onUndo}
+        >
           Undo Bet
         </button>
-        <button className="btn bg-red-600 text-white hover:bg-red-500 
-                          focus:ring-red-500 text-lg py-4">
+        <button 
+          className="btn bg-red-600 text-white hover:bg-red-500 
+                     focus:ring-red-500 text-lg py-4"
+          onClick={onClear}
+        >
           Clear All
         </button>
       </div>

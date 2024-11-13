@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import boardLayout from '../assets/just_text.png';
 import Dice from './Dice';
 import DiceHistory from './DiceHistory';
@@ -43,11 +43,16 @@ interface Bet {
   count: number;
 }
 
+export interface CrapsTableRef {
+  handleUndo: () => void;
+  handleClear: () => void;
+}
+
 interface CrapsTableProps {
   selectedChipValue: number | null;
 }
 
-const CrapsTable: React.FC<CrapsTableProps> = ({ selectedChipValue }) => {
+const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipValue }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
@@ -57,6 +62,7 @@ const CrapsTable: React.FC<CrapsTableProps> = ({ selectedChipValue }) => {
   const [isRolling, setIsRolling] = useState(false);
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
   const [bets, setBets] = useState<Bet[]>([]);
+  const [betHistory, setBetHistory] = useState<Bet[][]>([]);  // Stack of bet states
 
   // Constants based on your measurements for 4
   const numberWidth = 29.92 - 21.67;  // ~8.25%
@@ -140,8 +146,8 @@ const CrapsTable: React.FC<CrapsTableProps> = ({ selectedChipValue }) => {
       style: {
         top: '29.14%',
         left: '14.03%',
-        width: '49.29%',  // 63.32% - 14.03%
-        height: '16.35%'  // 45.49% - 29.14%
+        width: '49.29%',
+        height: '16.35%'
       }
     },
     // Don't come bar
@@ -382,11 +388,13 @@ const CrapsTable: React.FC<CrapsTableProps> = ({ selectedChipValue }) => {
   const handleAreaClick = (areaId: string) => {
     if (!selectedChipValue) return;
     
+    // Save current state to history before making changes
+    setBetHistory(prev => [...prev, bets]);
+    
     setBets(prev => {
       const existingBet = prev.find(bet => bet.areaId === areaId);
       if (existingBet) {
         const newAmount = existingBet.amount + selectedChipValue;
-        // Find the optimal chip color for the new amount
         const optimalChip = CHIPS_CONFIG
           .slice()
           .reverse()
@@ -404,7 +412,6 @@ const CrapsTable: React.FC<CrapsTableProps> = ({ selectedChipValue }) => {
         );
       }
       
-      // Add new bet
       return [...prev, {
         areaId,
         amount: selectedChipValue,
@@ -413,6 +420,29 @@ const CrapsTable: React.FC<CrapsTableProps> = ({ selectedChipValue }) => {
       }];
     });
   };
+
+  const handleUndo = () => {
+    if (betHistory.length === 0) return;
+    
+    // Pop the last state from history and set it as current
+    const lastState = betHistory[betHistory.length - 1];
+    setBets(lastState);
+    setBetHistory(prev => prev.slice(0, -1));
+  };
+
+  const handleClear = () => {
+    // Save current state to history before clearing
+    if (bets.length > 0) {
+      setBetHistory(prev => [...prev, bets]);
+    }
+    setBets([]);
+  };
+
+  // Expose methods to parent through ref
+  useImperativeHandle(ref, () => ({
+    handleUndo,
+    handleClear
+  }));
 
   return (
     <div className="relative w-full h-full">
@@ -511,6 +541,6 @@ const CrapsTable: React.FC<CrapsTableProps> = ({ selectedChipValue }) => {
       </div>    
     </div>      
   );
-};
+});
 
 export default CrapsTable;

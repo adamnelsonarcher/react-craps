@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import CrapsTable from './components/CrapsTable';
+import React, { useState, useRef } from 'react';
+import CrapsTable, { CrapsTableRef } from './components/CrapsTable';
 import DiceArea from './components/DiceArea';
 import BettingControls from './components/BettingControls';
 import DiceHistory from './components/DiceHistory';
@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [isRolling, setIsRolling] = useState(false);
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
   const [selectedChipValue, setSelectedChipValue] = useState<number | null>(null);
+  const tableRef = useRef<CrapsTableRef>(null);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -50,6 +51,8 @@ const App: React.FC = () => {
           <BettingControls 
             onChipSelect={setSelectedChipValue}
             selectedChipValue={selectedChipValue}
+            onUndo={() => tableRef.current?.handleUndo()}
+            onClear={() => tableRef.current?.handleClear()}
           />
           
           <DiceArea onRoll={handleRoll} isRolling={isRolling} />
@@ -58,7 +61,10 @@ const App: React.FC = () => {
         {/* Right side - Table */}
         <div className="flex-[2.5] flex items-center justify-center bg-felt-green rounded-xl p-4 shadow-table">
           <div className="w-full aspect-[2/1] relative">
-            <CrapsTable selectedChipValue={selectedChipValue} />
+            <CrapsTable 
+              ref={tableRef}
+              selectedChipValue={selectedChipValue}
+            />
             {/* Dice in top right */}
             <div className="absolute top-4 right-4 flex gap-4 z-10">
               <Dice value={dice.die1} isRolling={isRolling} />
