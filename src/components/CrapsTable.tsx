@@ -133,6 +133,55 @@ const CrapsTable: React.FC = () => {
         height: '13.45%', // 58.94% - 45.49%
         clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 15% 100%, 5% 80%, 0% 45%)'
       }
+    },
+    // Pass Line with more points for smoother curves
+    {
+      id: 'pass-line',
+      name: 'Pass Line',
+      style: {
+        position: 'absolute',
+        top: '2.54%',
+        left: '3.10%',
+        width: '59.91%',
+        height: '72.60%',
+        clipPath: `polygon(
+          ${3.10}% ${2.54}%,  /* Start */
+          ${7.92}% ${2.70}%,  /* Top right corner */
+          ${8.07}% ${52.67}%, /* Middle right before curve */
+          ${10}% ${56}%,      /* Start curve */
+          ${12}% ${60}%,      /* Middle of curve */
+          ${14}% ${63}%,      /* Continue curve */
+          ${17.39}% ${66.89}%, /* End of curve */
+          ${62.86}% ${67.50}%, /* Top of straight section */
+          ${63.01}% ${75.14}%, /* Bottom right corner */
+          ${14.56}% ${74.99}%, /* Bottom left corner */
+          ${10}% ${70}%,      /* Start bottom curve */
+          ${7}% ${65}%,       /* Middle bottom curve */
+          ${5}% ${60}%,       /* Continue bottom curve */
+          ${3.10}% ${56.50}%, /* End bottom curve */
+          ${3.10}% ${2.54}%   /* Back to start */
+        )`
+      }
+    },
+    // Don't Pass Bar - using clip-path for curved edges
+    {
+      id: 'dont-pass',
+      name: "Don't Pass Bar",
+      style: {
+        top: '2.24%',
+        left: '9.06%',
+        width: '53.95%',
+        height: '62.51%',
+        clipPath: `polygon(
+          9% 0%, 9% 71%, 
+          12% 83%, 17.8% 91%, 
+          22% 93%, 100% 94%, 
+          100% 103%, 19% 103%, 
+          10.3% 101%, 4.8% 95%, 
+          0.4% 84%, 0% 43%, 
+          0% 6.8%
+        )`
+      }
     }
   ];
 
@@ -183,26 +232,6 @@ const CrapsTable: React.FC = () => {
 
   return (
     <div className="relative w-full h-full">
-      {/* Dev Tools Panel */}
-      {showDevTools && (
-        <div className="absolute -top-40 right-0 bg-black/70 text-white p-2 rounded-lg z-50">
-          <h3 className="font-bold mb-2">Area Visibility</h3>
-          {areaConfig.map(config => (
-            <div key={config.id} className="flex items-center gap-2 mb-1">
-              <input
-                type="checkbox"
-                checked={config.visible}
-                onChange={() => toggleAreaVisibility(config.id)}
-                id={`toggle-${config.id}`}
-              />
-              <label htmlFor={`toggle-${config.id}`}>
-                {config.id.charAt(0).toUpperCase() + config.id.slice(1)}
-              </label>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Hover Indicator */}
       <div className="absolute -top-12 left-0 right-0 flex justify-center">
         {hoveredArea && (
@@ -217,13 +246,6 @@ const CrapsTable: React.FC = () => {
         )}
       </div>
 
-      <button 
-        className="absolute top-2 left-2 z-50 bg-blue-500 text-white px-2 py-1 rounded"
-        onClick={() => setShowDevTools(!showDevTools)}
-      >
-        {showDevTools ? 'Hide' : 'Show'} Dev Tools
-      </button>
-
       <img 
         src={boardLayout}
         alt="Craps Table Layout"
@@ -234,6 +256,14 @@ const CrapsTable: React.FC = () => {
         })}
       />
       
+      {/* Moved dev tools button to bottom left */}
+      <button 
+        className="absolute bottom-2 left-2 z-50 bg-blue-500 text-white px-2 py-1 rounded"
+        onClick={() => setShowDevTools(!showDevTools)}
+      >
+        {showDevTools ? 'Hide' : 'Show'} Dev Tools
+      </button>
+
       <div 
         className="absolute inset-0"
         onMouseMove={handleMouseMove}
