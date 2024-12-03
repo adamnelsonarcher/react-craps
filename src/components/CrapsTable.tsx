@@ -56,6 +56,8 @@ interface CrapsTableProps {
   setBank: (value: number) => void;
   helpMode: boolean;
   setHelpMode: (value: boolean) => void;
+  bets: Bet[];
+  setBets: (bets: Bet[] | ((prev: Bet[]) => Bet[])) => void;
 }
 
 const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
@@ -63,7 +65,9 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   bank, 
   setBank,
   helpMode,
-  setHelpMode 
+  setHelpMode,
+  bets,
+  setBets
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -73,7 +77,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   const [dice, setDice] = useState<{ die1: number; die2: number }>({ die1: 1, die2: 1 });
   const [isRolling, setIsRolling] = useState(false);
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
-  const [bets, setBets] = useState<Bet[]>([]);
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);  // Stack of bet states
   const [quickRoll, setQuickRoll] = useState(false);
   const [showDevToolsButton, setShowDevToolsButton] = useState(false);

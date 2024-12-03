@@ -11,6 +11,13 @@ interface DiceRoll {
   total: number;
 }
 
+interface Bet {
+  areaId: string;
+  amount: number;
+  color: string;
+  count: number;
+}
+
 const App: React.FC = () => {
   const [dice, setDice] = useState<{ die1: number; die2: number }>({ die1: 1, die2: 1 });
   const [isRolling, setIsRolling] = useState(false);
@@ -22,6 +29,7 @@ const App: React.FC = () => {
   const [animationInterval, setAnimationInterval] = useState<NodeJS.Timeout | null>(null);
   const [bank, setBank] = useState(1000);
   const [helpMode, setHelpMode] = useState(false);
+  const [bets, setBets] = useState<Bet[]>([]);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -77,6 +85,10 @@ const App: React.FC = () => {
     };
   }, [animationInterval]);
 
+  const calculateTotalWager = (bets: Bet[]) => {
+    return bets.reduce((total, bet) => total + bet.amount, 0);
+  };
+
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       <h1 className="text-3xl font-semibold text-white text-center mb-4">RollSim.com</h1>
@@ -84,8 +96,13 @@ const App: React.FC = () => {
       <div className="flex-1 flex gap-6">
         {/* Left side - Controls */}
         <div className={`flex-1 flex flex-col gap-4 min-w-[300px] relative ${helpMode ? 'pointer-events-none' : ''}`}>
-          <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg">
-            <span className="text-2xl text-green-400 font-bold">Bank: ${bank}</span>
+          <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
+            <div className="w-[200px] text-left">
+              <span className="text-2xl text-green-400 font-bold">Bank: ${bank.toLocaleString()}</span>
+            </div>
+            <div className="w-[200px] text-right">
+              <span className="text-2xl text-yellow-400 font-bold">Wager: ${calculateTotalWager(bets).toLocaleString()}</span>
+            </div>
           </div>
           
           <BettingControls 
@@ -114,6 +131,8 @@ const App: React.FC = () => {
               setBank={setBank}
               helpMode={helpMode}
               setHelpMode={setHelpMode}
+              bets={bets}
+              setBets={setBets}
             />
             {/* Dice in top right */}
             <div className="absolute top-4 right-4 flex gap-4 z-10">
