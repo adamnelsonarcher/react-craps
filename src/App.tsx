@@ -17,24 +17,36 @@ const App: React.FC = () => {
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
   const [selectedChipValue, setSelectedChipValue] = useState<number | null>(null);
   const tableRef = useRef<CrapsTableRef>(null);
+  const [quickRoll, setQuickRoll] = useState(false);
 
   const handleRoll = () => {
     if (isRolling) return;
-    setIsRolling(true);
-    
-    setTimeout(() => {
+
+    if (quickRoll) {
+      // Instant roll without animation
       const die1 = Math.floor(Math.random() * 6) + 1;
       const die2 = Math.floor(Math.random() * 6) + 1;
-      
       setDice({ die1, die2 });
       setRollHistory(prev => [{
         die1,
         die2,
         total: die1 + die2
       }, ...prev].slice(0, 10));
-      
-      setIsRolling(false);
-    }, 1000);
+    } else {
+      // Roll with animation
+      setIsRolling(true);
+      setTimeout(() => {
+        const die1 = Math.floor(Math.random() * 6) + 1;
+        const die2 = Math.floor(Math.random() * 6) + 1;
+        setDice({ die1, die2 });
+        setRollHistory(prev => [{
+          die1,
+          die2,
+          total: die1 + die2
+        }, ...prev].slice(0, 10));
+        setIsRolling(false);
+      }, 1000);
+    }
   };
 
   return (
@@ -55,7 +67,12 @@ const App: React.FC = () => {
             onClear={() => tableRef.current?.handleClear()}
           />
           
-          <DiceArea onRoll={handleRoll} isRolling={isRolling} />
+          <DiceArea 
+            onRoll={handleRoll} 
+            isRolling={isRolling} 
+            quickRoll={quickRoll}
+            onQuickRollChange={setQuickRoll}
+          />
         </div>
         
         {/* Right side - Table */}

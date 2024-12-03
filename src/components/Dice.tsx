@@ -21,7 +21,7 @@ const Dice: React.FC<DiceProps> = ({ value, isRolling, size = 'large' }) => {
   
   return (
     <div className={`${sizeClasses[size]} bg-white rounded-lg shadow-lg 
-                    relative ${isRolling ? 'animate-spin' : ''}`}>
+                    relative ${isRolling ? 'animate-spin dice-rolling' : ''}`}>
       <div className={`absolute ${paddingClasses[size]} grid grid-cols-3 grid-rows-3 gap-0.5`}>
         {gridPositions.map((_, i) => (
           <div 

@@ -3,6 +3,7 @@ import boardLayout from '../assets/just_text.png';
 import Dice from './Dice';
 import DiceHistory from './DiceHistory';
 import ChipStack from './ChipStack';
+import DiceArea from './DiceArea';
 
 // Add chip configuration
 const CHIPS_CONFIG = [
@@ -64,6 +65,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
   const [bets, setBets] = useState<Bet[]>([]);
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);  // Stack of bet states
+  const [quickRoll, setQuickRoll] = useState(false);
 
   // Constants based on your measurements for 4
   const numberWidth = 29.92 - 21.67;  // ~8.25%
@@ -470,6 +472,26 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
       setBetHistory(prev => [...prev, bets]);
     }
     setBets([]);
+  };
+
+  const handleRoll = () => {
+    if (quickRoll) {
+      // Instant roll without animation
+      const newDie1 = Math.floor(Math.random() * 6) + 1;
+      const newDie2 = Math.floor(Math.random() * 6) + 1;
+      setDice({ die1: newDie1, die2: newDie2 });
+      setRollHistory(prev => [...prev, { die1: newDie1, die2: newDie2, total: newDie1 + newDie2 }]);
+    } else {
+      // Existing roll with animation
+      setIsRolling(true);
+      setTimeout(() => {
+        const newDie1 = Math.floor(Math.random() * 6) + 1;
+        const newDie2 = Math.floor(Math.random() * 6) + 1;
+        setDice({ die1: newDie1, die2: newDie2 });
+        setIsRolling(false);
+        setRollHistory(prev => [...prev, { die1: newDie1, die2: newDie2, total: newDie1 + newDie2 }]);
+      }, 1000);
+    }
   };
 
   // Expose methods to parent through ref
