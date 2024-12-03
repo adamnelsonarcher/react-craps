@@ -3,6 +3,8 @@ import React from 'react';
 interface GameStateProps {
   isRolling: boolean;
   diceTotal: number;
+  onStateChange?: (isComingOut: boolean, point: number | null) => void;
+  onRollType?: (type: 'point-made' | 'craps-out' | 'normal') => void;
 }
 
 interface PointMarkerProps {
@@ -33,7 +35,12 @@ const PointMarker: React.FC<PointMarkerProps> = ({ point, position, isOn }) => {
   );
 };
 
-const GameState: React.FC<GameStateProps> = ({ isRolling, diceTotal }) => {
+const GameState: React.FC<GameStateProps> = ({ 
+  isRolling, 
+  diceTotal, 
+  onStateChange,
+  onRollType 
+}) => {
   const [point, setPoint] = React.useState<number | null>(null);
   const [isComingOut, setIsComingOut] = React.useState(true);
 
@@ -50,40 +57,49 @@ const GameState: React.FC<GameStateProps> = ({ isRolling, diceTotal }) => {
   React.useEffect(() => {
     if (isRolling || !diceTotal) return;
 
+    let newIsComingOut = isComingOut;
+    let newPoint = point;
+    let rollType: 'point-made' | 'craps-out' | 'normal' = 'normal';
+
     if (isComingOut) {
-      // Come out roll logic
       if (diceTotal === 7 || diceTotal === 11) {
-        // Natural - Pass line wins, stay in come out
         console.log('Natural!');
       } else if (diceTotal === 2 || diceTotal === 3 || diceTotal === 12) {
-        // Craps - Pass line loses, stay in come out
         console.log('Craps!');
       } else {
-        // Point established
-        setPoint(diceTotal);
-        setIsComingOut(false);
+        newPoint = diceTotal;
+        newIsComingOut = false;
         console.log(`Point is ${diceTotal}`);
       }
     } else {
-      // Point phase logic
       if (diceTotal === 7) {
-        // Seven out - Pass line loses
         console.log('Seven out!');
-        setPoint(null);
-        setIsComingOut(true);
+        rollType = 'craps-out';
+        newPoint = null;
+        newIsComingOut = true;
       } else if (diceTotal === point) {
-        // Point made - Pass line wins
         console.log('Point made!');
-        setPoint(null);
-        setIsComingOut(true);
+        rollType = 'point-made';
+        newPoint = null;
+        newIsComingOut = true;
       }
+    }
+
+    // Update state
+    setPoint(newPoint);
+    setIsComingOut(newIsComingOut);
+    
+    // Notify parent components
+    onStateChange?.(newIsComingOut, newPoint);
+    if (rollType !== 'normal') {
+      onRollType?.(rollType);
     }
   }, [isRolling, diceTotal]);
 
   return (
     <PointMarker 
       point={point}
-      position={point ? markerPositions[point] : markerPositions[4]} // Default position if no point
+      position={point ? markerPositions[point] : markerPositions[4]}
       isOn={!isComingOut && point !== null}
     />
   );

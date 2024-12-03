@@ -4,11 +4,13 @@ import DiceArea from './components/DiceArea';
 import BettingControls from './components/BettingControls';
 import DiceHistory from './components/DiceHistory';
 import Dice from './components/Dice';
+import GameState from './components/GameState';
 
 interface DiceRoll {
   die1: number;
   die2: number;
   total: number;
+  type?: 'point-made' | 'craps-out' | 'normal';
 }
 
 interface Bet {
@@ -30,50 +32,52 @@ const App: React.FC = () => {
   const [bank, setBank] = useState(1000);
   const [helpMode, setHelpMode] = useState(false);
   const [bets, setBets] = useState<Bet[]>([]);
+  const [isComingOut, setIsComingOut] = useState(true);
+  const [point, setPoint] = useState<number | null>(null);
 
   const handleRoll = () => {
     if (isRolling) return;
 
-    if (quickRoll) {
-      // Instant roll without animation
+    const rollDice = () => {
       const die1 = Math.floor(Math.random() * 6) + 1;
       const die2 = Math.floor(Math.random() * 6) + 1;
-      setDice({ die1, die2 });
-      setRollHistory(prev => [{
-        die1,
-        die2,
-        total: die1 + die2
-      }, ...prev]);
+      const total = die1 + die2;
+      
+      return { die1, die2, total, type: 'normal' as const };
+    };
+
+    if (quickRoll) {
+      const roll = rollDice();
+      setDice({ die1: roll.die1, die2: roll.die2 });
+      setRollHistory(prev => [roll, ...prev]);
     } else {
-      // Roll with animation
       setIsRolling(true);
       
-      // Start the animation interval
       const interval = setInterval(() => {
         setAnimationDice({
           die1: Math.floor(Math.random() * 6) + 1,
           die2: Math.floor(Math.random() * 6) + 1
         });
-      }, 100); // Change numbers every 100ms
+      }, 100);
       
       setAnimationInterval(interval);
 
-      // Final roll after animation
       setTimeout(() => {
-        const die1 = Math.floor(Math.random() * 6) + 1;
-        const die2 = Math.floor(Math.random() * 6) + 1;
-        
+        const roll = rollDice();
         clearInterval(interval);
         setAnimationInterval(null);
-        setDice({ die1, die2 });
-        setRollHistory(prev => [{
-          die1,
-          die2,
-          total: die1 + die2
-        }, ...prev]);
+        setDice({ die1: roll.die1, die2: roll.die2 });
+        setRollHistory(prev => [roll, ...prev]);
         setIsRolling(false);
       }, 1000);
     }
+  };
+
+  const handleRollType = (type: 'point-made' | 'craps-out' | 'normal') => {
+    setRollHistory(prev => prev.length > 0 ? [
+      { ...prev[0], type },
+      ...prev.slice(1)
+    ] : prev);
   };
 
   // Cleanup interval on unmount
@@ -87,6 +91,11 @@ const App: React.FC = () => {
 
   const calculateTotalWager = (bets: Bet[]) => {
     return bets.reduce((total, bet) => total + bet.amount, 0);
+  };
+
+  const handleGameStateChange = (newIsComingOut: boolean, newPoint: number | null) => {
+    setIsComingOut(newIsComingOut);
+    setPoint(newPoint);
   };
 
   return (
@@ -151,10 +160,13 @@ const App: React.FC = () => {
             {rollHistory.length === 0 ? (
               <div className="text-gray-400 text-center italic text-xs"> </div>
             ) : (
-              rollHistory.slice(0, 20).map((roll, index) => (  // Only show last 15 rolls
+              rollHistory.slice(0, 20).map((roll, index) => (
                 <div 
-                  key={`roll-${roll.die1}-${roll.die2}-${index}`}  // Removed Date.now()
-                  className={`flex justify-center gap-1 ${index === 0 && !isRolling ? 'animate-slideIn' : ''}`}
+                  key={`roll-${roll.die1}-${roll.die2}-${index}`}
+                  className={`flex justify-center gap-1 ${index === 0 && !isRolling ? 'animate-slideIn' : ''} 
+                             p-0.5 rounded-md
+                             ${roll.type === 'craps-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
+                             ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
                 >
                   <Dice value={roll.die1} isRolling={false} size="small" />
                   <Dice value={roll.die2} isRolling={false} size="small" />
@@ -168,6 +180,13 @@ const App: React.FC = () => {
       {helpMode && (
         <div className="fixed inset-0 cursor-help pointer-events-none" />
       )}
+      
+      <GameState 
+        isRolling={isRolling}
+        diceTotal={dice.die1 + dice.die2}
+        onStateChange={handleGameStateChange}
+        onRollType={handleRollType}
+      />
     </div>
   );
 };
