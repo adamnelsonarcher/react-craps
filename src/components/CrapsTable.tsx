@@ -54,9 +54,17 @@ interface CrapsTableProps {
   selectedChipValue: number | null;
   bank: number;
   setBank: (value: number) => void;
+  helpMode: boolean;
+  setHelpMode: (value: boolean) => void;
 }
 
-const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipValue, bank, setBank }, ref) => {
+const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
+  selectedChipValue, 
+  bank, 
+  setBank,
+  helpMode,
+  setHelpMode 
+}, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
@@ -69,7 +77,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);  // Stack of bet states
   const [quickRoll, setQuickRoll] = useState(false);
   const [showDevToolsButton, setShowDevToolsButton] = useState(false);
-  const [helpMode, setHelpMode] = useState(false);
   const [helpText, setHelpText] = useState<string | null>(null);
 
   // Constants based on your measurements for 4
@@ -561,7 +568,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
   }, []);
 
   return (
-    <div className="relative w-full h-full">
+    <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''}`}>
       {/* Hover Indicator */}
       <div className="absolute -top-12 left-0 right-0 flex justify-center">
         {hoveredArea && (
@@ -598,8 +605,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
 
       {/* Help Mode Button */}
       <button 
-        className={`absolute bottom-4 left-4 z-50 w-8 h-8 rounded-full 
-                    flex items-center justify-center
+        className={`absolute bottom-4 left-4 z-50 px-4 h-8 rounded-full 
+                    flex items-center justify-center gap-2
                     ${helpMode ? 'bg-blue-500' : 'bg-gray-600'} 
                     text-white font-bold text-lg
                     hover:bg-opacity-90 transition-colors`}
@@ -608,22 +615,17 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
           setHelpText(null);
         }}
       >
-        ?
+        ? {helpMode && <span className="text-sm font-normal">Help</span>}
       </button>
 
       {/* Help Text Popup */}
       {helpText && helpMode && (
-        <div className="absolute bottom-4 left-14 z-50
+        <div className="absolute bottom-4 left-28 z-50
                         bg-black/90 text-white p-3 rounded-lg
                         shadow-lg backdrop-blur-sm
                         max-w-[300px]">
           <p className="text-sm leading-tight">{helpText}</p>
         </div>
-      )}
-
-      {/* Cursor indicator for help mode */}
-      {helpMode && (
-        <div className="fixed inset-0 cursor-help pointer-events-none" />
       )}
 
       <div 

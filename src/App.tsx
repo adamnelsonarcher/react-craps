@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [animationDice, setAnimationDice] = useState({ die1: 1, die2: 1 });
   const [animationInterval, setAnimationInterval] = useState<NodeJS.Timeout | null>(null);
   const [bank, setBank] = useState(1000);
+  const [helpMode, setHelpMode] = useState(false);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -82,7 +83,7 @@ const App: React.FC = () => {
       
       <div className="flex-1 flex gap-6">
         {/* Left side - Controls */}
-        <div className="flex-1 flex flex-col gap-4 min-w-[300px]">
+        <div className={`flex-1 flex flex-col gap-4 min-w-[300px] relative ${helpMode ? 'pointer-events-none' : ''}`}>
           <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg">
             <span className="text-2xl text-green-400 font-bold">Bank: ${bank}</span>
           </div>
@@ -111,6 +112,8 @@ const App: React.FC = () => {
               selectedChipValue={selectedChipValue}
               bank={bank}
               setBank={setBank}
+              helpMode={helpMode}
+              setHelpMode={setHelpMode}
             />
             {/* Dice in top right */}
             <div className="absolute top-4 right-4 flex gap-4 z-10">
@@ -140,6 +143,10 @@ const App: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {helpMode && (
+        <div className="fixed inset-0 cursor-help pointer-events-none" />
+      )}
     </div>
   );
 };
