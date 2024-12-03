@@ -4,6 +4,7 @@ import Dice from './Dice';
 import DiceHistory from './DiceHistory';
 import ChipStack from './ChipStack';
 import DiceArea from './DiceArea';
+import GameState from './GameState';
 
 // Add chip configuration
 const CHIPS_CONFIG = [
@@ -58,6 +59,8 @@ interface CrapsTableProps {
   setHelpMode: (value: boolean) => void;
   bets: Bet[];
   setBets: (bets: Bet[] | ((prev: Bet[]) => Bet[])) => void;
+  dice: { die1: number; die2: number };
+  isRolling: boolean;
 }
 
 const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
@@ -67,15 +70,15 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   helpMode,
   setHelpMode,
   bets,
-  setBets
+  setBets,
+  dice,
+  isRolling
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [clickLog, setClickLog] = useState<string[]>([]);
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
-  const [dice, setDice] = useState<{ die1: number; die2: number }>({ die1: 1, die2: 1 });
-  const [isRolling, setIsRolling] = useState(false);
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);  // Stack of bet states
   const [quickRoll, setQuickRoll] = useState(false);
@@ -515,26 +518,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     }
   };
 
-  const handleRoll = () => {
-    if (quickRoll) {
-      // Instant roll without animation
-      const newDie1 = Math.floor(Math.random() * 6) + 1;
-      const newDie2 = Math.floor(Math.random() * 6) + 1;
-      setDice({ die1: newDie1, die2: newDie2 });
-      setRollHistory(prev => [...prev, { die1: newDie1, die2: newDie2, total: newDie1 + newDie2 }]);
-    } else {
-      // Existing roll with animation
-      setIsRolling(true);
-      setTimeout(() => {
-        const newDie1 = Math.floor(Math.random() * 6) + 1;
-        const newDie2 = Math.floor(Math.random() * 6) + 1;
-        setDice({ die1: newDie1, die2: newDie2 });
-        setIsRolling(false);
-        setRollHistory(prev => [...prev, { die1: newDie1, die2: newDie2, total: newDie1 + newDie2 }]);
-      }, 1000);
-    }
-  };
-
   // Add this function to handle help mode clicks
   const handleHelpClick = (areaId: string) => {
     const baseAreaId = areaId.split('-').slice(0, 2).join('-'); // Handle numbered bets like 'place-6'
@@ -631,6 +614,11 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
           <p className="text-sm leading-tight">{helpText}</p>
         </div>
       )}
+
+      <GameState 
+        isRolling={isRolling}
+        diceTotal={dice.die1 + dice.die2}
+      />
 
       <div 
         className="absolute inset-0"

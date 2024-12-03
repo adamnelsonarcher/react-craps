@@ -133,6 +133,8 @@ const App: React.FC = () => {
               setHelpMode={setHelpMode}
               bets={bets}
               setBets={setBets}
+              dice={dice}
+              isRolling={isRolling}
             />
             {/* Dice in top right */}
             <div className="absolute top-4 right-4 flex gap-4 z-10">
