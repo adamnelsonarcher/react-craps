@@ -61,6 +61,7 @@ interface CrapsTableProps {
   setBets: (bets: Bet[] | ((prev: Bet[]) => Bet[])) => void;
   dice: { die1: number; die2: number };
   isRolling: boolean;
+  point: number | null;
 }
 
 const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
@@ -72,7 +73,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   bets,
   setBets,
   dice,
-  isRolling
+  isRolling,
+  point
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -460,8 +462,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     const newBank = bank - selectedChipValue;
     setBank(newBank);
     
-    setBets(prev => {
-      const existingBet = prev.find(bet => bet.areaId === chipAreaId);
+    setBets((prev: Bet[]) => {
+      const existingBet = prev.find((bet: Bet) => bet.areaId === chipAreaId);
       if (existingBet) {
         const newAmount = existingBet.amount + selectedChipValue;
         const optimalChip = CHIPS_CONFIG
@@ -469,7 +471,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
           .reverse()
           .find(chip => newAmount >= chip.value) || CHIPS_CONFIG[0];
         
-        return prev.map(bet => 
+        return prev.map((bet: Bet) => 
           bet.areaId === chipAreaId 
             ? { 
                 ...bet, 
@@ -483,7 +485,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       
       console.log('Adding new bet for area:', chipAreaId);
       return [...prev, {
-        areaId: chipAreaId, // Use the chip area ID instead
+        areaId: chipAreaId,
         amount: selectedChipValue,
         color: CHIPS_CONFIG.find(c => c.value === selectedChipValue)?.color || 'bg-chip-red',
         count: 1
@@ -629,6 +631,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
           <div
             key={area.id}
             className="absolute cursor-pointer transition-all duration-200"
+            data-bet-id={area.id}
             style={{
               ...area.style,
               backgroundColor: hoveredArea === area.id ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
@@ -653,10 +656,15 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                 {...bets.find(bet => bet.areaId === area.id)!}
                 position={
                   area.id === 'pass-line' || area.id === 'dont-pass'
-                    ? 'custom' // Use a custom position for these areas
+                    ? 'custom'
                     : area.id.startsWith('place-') ? 'bottom' : 'center'
                 }
                 areaId={area.id}
+                isOff={!point && (
+                  area.id.startsWith('place-') || 
+                  area.id.startsWith('buy-') || 
+                  area.id.startsWith('lay-')
+                )}
               />
             )}
           </div>

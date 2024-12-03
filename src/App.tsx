@@ -5,6 +5,7 @@ import BettingControls from './components/BettingControls';
 import DiceHistory from './components/DiceHistory';
 import Dice from './components/Dice';
 import GameState from './components/GameState';
+import AnimatedChipStack from './components/AnimatedChipStack';
 
 interface DiceRoll {
   die1: number;
@@ -18,6 +19,11 @@ interface Bet {
   amount: number;
   color: string;
   count: number;
+}
+
+interface ResolvingBet extends Bet {
+  isWinning: boolean;
+  position: { x: number; y: number };
 }
 
 const App: React.FC = () => {
@@ -34,6 +40,8 @@ const App: React.FC = () => {
   const [bets, setBets] = useState<Bet[]>([]);
   const [isComingOut, setIsComingOut] = useState(true);
   const [point, setPoint] = useState<number | null>(null);
+  const [resolvingBets, setResolvingBets] = useState<ResolvingBet[]>([]);
+  const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -78,6 +86,10 @@ const App: React.FC = () => {
       { ...prev[0], type },
       ...prev.slice(1)
     ] : prev);
+    
+    if (type !== 'normal') {
+      resolveBets(type);
+    }
   };
 
   // Cleanup interval on unmount
@@ -98,13 +110,61 @@ const App: React.FC = () => {
     setPoint(newPoint);
   };
 
+  const resolveBets = (rollType: 'point-made' | 'craps-out' | 'normal') => {
+    const betsToResolve = bets.map(bet => {
+      let isWinning = false;
+      
+      if (bet.areaId === 'pass-line') {
+        isWinning = rollType === 'point-made';
+      } else if (bet.areaId === 'dont-pass') {
+        isWinning = rollType === 'craps-out';
+      }
+      
+      const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
+      const tableElement = document.querySelector('.bg-felt-green');
+      
+      if (betElement && tableElement) {
+        const betRect = betElement.getBoundingClientRect();
+        const tableRect = tableElement.getBoundingClientRect();
+        
+        return {
+          ...bet,
+          isWinning,
+          position: { 
+            x: betRect.left + (betRect.width / 2),
+            y: betRect.top + (betRect.height / 2)
+          }
+        };
+      }
+      
+      return {
+        ...bet,
+        isWinning,
+        position: { x: 0, y: 0 }
+      };
+    });
+
+    setAnimatingBets(new Set(betsToResolve.map(bet => bet.areaId)));
+    setResolvingBets(betsToResolve);
+    setBets([]);
+    
+    const winnings = betsToResolve.reduce((total, bet) => {
+      if (bet.isWinning) {
+        return total + (bet.amount * 2);
+      }
+      return total;
+    }, 0);
+    
+    setBank(prev => prev + winnings);
+  };
+
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       <h1 className="text-3xl font-semibold text-white text-center mb-4">RollSim.com</h1>
       
       <div className="flex-1 flex gap-6">
         {/* Left side - Controls */}
-        <div className={`flex-1 flex flex-col gap-4 min-w-[250px] max-w-[430px] relative ${helpMode ? 'pointer-events-none' : ''}`}>
+        <div className={`flex-1 flex flex-col gap-4 min-w-[250px] max-w-[400px] relative ${helpMode ? 'pointer-events-none' : ''}`}>
           <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
             <div className="w-[200px] text-left">
               <span className="text-2xl text-green-400 font-bold">Bank: ${bank.toLocaleString()}</span>
@@ -144,6 +204,7 @@ const App: React.FC = () => {
               setBets={setBets}
               dice={dice}
               isRolling={isRolling}
+              point={point}
             />
             {/* Dice in top right */}
             <div className="absolute top-4 right-4 flex gap-4 z-10">
@@ -187,6 +248,26 @@ const App: React.FC = () => {
         onStateChange={handleGameStateChange}
         onRollType={handleRollType}
       />
+
+      {resolvingBets.map((bet, index) => (
+        animatingBets.has(bet.areaId) ? (
+          <AnimatedChipStack
+            key={`resolving-${bet.areaId}-${index}`}
+            amount={bet.amount}
+            color={bet.color}
+            position={bet.position}
+            isWinning={bet.isWinning}
+            onAnimationComplete={() => {
+              setAnimatingBets(prev => {
+                const next = new Set(prev);
+                next.delete(bet.areaId);
+                return next;
+              });
+              setResolvingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+            }}
+          />
+        ) : null
+      ))}
     </div>
   );
 };

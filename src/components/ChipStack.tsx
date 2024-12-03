@@ -6,6 +6,7 @@ interface ChipStackProps {
   count?: number;
   position?: 'center' | 'bottom' | 'custom';
   areaId?: string;
+  isOff?: boolean;
 }
 
 const CHIP_VALUES = [
@@ -17,7 +18,7 @@ const CHIP_VALUES = [
   { value: 1, color: 'bg-gray-200' }     // Light Gray (was white)
 ];
 
-const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId }) => {
+const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId, isOff = false }) => {
   console.log('ChipStack rendered with:', { amount, position, areaId });
   
   const optimalChip = CHIP_VALUES.find(chip => amount >= chip.value) || CHIP_VALUES[CHIP_VALUES.length - 1];
@@ -41,23 +42,34 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
                      border-2 border-white shadow-lg
                      transition-all duration-150
                      ring-1 ring-white/20
-                     ${optimalChip.color === 'bg-gray-200' ? 'text-black' : 'text-white'}`}
+                     ${optimalChip.color === 'bg-gray-200' ? 'text-black' : 'text-white'}
+                     ${isOff ? 'opacity-75' : ''}`}
           style={{
             width: chipSize,
             height: chipSize,
-            bottom: `${index * 2.3}px`, // Increased spacing between chips
+            bottom: `${index * 2.3}px`,
             zIndex: index,
           }}
         />
       ))}
       
-      {/* Amount display - adjusted for larger chips */}
+      {/* Amount display */}
       <div className="absolute top-1.5 left-1/2 -translate-x-1/2 
                     bg-black/80 text-white px-1.5 py-0 rounded text-sm
                     whitespace-nowrap z-50 font-bold
                     border border-white/30">
         ${amount}
       </div>
+
+      {/* OFF indicator */}
+      {isOff && (
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2
+                      bg-red-600 text-white px-1.5 py-0.5 rounded-sm text-xs
+                      whitespace-nowrap z-50 font-bold
+                      border border-white/30">
+          OFF
+        </div>
+      )}
     </div>
   );
 };
