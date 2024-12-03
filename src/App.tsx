@@ -18,6 +18,8 @@ const App: React.FC = () => {
   const [selectedChipValue, setSelectedChipValue] = useState<number | null>(null);
   const tableRef = useRef<CrapsTableRef>(null);
   const [quickRoll, setQuickRoll] = useState(false);
+  const [animationDice, setAnimationDice] = useState({ die1: 1, die2: 1 });
+  const [animationInterval, setAnimationInterval] = useState<NodeJS.Timeout | null>(null);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -35,9 +37,24 @@ const App: React.FC = () => {
     } else {
       // Roll with animation
       setIsRolling(true);
+      
+      // Start the animation interval
+      const interval = setInterval(() => {
+        setAnimationDice({
+          die1: Math.floor(Math.random() * 6) + 1,
+          die2: Math.floor(Math.random() * 6) + 1
+        });
+      }, 100); // Change numbers every 100ms
+      
+      setAnimationInterval(interval);
+
+      // Final roll after animation
       setTimeout(() => {
         const die1 = Math.floor(Math.random() * 6) + 1;
         const die2 = Math.floor(Math.random() * 6) + 1;
+        
+        clearInterval(interval);
+        setAnimationInterval(null);
         setDice({ die1, die2 });
         setRollHistory(prev => [{
           die1,
@@ -48,6 +65,15 @@ const App: React.FC = () => {
       }, 1000);
     }
   };
+
+  // Cleanup interval on unmount
+  React.useEffect(() => {
+    return () => {
+      if (animationInterval) {
+        clearInterval(animationInterval);
+      }
+    };
+  }, [animationInterval]);
 
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
@@ -75,7 +101,7 @@ const App: React.FC = () => {
           />
         </div>
         
-        {/* Right side - Table */}
+        {/* Center - Table */}
         <div className="flex-[2.5] flex items-center justify-center bg-felt-green rounded-xl p-4 shadow-table">
           <div className="w-full aspect-[2/1] relative">
             <CrapsTable 
@@ -84,27 +110,30 @@ const App: React.FC = () => {
             />
             {/* Dice in top right */}
             <div className="absolute top-4 right-4 flex gap-4 z-10">
-              <Dice value={dice.die1} isRolling={isRolling} />
-              <Dice value={dice.die2} isRolling={isRolling} />
+              <Dice value={isRolling ? animationDice.die1 : dice.die1} isRolling={isRolling} />
+              <Dice value={isRolling ? animationDice.die2 : dice.die2} isRolling={isRolling} />
             </div>
           </div>
         </div>
-      </div>
 
-      {/* History overlay */}
-      <div className="fixed bottom-0 left-0 right-1/2 bg-gray-800/75 rounded-t-lg p-2 shadow-lg backdrop-blur-sm">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-          {rollHistory.map((roll, index) => (
-            <div 
-              key={index}
-              className="flex items-center gap-1 px-2 py-1 rounded whitespace-nowrap animate-slideIn"
-            >
-              <div className="flex gap-1">
-                <Dice value={roll.die1} isRolling={false} size="small" />
-                <Dice value={roll.die2} isRolling={false} size="small" />
-              </div>
-            </div>
-          ))}
+        {/* Right side - Roll History */}
+        <div className="w-24 bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm">
+          <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
+          <div className="flex flex-col-reverse gap-1">
+            {rollHistory.length === 0 ? (
+              <div className="text-gray-400 text-center italic text-xs">No rolls yet</div>
+            ) : (
+              rollHistory.map((roll, index) => (
+                <div 
+                  key={`roll-${roll.die1}-${roll.die2}-${Date.now()}-${index}`}
+                  className="flex justify-center gap-1 animate-slideIn"
+                >
+                  <Dice value={roll.die1} isRolling={false} size="small" />
+                  <Dice value={roll.die2} isRolling={false} size="small" />
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
