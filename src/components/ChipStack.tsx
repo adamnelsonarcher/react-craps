@@ -18,30 +18,15 @@ const CHIP_VALUES = [
 ];
 
 const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId }) => {
+  console.log('ChipStack rendered with:', { amount, position, areaId });
+  
   const optimalChip = CHIP_VALUES.find(chip => amount >= chip.value) || CHIP_VALUES[CHIP_VALUES.length - 1];
   const chipCount = Math.min(5, Math.ceil(amount / optimalChip.value));
   const chips = Array(chipCount).fill(null);
   
-  let positionStyle: React.CSSProperties = position === 'bottom' 
+  const positionStyle: React.CSSProperties = position === 'bottom' 
     ? { bottom: '0.25rem', left: '50%', transform: 'translateX(-50%)' }
     : { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
-  
-  // Use exact coordinates for pass line and don't pass
-  if (position === 'custom') {
-    if (areaId === 'pass-line') {
-      positionStyle = {
-        top: '75.45%',
-        left: '37.26%',
-        transform: 'translate(-50%, -50%)'
-      };
-    } else if (areaId === 'dont-pass') {
-      positionStyle = {
-        top: '64.75%',
-        left: '40.09%',
-        transform: 'translate(-50%, -50%)'
-      };
-    }
-  }
   
   return (
     <div className="absolute w-8 h-8" style={positionStyle}>

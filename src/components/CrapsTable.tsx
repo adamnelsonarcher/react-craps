@@ -78,6 +78,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
     { id: 'field', visible: true },
     { id: 'come', visible: true },
     { id: 'dont-come', visible: true },
+    { id: 'pass-line-chips', visible: false },
+    { id: 'dont-pass-chips', visible: false },
   ]);
 
   const generateNumberAreas = () => {
@@ -338,6 +340,31 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
         width: '32.18%',
         height: '7.72%'
       }
+    },
+    // Invisible chip placement areas
+    {
+      id: 'pass-line-chips',
+      name: 'Pass Line',
+      style: {
+        top: '69.45%',      // Slightly adjusted for better placement
+        left: '36.26%',     // Slightly adjusted for better placement
+        width: '32px',      // Fixed width for chip
+        height: '32px',     // Fixed height for chip
+        pointerEvents: 'none', // Make sure it doesn't interfere with clicks
+        // backgroundColor: 'rgba(255,0,0,0.2)', // Uncomment for debugging
+      }
+    },
+    {
+      id: 'dont-pass-chips',
+      name: "Don't Pass Bar",
+      style: {
+        top: '60.15%',      // Slightly adjusted for better placement
+        left: '38.09%',     // Slightly adjusted for better placement
+        width: '32px',      // Fixed width for chip
+        height: '32px',     // Fixed height for chip
+        pointerEvents: 'none', // Make sure it doesn't interfere with clicks
+        // backgroundColor: 'rgba(0,255,0,0.2)', // Uncomment for debugging
+      }
     }
   ];
 
@@ -390,11 +417,15 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
     console.log('Clicked area:', areaId);
     if (!selectedChipValue) return;
     
-    // Save current state to history before making changes
+    // Map the betting areas to their chip display areas
+    const chipAreaId = areaId === 'pass-line' ? 'pass-line-chips' :
+                      areaId === 'dont-pass' ? 'dont-pass-chips' :
+                      areaId;
+    
     setBetHistory(prev => [...prev, bets]);
     
     setBets(prev => {
-      const existingBet = prev.find(bet => bet.areaId === areaId);
+      const existingBet = prev.find(bet => bet.areaId === chipAreaId);
       if (existingBet) {
         const newAmount = existingBet.amount + selectedChipValue;
         const optimalChip = CHIPS_CONFIG
@@ -403,7 +434,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
           .find(chip => newAmount >= chip.value) || CHIPS_CONFIG[0];
         
         return prev.map(bet => 
-          bet.areaId === areaId 
+          bet.areaId === chipAreaId 
             ? { 
                 ...bet, 
                 amount: newAmount,
@@ -414,9 +445,9 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
         );
       }
       
-      console.log('Adding new bet for area:', areaId);
+      console.log('Adding new bet for area:', chipAreaId);
       return [...prev, {
-        areaId,
+        areaId: chipAreaId, // Use the chip area ID instead
         amount: selectedChipValue,
         color: CHIPS_CONFIG.find(c => c.value === selectedChipValue)?.color || 'bg-chip-red',
         count: 1
