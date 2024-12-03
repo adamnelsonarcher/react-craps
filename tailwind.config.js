@@ -24,8 +24,7 @@ module.exports = {
         'table': 'inset 0 0 50px rgba(0, 0, 0, 0.5)',
       },
       animation: {
-        'pulse-soft': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'slideIn': 'slideIn 0.3s ease-out'
+        'flash-win': 'flash-win 3s ease-out'
       },
       height: {
         'screen': '100vh',
@@ -40,6 +39,23 @@ module.exports = {
         slideIn: {
           '0%': { transform: 'translateY(100%)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' }
+        },
+        'flash-win': {
+          '0%': { 
+            backgroundColor: 'rgba(255, 255, 200, 0.25)'
+          },
+          '15%, 40%': { 
+            backgroundColor: 'rgba(255, 255, 200, 0.5)'
+          },
+          '25%, 50%': { 
+            backgroundColor: 'rgba(255, 255, 200, 0.25)'
+          },
+          '65%, 90%': {
+            backgroundColor: 'rgba(255, 255, 200, 0.5)'
+          },
+          '75%, 100%': { 
+            backgroundColor: 'rgba(255, 255, 200, 0)'
+          }
         }
       },
     },

@@ -16,6 +16,11 @@ const CHIPS_CONFIG = [
   { value: 100, color: 'bg-gray-900', ringColor: 'border-gray-400' },
 ];
 
+interface WinningArea {
+  id: string;
+  type: 'win' | 'lose';
+}
+
 interface BettingArea {
   id: string;
   name: string;
@@ -62,6 +67,7 @@ interface CrapsTableProps {
   dice: { die1: number; die2: number };
   isRolling: boolean;
   point: number | null;
+  winningAreas?: WinningArea[];
 }
 
 const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
@@ -74,7 +80,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   setBets,
   dice,
   isRolling,
-  point
+  point,
+  winningAreas
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -620,6 +627,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       <GameState 
         isRolling={isRolling}
         diceTotal={dice.die1 + dice.die2}
+        die1={dice.die1}
+        die2={dice.die2}
       />
 
       <div 
@@ -627,48 +636,59 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
         onMouseMove={handleMouseMove}
         onClick={handleGlobalClick}
       >
-        {visibleBettingAreas.map((area) => (
-          <div
-            key={area.id}
-            className="absolute cursor-pointer transition-all duration-200"
-            data-bet-id={area.id}
-            style={{
-              ...area.style,
-              backgroundColor: hoveredArea === area.id ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-              border: hoveredArea === area.id ? '2px solid rgba(255, 255, 255, 0.3)' : '2px solid transparent',
-              pointerEvents: 'all',
-            }}
-            onMouseEnter={() => setHoveredArea(area.id)}
-            onMouseLeave={() => setHoveredArea(null)}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (showDevTools) return;
-              if (helpMode) {
-                handleHelpClick(area.id);
-              } else {
-                handleAreaClick(area.id);
-              }
-            }}
-          >
-            {/* Render chip stack if there's a bet */}
-            {bets.find(bet => bet.areaId === area.id) && (
-              <ChipStack 
-                {...bets.find(bet => bet.areaId === area.id)!}
-                position={
-                  area.id === 'pass-line' || area.id === 'dont-pass'
-                    ? 'custom'
-                    : area.id.startsWith('place-') ? 'bottom' : 'center'
+        {visibleBettingAreas.map((area) => {
+          const isWinning = winningAreas?.some(
+            winArea => winArea.id === area.id && winArea.type === 'win'
+          );
+
+          return (
+            <div
+              key={area.id}
+              className={`absolute cursor-pointer transition-all duration-200
+                          ${isWinning ? 'animate-flash-win bg-[rgba(255,255,200,0.25)]' : ''}`}
+              data-bet-id={area.id}
+              style={{
+                ...area.style,
+                backgroundColor: !isWinning && hoveredArea === area.id 
+                  ? 'rgba(255, 255, 255, 0.1)' 
+                  : 'transparent',
+                border: hoveredArea === area.id 
+                  ? '2px solid rgba(255, 255, 255, 0.3)' 
+                  : '2px solid transparent',
+                pointerEvents: 'all',
+              }}
+              onMouseEnter={() => setHoveredArea(area.id)}
+              onMouseLeave={() => setHoveredArea(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (showDevTools) return;
+                if (helpMode) {
+                  handleHelpClick(area.id);
+                } else {
+                  handleAreaClick(area.id);
                 }
-                areaId={area.id}
-                isOff={!point && (
-                  area.id.startsWith('place-') || 
-                  area.id.startsWith('buy-') || 
-                  area.id.startsWith('lay-')
-                )}
-              />
-            )}
-          </div>
-        ))}
+              }}
+            >
+              {/* Render chip stack if there's a bet */}
+              {bets.find(bet => bet.areaId === area.id) && (
+                <ChipStack 
+                  {...bets.find(bet => bet.areaId === area.id)!}
+                  position={
+                    area.id === 'pass-line' || area.id === 'dont-pass'
+                      ? 'custom'
+                      : area.id.startsWith('place-') ? 'bottom' : 'center'
+                  }
+                  areaId={area.id}
+                  isOff={!point && (
+                    area.id.startsWith('place-') || 
+                    area.id.startsWith('buy-') || 
+                    area.id.startsWith('lay-')
+                  )}
+                />
+              )}
+            </div>
+          );
+        })}
 
         {/* Dev Tools Overlay */}
         {showDevTools && (

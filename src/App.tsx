@@ -26,6 +26,11 @@ interface ResolvingBet extends Bet {
   position: { x: number; y: number };
 }
 
+interface WinningArea {
+  id: string;
+  type: 'win' | 'lose';
+}
+
 const App: React.FC = () => {
   const [dice, setDice] = useState<{ die1: number; die2: number }>({ die1: 1, die2: 1 });
   const [isRolling, setIsRolling] = useState(false);
@@ -42,6 +47,7 @@ const App: React.FC = () => {
   const [point, setPoint] = useState<number | null>(null);
   const [resolvingBets, setResolvingBets] = useState<ResolvingBet[]>([]);
   const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
+  const [winningAreas, setWinningAreas] = useState<WinningArea[]>([]);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -158,6 +164,15 @@ const App: React.FC = () => {
     setBank(prev => prev + winnings);
   };
 
+  const handleWinningAreas = (areas: WinningArea[]) => {
+    setWinningAreas(areas);
+    
+    // Increased duration to 3.5 seconds
+    setTimeout(() => {
+      setWinningAreas([]);
+    }, 3500);
+  };
+
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       <h1 className="text-3xl font-semibold text-white text-center mb-4">RollSim.com</h1>
@@ -205,6 +220,7 @@ const App: React.FC = () => {
               dice={dice}
               isRolling={isRolling}
               point={point}
+              winningAreas={winningAreas}
             />
             {/* Dice in top right */}
             <div className="absolute top-4 right-4 flex gap-4 z-10">
@@ -245,8 +261,11 @@ const App: React.FC = () => {
       <GameState 
         isRolling={isRolling}
         diceTotal={dice.die1 + dice.die2}
+        die1={dice.die1}
+        die2={dice.die2}
         onStateChange={handleGameStateChange}
         onRollType={handleRollType}
+        onWinningAreas={handleWinningAreas}
       />
 
       {resolvingBets.map((bet, index) => (
