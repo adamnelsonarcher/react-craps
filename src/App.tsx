@@ -95,7 +95,7 @@ const App: React.FC = () => {
       
       <div className="flex-1 flex gap-6">
         {/* Left side - Controls */}
-        <div className={`flex-1 flex flex-col gap-4 min-w-[300px] relative ${helpMode ? 'pointer-events-none' : ''}`}>
+        <div className={`flex-1 flex flex-col gap-4 min-w-[250px] max-w-[430px] relative ${helpMode ? 'pointer-events-none' : ''}`}>
           <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
             <div className="w-[200px] text-left">
               <span className="text-2xl text-green-400 font-bold">Bank: ${bank.toLocaleString()}</span>

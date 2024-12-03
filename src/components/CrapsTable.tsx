@@ -612,7 +612,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                     flex items-center justify-center gap-2
                     ${helpMode ? 'bg-blue-500' : 'bg-gray-600'} 
                     text-white font-bold text-lg
-                    hover:bg-opacity-90 transition-colors`}
+                    hover:bg-opacity-90 transition-colors
+                    ring-2 ring-white/50 shadow-lg`}
         onClick={() => {
           setHelpMode(!helpMode);
           setHelpText(null);
