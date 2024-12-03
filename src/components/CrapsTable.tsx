@@ -66,6 +66,9 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
   const [bets, setBets] = useState<Bet[]>([]);
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);  // Stack of bet states
   const [quickRoll, setQuickRoll] = useState(false);
+  const [showDevToolsButton, setShowDevToolsButton] = useState(false);
+  const [helpMode, setHelpMode] = useState(false);
+  const [helpText, setHelpText] = useState<string | null>(null);
 
   // Constants based on your measurements for 4
   const numberWidth = 29.92 - 21.67;  // ~8.25%
@@ -83,6 +86,21 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
     { id: 'pass-line-chips', visible: false },
     { id: 'dont-pass-chips', visible: false },
   ]);
+
+  // Add this object for betting area descriptions
+  const bettingDescriptions: Record<string, string> = {
+    'pass-line': 'Pass Line: The most common bet. Win if first roll is 7/11, lose on 2/3/12. Any other number becomes the "point" - you win if point is rolled again before a 7.',
+    'dont-pass': "Don't Pass: Opposite of Pass Line. Win on 2/3, lose on 7/11, push on 12. After point, win if 7 comes before point.",
+    'come': 'Come: Like a Pass Line bet, but made after the point. Win on 7/11, lose on 2/3/12.',
+    'dont-come': "Don't Come: Opposite of Come bet. Win on 2/3, lose on 7/11, push on 12.",
+    'field': 'Field: One-roll bet. Win on 2,3,4,9,10,11,12. 2 and 12 typically pay double.',
+    'any-7': 'Any Seven: One-roll bet. Win if next roll is 7.',
+    'any-craps': 'Any Craps: One-roll bet. Win if next roll is 2, 3, or 12.',
+    'hard-4': 'Hard 4: Win if 2-2 is rolled before any 7 or "easy" 4 (3-1).',
+    'hard-6': 'Hard 6: Win if 3-3 is rolled before any 7 or "easy" 6 (4-2, 5-1).',
+    'hard-8': 'Hard 8: Win if 4-4 is rolled before any 7 or "easy" 8 (5-3, 6-2).',
+    'hard-10': 'Hard 10: Win if 5-5 is rolled before any 7 or "easy" 10 (6-4).',
+  };
 
   const generateNumberAreas = () => {
     const numbers: NumberArea[] = [
@@ -494,11 +512,40 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
     }
   };
 
+  // Add this function to handle help mode clicks
+  const handleHelpClick = (areaId: string) => {
+    const baseAreaId = areaId.split('-').slice(0, 2).join('-'); // Handle numbered bets like 'place-6'
+    let description = bettingDescriptions[baseAreaId] || '';
+    
+    // Handle place/buy/lay bets
+    if (areaId.startsWith('place-')) {
+      const number = areaId.split('-')[1];
+      description = `Place ${number}: Bet that ${number} will be rolled before a 7. Better odds than buying.`;
+    } else if (areaId.startsWith('buy-')) {
+      const number = areaId.split('-')[1];
+      description = `Buy ${number}: Like a place bet, but with better payouts and a 5% commission.`;
+    } else if (areaId.startsWith('lay-')) {
+      const number = areaId.split('-')[1];
+      description = `Lay ${number}: Bet against ${number}. Win if 7 comes before ${number}, with a 5% commission.`;
+    }
+    
+    setHelpText(description);
+  };
+
   // Expose methods to parent through ref
   useImperativeHandle(ref, () => ({
     handleUndo,
     handleClear
   }));
+
+  // Add this useEffect to set up the console command
+  React.useEffect(() => {
+    // @ts-ignore
+    window.enableDevTools = () => {
+      setShowDevToolsButton(true);
+      console.log('Dev tools button enabled');
+    };
+  }, []);
 
   return (
     <div className="relative w-full h-full">
@@ -526,13 +573,45 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
         })}
       />
       
-      {/* Moved dev tools button to bottom left */}
+      {/* Dev tools button - only show if enabled */}
+      {showDevToolsButton && (
+        <button 
+          className="absolute bottom-2 left-2 z-50 bg-blue-500 text-white px-2 py-1 rounded"
+          onClick={() => setShowDevTools(!showDevTools)}
+        >
+          {showDevTools ? 'Hide' : 'Show'} Dev Tools
+        </button>
+      )}
+
+      {/* Help Mode Button */}
       <button 
-        className="absolute bottom-2 left-2 z-50 bg-blue-500 text-white px-2 py-1 rounded"
-        onClick={() => setShowDevTools(!showDevTools)}
+        className={`absolute bottom-2 left-2 z-50 w-8 h-8 rounded-full 
+                    flex items-center justify-center
+                    ${helpMode ? 'bg-blue-500' : 'bg-gray-600'} 
+                    text-white font-bold text-lg
+                    hover:bg-opacity-90 transition-colors`}
+        onClick={() => {
+          setHelpMode(!helpMode);
+          setHelpText(null);
+        }}
       >
-        {showDevTools ? 'Hide' : 'Show'} Dev Tools
+        ?
       </button>
+
+      {/* Help Text Popup */}
+      {helpText && helpMode && (
+        <div className="absolute bottom-12 left-2 right-2 
+                        bg-black/90 text-white p-4 rounded-lg
+                        shadow-lg backdrop-blur-sm z-50
+                        max-w-md mx-auto">
+          <p className="text-sm">{helpText}</p>
+        </div>
+      )}
+
+      {/* Cursor indicator for help mode */}
+      {helpMode && (
+        <div className="fixed inset-0 cursor-help pointer-events-none" />
+      )}
 
       <div 
         className="absolute inset-0"
@@ -553,8 +632,10 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
             onMouseLeave={() => setHoveredArea(null)}
             onClick={(e) => {
               e.stopPropagation();
-              if (!showDevTools) {
-                console.log('Clicked element:', area.id);
+              if (showDevTools) return;
+              if (helpMode) {
+                handleHelpClick(area.id);
+              } else {
                 handleAreaClick(area.id);
               }
             }}

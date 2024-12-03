@@ -33,7 +33,7 @@ const App: React.FC = () => {
         die1,
         die2,
         total: die1 + die2
-      }, ...prev].slice(0, 10));
+      }, ...prev]);
     } else {
       // Roll with animation
       setIsRolling(true);
@@ -60,7 +60,7 @@ const App: React.FC = () => {
           die1,
           die2,
           total: die1 + die2
-        }, ...prev].slice(0, 10));
+        }, ...prev]);
         setIsRolling(false);
       }, 1000);
     }
@@ -119,14 +119,14 @@ const App: React.FC = () => {
         {/* Right side - Roll History */}
         <div className="w-24 bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm">
           <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
-          <div className="flex flex-col-reverse gap-1">
+          <div className="flex flex-col gap-1">
             {rollHistory.length === 0 ? (
-              <div className="text-gray-400 text-center italic text-xs">No rolls yet</div>
+              <div className="text-gray-400 text-center italic text-xs"> </div>
             ) : (
-              rollHistory.map((roll, index) => (
+              rollHistory.slice(0, 20).map((roll, index) => (  // Only show last 15 rolls
                 <div 
-                  key={`roll-${roll.die1}-${roll.die2}-${Date.now()}-${index}`}
-                  className="flex justify-center gap-1 animate-slideIn"
+                  key={`roll-${roll.die1}-${roll.die2}-${index}`}  // Removed Date.now()
+                  className={`flex justify-center gap-1 ${index === 0 && !isRolling ? 'animate-slideIn' : ''}`}
                 >
                   <Dice value={roll.die1} isRolling={false} size="small" />
                   <Dice value={roll.die2} isRolling={false} size="small" />
