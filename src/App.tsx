@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const [quickRoll, setQuickRoll] = useState(false);
   const [animationDice, setAnimationDice] = useState({ die1: 1, die2: 1 });
   const [animationInterval, setAnimationInterval] = useState<NodeJS.Timeout | null>(null);
+  const [bank, setBank] = useState(1000);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -83,7 +84,7 @@ const App: React.FC = () => {
         {/* Left side - Controls */}
         <div className="flex-1 flex flex-col gap-4 min-w-[300px]">
           <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg">
-            <span className="text-2xl text-green-400 font-bold">Bank: $1000</span>
+            <span className="text-2xl text-green-400 font-bold">Bank: ${bank}</span>
           </div>
           
           <BettingControls 
@@ -91,6 +92,7 @@ const App: React.FC = () => {
             selectedChipValue={selectedChipValue}
             onUndo={() => tableRef.current?.handleUndo()}
             onClear={() => tableRef.current?.handleClear()}
+            bank={bank}
           />
           
           <DiceArea 
@@ -107,6 +109,8 @@ const App: React.FC = () => {
             <CrapsTable 
               ref={tableRef}
               selectedChipValue={selectedChipValue}
+              bank={bank}
+              setBank={setBank}
             />
             {/* Dice in top right */}
             <div className="absolute top-4 right-4 flex gap-4 z-10">

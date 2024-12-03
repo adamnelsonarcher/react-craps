@@ -52,9 +52,11 @@ export interface CrapsTableRef {
 
 interface CrapsTableProps {
   selectedChipValue: number | null;
+  bank: number;
+  setBank: (value: number) => void;
 }
 
-const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipValue }, ref) => {
+const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipValue, bank, setBank }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
@@ -434,15 +436,16 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
   };
 
   const handleAreaClick = (areaId: string) => {
-    console.log('Clicked area:', areaId);
     if (!selectedChipValue) return;
+    if (selectedChipValue > bank) return;
     
-    // Map the betting areas to their chip display areas
     const chipAreaId = areaId === 'pass-line' ? 'pass-line-chips' :
                       areaId === 'dont-pass' ? 'dont-pass-chips' :
                       areaId;
     
     setBetHistory(prev => [...prev, bets]);
+    const newBank = bank - selectedChipValue;
+    setBank(newBank);
     
     setBets(prev => {
       const existingBet = prev.find(bet => bet.areaId === chipAreaId);
@@ -478,18 +481,28 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
   const handleUndo = () => {
     if (betHistory.length === 0) return;
     
-    // Pop the last state from history and set it as current
-    const lastState = betHistory[betHistory.length - 1];
-    setBets(lastState);
+    const currentBets = bets;
+    const previousBets = betHistory[betHistory.length - 1];
+    
+    const currentTotal = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
+    const previousTotal = previousBets.reduce((sum, bet) => sum + bet.amount, 0);
+    const difference = currentTotal - previousTotal;
+    
+    const newBank = bank + difference;
+    setBank(newBank);
+    
+    setBets(previousBets);
     setBetHistory(prev => prev.slice(0, -1));
   };
 
   const handleClear = () => {
-    // Save current state to history before clearing
     if (bets.length > 0) {
+      const totalBets = bets.reduce((sum, bet) => sum + bet.amount, 0);
+      const newBank = bank + totalBets;
+      setBank(newBank);
       setBetHistory(prev => [...prev, bets]);
+      setBets([]);
     }
-    setBets([]);
   };
 
   const handleRoll = () => {
