@@ -585,7 +585,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
 
       {/* Help Mode Button */}
       <button 
-        className={`absolute bottom-2 left-2 z-50 w-8 h-8 rounded-full 
+        className={`absolute bottom-4 left-4 z-50 w-8 h-8 rounded-full 
                     flex items-center justify-center
                     ${helpMode ? 'bg-blue-500' : 'bg-gray-600'} 
                     text-white font-bold text-lg
@@ -600,11 +600,11 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
 
       {/* Help Text Popup */}
       {helpText && helpMode && (
-        <div className="absolute bottom-12 left-2 right-2 
-                        bg-black/90 text-white p-4 rounded-lg
-                        shadow-lg backdrop-blur-sm z-50
-                        max-w-md mx-auto">
-          <p className="text-sm">{helpText}</p>
+        <div className="absolute bottom-4 left-14 z-50
+                        bg-black/90 text-white p-3 rounded-lg
+                        shadow-lg backdrop-blur-sm
+                        max-w-[300px]">
+          <p className="text-sm leading-tight">{helpText}</p>
         </div>
       )}
 

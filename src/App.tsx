@@ -77,7 +77,7 @@ const App: React.FC = () => {
 
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
-      <h1 className="text-3xl font-semibold text-white text-center mb-4">React Craps</h1>
+      <h1 className="text-3xl font-semibold text-white text-center mb-4">RollSim.com</h1>
       
       <div className="flex-1 flex gap-6">
         {/* Left side - Controls */}
