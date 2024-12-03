@@ -387,6 +387,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
   };
 
   const handleAreaClick = (areaId: string) => {
+    console.log('Clicked area:', areaId);
     if (!selectedChipValue) return;
     
     // Save current state to history before making changes
@@ -413,6 +414,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
         );
       }
       
+      console.log('Adding new bet for area:', areaId);
       return [...prev, {
         areaId,
         amount: selectedChipValue,
@@ -492,12 +494,14 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
               ...area.style,
               backgroundColor: hoveredArea === area.id ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
               border: hoveredArea === area.id ? '2px solid rgba(255, 255, 255, 0.3)' : '2px solid transparent',
+              pointerEvents: 'all',
             }}
             onMouseEnter={() => setHoveredArea(area.id)}
             onMouseLeave={() => setHoveredArea(null)}
             onClick={(e) => {
               e.stopPropagation();
               if (!showDevTools) {
+                console.log('Clicked element:', area.id);
                 handleAreaClick(area.id);
               }
             }}
@@ -506,7 +510,12 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ selectedChipVal
             {bets.find(bet => bet.areaId === area.id) && (
               <ChipStack 
                 {...bets.find(bet => bet.areaId === area.id)!}
-                position={area.id.startsWith('place-') ? 'bottom' : 'center'}
+                position={
+                  area.id === 'pass-line' || area.id === 'dont-pass'
+                    ? 'custom' // Use a custom position for these areas
+                    : area.id.startsWith('place-') ? 'bottom' : 'center'
+                }
+                areaId={area.id}
               />
             )}
           </div>
