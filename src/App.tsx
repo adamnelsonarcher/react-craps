@@ -328,12 +328,16 @@ const App: React.FC = () => {
       
       <GameState 
         isRolling={isRolling}
-        diceTotal={hasRolled ? dice.die1 + dice.die2 : 0}
+        diceTotal={dice.die1 + dice.die2}
         die1={dice.die1}
         die2={dice.die2}
         onStateChange={handleGameStateChange}
-        onRollType={handleRollType}
-        onWinningAreas={hasRolled ? handleWinningAreas : undefined}
+        onRollType={(type) => {
+          if (tableRef.current) {
+            tableRef.current.resolveBets(type);  // Call resolveBets through the ref
+          }
+        }}
+        onWinningAreas={handleWinningAreas}
         onRollOutcome={handleRollOutcome}
       />
 

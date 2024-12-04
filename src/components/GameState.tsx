@@ -53,6 +53,7 @@ const GameState: React.FC<GameStateProps> = ({
   const [point, setPoint] = React.useState<number | null>(null);
   const [isComingOut, setIsComingOut] = React.useState(true);
   const prevRoll = React.useRef({ die1: 0, die2: 0 });
+  const [lastWinTimestamp, setLastWinTimestamp] = React.useState(0);
 
   // Point marker positions for each number (moved up to avoid overlap)
   const markerPositions: Record<number, { x: number; y: number }> = {
@@ -67,11 +68,50 @@ const GameState: React.FC<GameStateProps> = ({
   // Add function to determine winning areas based on the roll
   const determineWinningAreas = (total: number, isComingOut: boolean, point: number | null): WinningArea[] => {
     const winningAreas: WinningArea[] = [];
-    const losingAreas: WinningArea[] = [];  // Track losing areas
+    const losingAreas: WinningArea[] = [];
 
-    // One-roll bets
-    // Any 7
-    if (total === 7) {
+    // Pass line bets - handle come out roll first
+    if (isComingOut) {
+      if (total === 7 || total === 11) {
+        // Natural - pass line wins
+        winningAreas.push({ id: 'pass-line', type: 'win' });
+        losingAreas.push({ id: 'dont-pass', type: 'lose' });
+      } else if (total === 2 || total === 3 || total === 12) {
+        // Craps - pass line loses
+        losingAreas.push(
+          { id: 'pass-line', type: 'lose' },
+          { id: 'pass-line-chips', type: 'lose' }
+        );
+        if (total !== 12) {  // Don't pass wins on 2 and 3, pushes on 12
+          winningAreas.push({ id: 'dont-pass', type: 'win' });
+        }
+      }
+    } else if (point !== null) {
+      if (total === point) {
+        winningAreas.push(
+          { id: 'pass-line', type: 'win' },
+          { id: 'pass-line-chips', type: 'win' }
+        );
+        losingAreas.push({ id: 'dont-pass', type: 'lose' });
+        winningAreas.push({ id: `place-${total}`, type: 'win' });
+      } else if (total === 7) {
+        losingAreas.push(
+          { id: 'pass-line', type: 'lose' },
+          { id: 'pass-line-chips', type: 'lose' }
+        );
+        winningAreas.push({ id: 'dont-pass', type: 'win' });
+        // All place bets lose on seven
+        [4, 5, 6, 8, 9, 10].forEach(num => {
+          losingAreas.push({ id: `place-${num}`, type: 'lose' });
+          losingAreas.push({ id: `lay-${num}`, type: 'lose' });
+        });
+      } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
+        winningAreas.push({ id: `place-${total}`, type: 'win' });
+      }
+    }
+
+    // Any 7 - Only wins on 7 during come-out roll
+    if (total === 7) {  // Any 7 should win on ANY 7, not just during come-out
       winningAreas.push({ id: 'any-7', type: 'win' });
     } else {
       losingAreas.push({ id: 'any-7', type: 'lose' });
@@ -119,7 +159,7 @@ const GameState: React.FC<GameStateProps> = ({
     // Hard 4
     if (total === 4 && die1 === 2 && die2 === 2) {
       winningAreas.push({ id: 'hard-4', type: 'win' });
-    } else if (total === 7 || (total === 4 && (die1 !== 2 || die2 !== 2))) {
+    } else if (total === 7 || (total === 4 && (die1 !== die2))) {
       losingAreas.push({ id: 'hard-4', type: 'lose' });
     }
 
@@ -151,43 +191,6 @@ const GameState: React.FC<GameStateProps> = ({
       losingAreas.push({ id: 'field', type: 'lose' });
     }
 
-    // Pass line bets
-    if (isComingOut) {
-      if (total === 7 || total === 11) {
-        winningAreas.push(
-          { id: 'pass-line', type: 'win' },
-          { id: 'dont-pass', type: 'lose' }
-        );
-      } else if (total === 2 || total === 3) {
-        losingAreas.push({ id: 'pass-line', type: 'lose' });
-        winningAreas.push({ id: 'dont-pass', type: 'win' });
-      } else if (total === 12) {
-        losingAreas.push({ id: 'pass-line', type: 'lose' });
-        // Don't Pass pushes on 12
-      }
-    } else {
-      if (total === 7) {
-        losingAreas.push({ id: 'pass-line', type: 'lose' });
-        winningAreas.push({ id: 'dont-pass', type: 'win' });
-        // All place bets lose on seven
-        [4, 5, 6, 8, 9, 10].forEach(num => {
-          losingAreas.push({ id: `place-${num}`, type: 'lose' });
-        });
-        [4, 5, 6, 8, 9, 10].forEach(num => {
-          losingAreas.push({ id: `lay-${num}`, type: 'lose' });
-        });
-      } else if (total === point) {
-        winningAreas.push(
-          { id: 'pass-line', type: 'win' },
-          { id: 'dont-pass', type: 'lose' },
-          { id: `place-${total}`, type: 'win' }
-        );
-      } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
-        winningAreas.push({ id: `place-${total}`, type: 'win' });
-      }
-    }
-
-    // Combine winning and losing areas
     return [...winningAreas, ...losingAreas];
   };
 
@@ -307,8 +310,26 @@ const GameState: React.FC<GameStateProps> = ({
     // Determine the outcome of this roll
     const outcome = determineRollOutcome(diceTotal, isComingOut, point);
 
-    // Determine winning areas
-    const winningAreas = determineWinningAreas(diceTotal, isComingOut, point);
+    // Determine winning areas and add timestamp to force update
+    const winningAreas = determineWinningAreas(diceTotal, isComingOut, point).map(area => ({
+      ...area,
+      timestamp: Date.now()
+    }));
+
+    // Add debug logging
+    console.log('=== Roll Debug ===');
+    console.log('Dice:', die1, die2, 'Total:', diceTotal);
+    console.log('Is Coming Out:', isComingOut);
+    console.log('Point:', point);
+    console.log('Outcome:', outcome);
+    console.log('Winning Areas:', winningAreas.filter(area => area.type === 'win').map(area => area.id));
+    console.log('Losing Areas:', winningAreas.filter(area => area.type === 'lose').map(area => area.id));
+    console.log('================');
+    
+    // Update timestamp to force re-render of winning areas
+    setLastWinTimestamp(Date.now());
+    
+    // Pass winning areas to parent
     onWinningAreas?.(winningAreas);
 
     // Determine losing areas
@@ -328,8 +349,10 @@ const GameState: React.FC<GameStateProps> = ({
       onStateChange?.(outcome.isComingOut, outcome.point ?? null);
 
       if (outcome.type === 'point-made') {
+        console.log('Point made! Should be winning pass line');
         onRollType?.('point-made');
       } else if (outcome.type === 'seven-out') {
+        console.log('Seven out! Should be losing pass line');
         onRollType?.('craps-out');
       }
     }

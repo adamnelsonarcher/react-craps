@@ -7,4 +7,5 @@ export interface RollOutcome {
 export interface WinningArea {
   id: string;
   type: 'win' | 'lose';
+  timestamp?: number;
 } 
