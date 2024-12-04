@@ -28,7 +28,7 @@ interface PointMarkerProps {
 }
 
 const PointMarker: React.FC<PointMarkerProps> = ({ point, position, isOn }) => {
-  const offPosition = { x: 6, y: 8 };
+  const offPosition = { x: 6, y: -4 };
   const currentPosition = isOn ? position : offPosition;
 
   return (

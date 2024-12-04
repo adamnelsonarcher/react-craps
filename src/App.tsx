@@ -184,100 +184,106 @@ const App: React.FC = () => {
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="flex-1 flex gap-6">
-        {/* Left side - Controls */}
-        <div className={`flex-1 flex flex-col gap-4 min-w-[250px] max-w-[400px] relative ${helpMode ? 'pointer-events-none' : ''}`}>
-          <h1 className="text-3xl font-semibold text-white text-center">RollSim.com</h1>
-          
-          <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
-            <div className="w-[200px] text-left">
-              <span className="text-2xl text-green-400 font-bold">Bank: ${bank.toLocaleString()}</span>
-            </div>
-            <div className="w-[200px] text-right">
-              <span className="text-2xl text-yellow-400 font-bold">Wager: ${calculateTotalWager(bets).toLocaleString()}</span>
-            </div>
-          </div>
-          
-          <BettingControls 
-            onChipSelect={setSelectedChipValue}
-            selectedChipValue={selectedChipValue}
-            onUndo={() => tableRef.current?.handleUndo()}
-            onClear={() => tableRef.current?.handleClear()}
-            bank={bank}
-          />
-          
-          <DiceArea 
-            onRoll={handleRoll} 
-            isRolling={isRolling} 
-            quickRoll={quickRoll}
-            onQuickRollChange={setQuickRoll}
-          />
-        </div>
-        
-        {/* Center - Table */}
-        <div className="flex-[2.5] flex items-center justify-center bg-felt-green rounded-xl p-4 shadow-table">
-          <div className="w-full aspect-[2/1] relative">
-            <CrapsTable 
-              ref={tableRef}
-              selectedChipValue={selectedChipValue}
-              bank={bank}
-              setBank={setBank}
-              helpMode={helpMode}
-              setHelpMode={setHelpMode}
-              bets={bets}
-              setBets={setBets}
-              dice={dice}
-              setDice={setDice}
-              isRolling={isRolling}
-              point={point}
-              winningAreas={winningAreas}
-            />
-            {/* Dice in top right */}
-            <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
-              <Dice 
-                value={isRolling ? animationDice.die1 : dice.die1} 
-                isRolling={isRolling}
-                size="large"
-              />
-              <Dice 
-                value={isRolling ? animationDice.die2 : dice.die2} 
-                isRolling={isRolling}
-                size="large"
-              />
-            </div>
-            <GameState 
-              isRolling={isRolling}
-              diceTotal={dice.die1 + dice.die2}
-              die1={dice.die1}
-              die2={dice.die2}
-              bets={bets}
-              onStateChange={handleGameStateChange}
-              onRollOutcome={handleRollOutcome}
-              onWinningAreas={handleWinningAreas}
-            />
-          </div>
-        </div>
-
-        {/* Right side - Roll History */}
-        <div className="w-24 bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm">
-          <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
-          <div className="flex flex-col gap-1">
-            {rollHistory.length === 0 ? (
-              <div className="text-gray-400 text-center italic text-xs"> </div>
-            ) : (
-              rollHistory.slice(0, 20).map((roll, index) => (
-                <div 
-                  key={`roll-${roll.die1}-${roll.die2}-${index}`}
-                  className={`flex justify-center gap-1 ${index === 0 && !isRolling ? 'animate-slideIn' : ''} 
-                             p-0.5 rounded-md
-                             ${roll.type === 'craps-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
-                             ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
-                >
-                  <Dice value={roll.die1} isRolling={false} size="small" />
-                  <Dice value={roll.die2} isRolling={false} size="small" />
+        {/* Main container */}
+        <div className="flex flex-row gap-4 h-full max-w-[1600px] mx-auto p-4">
+          {/* Left side - Betting Controls */}
+          <div className="flex-[1]">
+            <div className={`flex-1 flex flex-col gap-4 min-w-[8vw] max-w-[23vw] relative ${helpMode ? 'pointer-events-none' : ''}`}>
+              <h1 className="text-3xl font-semibold text-white text-center">RollSim.com</h1>
+              
+              <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
+                <div className="w-[200px] text-left">
+                  <span className="text-2xl text-green-400 font-bold">Bank: ${bank.toLocaleString()}</span>
                 </div>
-              ))
-            )}
+                <div className="w-[200px] text-right">
+                  <span className="text-2xl text-yellow-400 font-bold">Wager: ${calculateTotalWager(bets).toLocaleString()}</span>
+                </div>
+              </div>
+              
+              <BettingControls 
+                onChipSelect={setSelectedChipValue}
+                selectedChipValue={selectedChipValue}
+                onUndo={() => tableRef.current?.handleUndo()}
+                onClear={() => tableRef.current?.handleClear()}
+                bank={bank}
+              />
+              
+              <DiceArea 
+                onRoll={handleRoll} 
+                isRolling={isRolling} 
+                quickRoll={quickRoll}
+                onQuickRollChange={setQuickRoll}
+              />
+            </div>
           </div>
+
+          {/* Center - Table */}
+          <div className="flex-[2.8] flex items-center justify-center bg-felt-green rounded-xl p-4 shadow-table">
+            <div className="w-full aspect-[2/1] relative">
+              <CrapsTable 
+                ref={tableRef}
+                selectedChipValue={selectedChipValue}
+                bank={bank}
+                setBank={setBank}
+                helpMode={helpMode}
+                setHelpMode={setHelpMode}
+                bets={bets}
+                setBets={setBets}
+                dice={dice}
+                setDice={setDice}
+                isRolling={isRolling}
+                point={point}
+                winningAreas={winningAreas}
+              />
+              {/* Dice in top right */}
+              <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
+                <Dice 
+                  value={isRolling ? animationDice.die1 : dice.die1} 
+                  isRolling={isRolling}
+                  size="large"
+                />
+                <Dice 
+                  value={isRolling ? animationDice.die2 : dice.die2} 
+                  isRolling={isRolling}
+                  size="large"
+                />
+              </div>
+              <GameState 
+                isRolling={isRolling}
+                diceTotal={dice.die1 + dice.die2}
+                die1={dice.die1}
+                die2={dice.die2}
+                bets={bets}
+                onStateChange={handleGameStateChange}
+                onRollOutcome={handleRollOutcome}
+                onWinningAreas={handleWinningAreas}
+              />
+            </div>
+          </div>
+
+          {/* Right side - Roll History */}
+          <div className="w-18 bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
+            <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
+            <div className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
+              {rollHistory.length === 0 ? (
+                <div className="text-gray-400 text-center italic text-xs"> </div>
+              ) : (
+                rollHistory.slice(0, Math.min(15, rollHistory.length)).map((roll, index) => (
+                  <div 
+                    key={`roll-${roll.die1}-${roll.die2}-${index}`}
+                    className={`flex justify-center items-center gap-1 ${index === 0 && !isRolling ? 'animate-slideIn' : ''} 
+                               p-0.5 rounded-md
+                               ${roll.type === 'craps-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
+                               ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
+                  >
+                    <Dice value={roll.die1} isRolling={false} size="small" />
+                    <Dice value={roll.die2} isRolling={false} size="small" />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
 
