@@ -75,7 +75,10 @@ const GameState: React.FC<GameStateProps> = ({
     if (isComingOut) {
       if (total === 7 || total === 11) {
         // Natural - pass line wins, don't pass loses
-        winningAreas.push({ id: 'pass-line', type: 'win' });
+        winningAreas.push(
+          { id: 'pass-line', type: 'win' },
+          { id: 'pass-line-chips', type: 'win' }
+        );
         losingAreas.push(
           { id: 'dont-pass', type: 'lose' },
           { id: 'dont-pass-chips', type: 'lose' }

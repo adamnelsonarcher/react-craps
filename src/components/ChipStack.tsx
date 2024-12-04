@@ -7,6 +7,7 @@ interface ChipStackProps {
   position?: 'center' | 'bottom' | 'custom';
   areaId?: string;
   isOff?: boolean;
+  isLocked?: boolean;
 }
 
 const CHIP_VALUES = [
@@ -18,7 +19,7 @@ const CHIP_VALUES = [
   { value: 1, color: 'bg-gray-200' }     // Light Gray (was white)
 ];
 
-const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId, isOff = false }) => {
+const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId, isOff = false, isLocked = false }) => {
   console.log('ChipStack rendered with:', { amount, position, areaId });
   
   const optimalChip = CHIP_VALUES.find(chip => amount >= chip.value) || CHIP_VALUES[CHIP_VALUES.length - 1];
@@ -68,6 +69,15 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
                       whitespace-nowrap z-50 font-bold
                       border border-white/30">
           OFF
+        </div>
+      )}
+
+      {/* LOCKED indicator */}
+      {isLocked && (
+        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2
+                      bg-black/80 text-white px-2 py-0.5 rounded-full text-xs
+                      font-bold whitespace-nowrap">
+          LOCKED
         </div>
       )}
     </div>

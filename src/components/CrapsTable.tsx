@@ -543,6 +543,12 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     if (!selectedChipValue) return;
     if (selectedChipValue > bank) return;
     
+    // Prevent betting on chip areas directly
+    if (areaId.endsWith('-chips')) return;
+    
+    // Prevent pass line and don't pass bets after point is set
+    if ((areaId === 'pass-line' || areaId === 'dont-pass') && point !== null) return;
+    
     const chipAreaId = areaId === 'pass-line' ? 'pass-line-chips' :
                       areaId === 'dont-pass' ? 'dont-pass-chips' :
                       areaId;
@@ -588,24 +594,52 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     const currentBets = bets;
     const previousBets = betHistory[betHistory.length - 1];
     
-    const currentTotal = currentBets.reduce((sum, bet) => sum + bet.amount, 0);
-    const previousTotal = previousBets.reduce((sum, bet) => sum + bet.amount, 0);
-    const difference = currentTotal - previousTotal;
+    // Keep pass line and don't pass bets if point is set
+    const betsToKeep = point !== null ? 
+      currentBets.filter(bet => 
+        bet.areaId === 'pass-line-chips' || bet.areaId === 'dont-pass-chips'
+      ) : [];
+    
+    // Calculate difference for all non-locked bets
+    const currentNonLockedTotal = currentBets
+      .filter(bet => 
+        bet.areaId !== 'pass-line-chips' && bet.areaId !== 'dont-pass-chips'
+      )
+      .reduce((sum, bet) => sum + bet.amount, 0);
+    
+    const previousNonLockedTotal = previousBets
+      .filter(bet => 
+        bet.areaId !== 'pass-line-chips' && bet.areaId !== 'dont-pass-chips'
+      )
+      .reduce((sum, bet) => sum + bet.amount, 0);
+    
+    const difference = currentNonLockedTotal - previousNonLockedTotal;
     
     const newBank = bank + difference;
     setBank(newBank);
     
-    setBets(previousBets);
+    setBets([
+      ...betsToKeep,
+      ...previousBets.filter(bet => 
+        bet.areaId !== 'pass-line-chips' && bet.areaId !== 'dont-pass-chips'
+      )
+    ]);
     setBetHistory(prev => prev.slice(0, -1));
   };
 
   const handleClear = () => {
     if (bets.length > 0) {
-      const totalBets = bets.reduce((sum, bet) => sum + bet.amount, 0);
+      // Don't clear pass line or don't pass bets if point is set
+      const betsToKeep = point !== null ? 
+        bets.filter(bet => bet.areaId === 'pass-line-chips' || bet.areaId === 'dont-pass-chips') : [];
+      const betsToRemove = point !== null ? 
+        bets.filter(bet => bet.areaId !== 'pass-line-chips' && bet.areaId !== 'dont-pass-chips') : bets;
+      
+      const totalBets = betsToRemove.reduce((sum, bet) => sum + bet.amount, 0);
       const newBank = bank + totalBets;
       setBank(newBank);
       setBetHistory(prev => [...prev, bets]);
-      setBets([]);
+      setBets(betsToKeep);
     }
   };
 
@@ -832,6 +866,10 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                     area.id.startsWith('place-') || 
                     area.id.startsWith('buy-') || 
                     area.id.startsWith('lay-')
+                  )}
+                  isLocked={point !== null && (
+                    area.id === 'pass-line-chips' || 
+                    area.id === 'dont-pass-chips'
                   )}
                 />
               )}
