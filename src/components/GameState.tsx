@@ -1,15 +1,24 @@
 import React from 'react';
-import { RollOutcome, WinningArea } from '../types/game';
+import { RollOutcome, WinningArea, BetMovement } from '../types/game';
+
+interface Bet {
+  areaId: string;
+  amount: number;
+  color: string;
+  count: number;
+}
 
 interface GameStateProps {
   isRolling: boolean;
   diceTotal: number;
   die1: number;
   die2: number;
+  bets: Bet[];
   onStateChange?: (isComingOut: boolean, point: number | null) => void;
   onRollType?: (type: 'point-made' | 'craps-out' | 'normal') => void;
   onWinningAreas?: (areas: WinningArea[]) => void;
   onRollOutcome?: (outcome: RollOutcome & { total: number }) => void;
+  onMoveBet?: (movement: BetMovement) => void;
 }
 
 interface PointMarkerProps {
@@ -45,10 +54,12 @@ const GameState: React.FC<GameStateProps> = ({
   diceTotal,
   die1,
   die2,
+  bets,
   onStateChange,
   onRollType,
   onWinningAreas,
-  onRollOutcome 
+  onRollOutcome,
+  onMoveBet
 }) => {
   const [point, setPoint] = React.useState<number | null>(null);
   const [isComingOut, setIsComingOut] = React.useState(true);
@@ -216,39 +227,20 @@ const GameState: React.FC<GameStateProps> = ({
       // For new come bets
       if (total === 7 || total === 11) {
         winningAreas.push({ id: 'come', type: 'win' });
-        losingAreas.push(
-          { id: 'dont-come', type: 'lose' },
-          { id: 'dont-come-chips', type: 'lose' }
-        );
-      } else if (total === 2 || total === 3) {
-        losingAreas.push(
-          { id: 'come', type: 'lose' },
-          { id: 'come-chips', type: 'lose' }
-        );
-        winningAreas.push(
-          { id: 'dont-come', type: 'win' },
-          { id: 'dont-come-chips', type: 'win' }
-        );
-      } else if (total === 12) {  // Don't come pushes on 12, just like don't pass
-        losingAreas.push(
-          { id: 'come', type: 'lose' },
-          { id: 'come-chips', type: 'lose' }
-        );
-      }
-      
-      // For established come/don't come points
-      if (total === 7) {
-        // Come points lose on seven
-        [4, 5, 6, 8, 9, 10].forEach(num => {
-          losingAreas.push({ id: `come-${num}`, type: 'lose' });
-          // Don't come points win on seven
-          winningAreas.push({ id: `dont-come-${num}`, type: 'win' });
-        });
+      } else if (total === 2 || total === 3 || total === 12) {
+        losingAreas.push({ id: 'come', type: 'lose' });
       } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
-        // Come point is made
-        winningAreas.push({ id: `come-${total}`, type: 'win' });
-        // Don't come point loses
-        losingAreas.push({ id: `dont-come-${total}`, type: 'lose' });
+        // Instead of marking come as losing, move the bet
+        const comeBets = bets.filter(bet => bet.areaId === 'come');
+        comeBets.forEach(bet => {
+          onMoveBet?.({
+            fromId: 'come',
+            toId: `come-${total}`,
+            amount: bet.amount,
+            color: bet.color,
+            count: bet.count
+          });
+        });
       }
     }
 

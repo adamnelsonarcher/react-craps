@@ -8,4 +8,12 @@ export interface WinningArea {
   id: string;
   type: 'win' | 'lose';
   timestamp?: number;
+}
+
+export interface BetMovement {
+  fromId: string;
+  toId: string;
+  amount: number;
+  color: string;
+  count: number;
 } 

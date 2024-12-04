@@ -4,7 +4,7 @@ interface ChipStackProps {
   amount: number;
   color: string;
   count?: number;
-  position?: 'center' | 'bottom' | 'custom';
+  position?: 'center' | 'bottom' | 'bottom-offset' | 'custom';
   areaId?: string;
   isOff?: boolean;
   isLocked?: boolean;
@@ -29,9 +29,20 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
   // Increased size for chips (15% larger)
   const chipSize = '2.3rem'; // Previous was 2rem (w-8 = 2rem)
   
-  const positionStyle: React.CSSProperties = position === 'bottom' 
-    ? { bottom: '0.25rem', left: '50%', transform: 'translateX(-50%)' }
-    : { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+  const positionStyle: React.CSSProperties = 
+    position === 'bottom' ? { 
+      bottom: '0.25rem', 
+      left: '50%', 
+      transform: 'translateX(-50%)' 
+    } : position === 'bottom-offset' ? { 
+      bottom: '-0.5rem', 
+      left: '50%',
+      transform: 'translateX(-50%)'
+    } : { 
+      top: '50%', 
+      left: '50%', 
+      transform: 'translate(-50%, -50%)' 
+    };
   
   return (
     <div className="absolute" style={{ ...positionStyle, width: chipSize, height: chipSize }}>

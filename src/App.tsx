@@ -331,10 +331,11 @@ const App: React.FC = () => {
         diceTotal={dice.die1 + dice.die2}
         die1={dice.die1}
         die2={dice.die2}
+        bets={bets}
         onStateChange={handleGameStateChange}
         onRollType={(type) => {
           if (tableRef.current) {
-            tableRef.current.resolveBets(type);  // Call resolveBets through the ref
+            tableRef.current.resolveBets(type);
           }
         }}
         onWinningAreas={handleWinningAreas}

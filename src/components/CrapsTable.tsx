@@ -4,7 +4,6 @@ import Dice from './Dice';
 import DiceHistory from './DiceHistory';
 import ChipStack from './ChipStack';
 import DiceArea from './DiceArea';
-import GameState from './GameState';
 
 // Add chip configuration
 const CHIPS_CONFIG = [
@@ -268,6 +267,80 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
   const bettingAreas: BettingArea[] = [
     ...generateNumberAreas(),
+    // Add come point areas for each number
+    {
+      id: 'come-4',
+      name: 'Come 4',
+      style: {
+        top: `${21.3 - 1}%`,  // Subtract half height to center
+        left: `${22.6 - 1}%`, // Subtract half width to center
+        width: '2%',           // Small fixed size
+        height: '3.5%',
+        pointerEvents: 'none',
+         //backgroundColor: 'rgba(255,0,0,0.2)', // Uncomment for debugging
+        //zIndex: -1  // Move to back
+      }
+    },
+    {
+      id: 'come-5',
+      name: 'Come 5',
+      style: {
+        top: `${21.3 - 1}%`,
+        left: `${31.20 - 1}%`,
+        width: '2%',           // Small fixed size
+        height: '3.5%',
+        pointerEvents: 'none',
+        //zIndex: -1
+      }
+    },
+    {
+      id: 'come-6',
+      name: 'Come 6',
+      style: {
+        top: `${21.3 - 1}%`,
+        left: `${39.7 - 1}%`,
+        width: '2%',           // Small fixed size
+        height: '3.5%',
+        pointerEvents: 'none',
+        //zIndex: -1
+      }
+    },
+    {
+      id: 'come-8',
+      name: 'Come 8',
+      style: {
+        top: `${21.3 - 1}%`,
+        left: `${47.9 - 1}%`,
+        width: '2%',           // Small fixed size
+        height: '3.5%',
+        pointerEvents: 'none',
+        //zIndex: -1
+      }
+    },
+    {
+      id: 'come-9',
+      name: 'Come 9',
+      style: {
+        top: `${21.3 - 1}%`,
+        left: `${56.4 - 1}%`,
+        width: '2%',           // Small fixed size
+        height: '3.5%',
+        pointerEvents: 'none',
+        //zIndex: -1
+      }
+    },
+    {
+      id: 'come-10',
+      name: 'Come 10',
+      style: {
+        top: `${21.3 - 1}%`,
+        left: `${64.4 - 1}%`,
+        width: '2%',           // Small fixed size
+        height: '3.5%',
+        pointerEvents: 'none',
+        //zIndex: -1
+      }
+    },
     // Come area
     {
       id: 'come',
@@ -476,7 +549,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
         left: '36.26%',     // Slightly adjusted for better placement
         width: '32px',      // Fixed width for chip
         height: '32px',     // Fixed height for chip
-        pointerEvents: 'none', // Make sure it doesn't interfere with clicks
+        pointerEvents: 'none',
+        //zIndex: -1, // Make sure it doesn't interfere with clicks
         // backgroundColor: 'rgba(255,0,0,0.2)', // Uncomment for debugging
       }
     },
@@ -488,7 +562,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
         left: '38.09%',     // Slightly adjusted for better placement
         width: '32px',      // Fixed width for chip
         height: '32px',     // Fixed height for chip
-        pointerEvents: 'none', // Make sure it doesn't interfere with clicks
+        pointerEvents: 'none',
+        //zIndex: -1, // Make sure it doesn't interfere with clicks
         // backgroundColor: 'rgba(0,255,0,0.2)', // Uncomment for debugging
       }
     }
@@ -807,13 +882,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
         </div>
       )}
 
-      <GameState 
-        isRolling={isRolling}
-        diceTotal={dice.die1 + dice.die2}
-        die1={dice.die1}
-        die2={dice.die2}
-      />
-
       <div 
         className="absolute inset-0"
         onMouseMove={handleMouseMove}
@@ -859,7 +927,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                   position={
                     area.id === 'pass-line' || area.id === 'dont-pass'
                       ? 'custom'
-                      : area.id.startsWith('place-') ? 'bottom' : 'center'
+                      : area.id.startsWith('place-') ? 'bottom-offset'
+                      : 'center'
                   }
                   areaId={area.id}
                   isOff={!point && (
