@@ -45,6 +45,7 @@ const App: React.FC = () => {
   const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
   const [winningAreas, setWinningAreas] = useState<WinningArea[]>([]);
   const winningAreasTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [hasRolled, setHasRolled] = useState(false);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -54,13 +55,13 @@ const App: React.FC = () => {
       const die2 = Math.floor(Math.random() * 6) + 1;
       const total = die1 + die2;
       
-      return { die1, die2, total, type: 'normal' as const };
+      return { die1, die2, total };
     };
 
     if (quickRoll) {
       const roll = rollDice();
       setDice({ die1: roll.die1, die2: roll.die2 });
-      setRollHistory(prev => [roll, ...prev]);
+      setHasRolled(true);
     } else {
       setIsRolling(true);
       
@@ -78,7 +79,7 @@ const App: React.FC = () => {
         clearInterval(interval);
         setAnimationInterval(null);
         setDice({ die1: roll.die1, die2: roll.die2 });
-        setRollHistory(prev => [roll, ...prev]);
+        setHasRolled(true);
         setIsRolling(false);
       }, 1000);
     }
@@ -186,7 +187,8 @@ const App: React.FC = () => {
   }, []);
 
   const handleRollOutcome = (outcome: RollOutcome & { total: number }) => {
-    // Update roll history with the new roll
+    if (!hasRolled) return;
+    
     setRollHistory(prev => [{
       die1: dice.die1,
       die2: dice.die2,
@@ -285,12 +287,12 @@ const App: React.FC = () => {
       
       <GameState 
         isRolling={isRolling}
-        diceTotal={dice.die1 + dice.die2}
+        diceTotal={hasRolled ? dice.die1 + dice.die2 : 0}
         die1={dice.die1}
         die2={dice.die2}
         onStateChange={handleGameStateChange}
         onRollType={handleRollType}
-        onWinningAreas={handleWinningAreas}
+        onWinningAreas={hasRolled ? handleWinningAreas : undefined}
         onRollOutcome={handleRollOutcome}
       />
 
