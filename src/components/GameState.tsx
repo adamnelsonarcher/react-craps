@@ -90,7 +90,7 @@ const GameState: React.FC<GameStateProps> = ({
       if (total === point) {
         winningAreas.push(
           { id: 'pass-line', type: 'win' },
-          { id: 'pass-line-chips', type: 'win' }
+          //{ id: 'pass-line-chips', type: 'win' }
         );
         losingAreas.push({ id: 'dont-pass', type: 'lose' });
         winningAreas.push({ id: `place-${total}`, type: 'win' });
@@ -103,10 +103,11 @@ const GameState: React.FC<GameStateProps> = ({
         // All place bets lose on seven
         [4, 5, 6, 8, 9, 10].forEach(num => {
           losingAreas.push({ id: `place-${num}`, type: 'lose' });
-          losingAreas.push({ id: `lay-${num}`, type: 'lose' });
+          winningAreas.push({ id: `lay-${num}`, type: 'win' });
         });
       } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
         winningAreas.push({ id: `place-${total}`, type: 'win' });
+        losingAreas.push({ id: `lay-${total}`, type: 'lose' });
       }
     }
 
@@ -186,9 +187,38 @@ const GameState: React.FC<GameStateProps> = ({
 
     // Field
     if ([2, 3, 4, 9, 10, 11, 12].includes(total)) {
-      winningAreas.push({ id: 'field', type: 'win' });
+      winningAreas.push({ 
+        id: 'field', 
+        type: 'win',
+        timestamp: Date.now()
+      });
     } else {
-      losingAreas.push({ id: 'field', type: 'lose' });
+      losingAreas.push({ 
+        id: 'field', 
+        type: 'lose',
+        timestamp: Date.now()
+      });
+    }
+
+    // Come bets - only active after a point is established
+    if (!isComingOut) {
+      // For new come bets
+      if (total === 7 || total === 11) {
+        winningAreas.push({ id: 'come', type: 'win' });
+      } else if (total === 2 || total === 3 || total === 12) {
+        losingAreas.push({ id: 'come', type: 'lose' });
+      }
+      
+      // For established come points, handle in seven-out case
+      if (total === 7) {
+        // Come points lose on seven
+        [4, 5, 6, 8, 9, 10].forEach(num => {
+          losingAreas.push({ id: `come-${num}`, type: 'lose' });
+        });
+      } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
+        // Come point is made
+        winningAreas.push({ id: `come-${total}`, type: 'win' });
+      }
     }
 
     return [...winningAreas, ...losingAreas];
@@ -313,7 +343,7 @@ const GameState: React.FC<GameStateProps> = ({
     // Determine winning areas and add timestamp to force update
     const winningAreas = determineWinningAreas(diceTotal, isComingOut, point).map(area => ({
       ...area,
-      timestamp: Date.now()
+      timestamp: area.timestamp || Date.now()
     }));
 
     // Add debug logging
