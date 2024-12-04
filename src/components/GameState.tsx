@@ -67,113 +67,128 @@ const GameState: React.FC<GameStateProps> = ({
   // Add function to determine winning areas based on the roll
   const determineWinningAreas = (total: number, isComingOut: boolean, point: number | null): WinningArea[] => {
     const winningAreas: WinningArea[] = [];
+    const losingAreas: WinningArea[] = [];  // Track losing areas
 
-    // One-roll bets - ALWAYS check these first
+    // One-roll bets
+    // Any 7
     if (total === 7) {
       winningAreas.push({ id: 'any-7', type: 'win' });
+    } else {
+      losingAreas.push({ id: 'any-7', type: 'lose' });
     }
+
+    // Any Craps
+    if ([2, 3, 12].includes(total)) {
+      winningAreas.push({ id: 'any-craps', type: 'win' });
+    } else {
+      losingAreas.push({ id: 'any-craps', type: 'lose' });
+    }
+
+    // Individual number bets
+    // Snake Eyes (2)
     if (total === 2) {
       winningAreas.push({ id: 'roll-2', type: 'win' });
-      winningAreas.push({ id: 'any-craps', type: 'win' });
+    } else {
+      losingAreas.push({ id: 'roll-2', type: 'lose' });
     }
+
+    // Three (Ace-Deuce)
     if (total === 3) {
       winningAreas.push({ id: 'roll-3', type: 'win' });
-      winningAreas.push({ id: 'any-craps', type: 'win' });
+    } else {
+      losingAreas.push({ id: 'roll-3', type: 'lose' });
     }
+
+    // Twelve (Boxcars)
+    if (total === 12) {
+      winningAreas.push({ id: 'roll-12', type: 'win' });
+    } else {
+      losingAreas.push({ id: 'roll-12', type: 'lose' });
+    }
+
+    // Eleven (Yo)
     if (total === 11) {
       winningAreas.push({ id: 'roll-11-1', type: 'win' });
       winningAreas.push({ id: 'roll-11-2', type: 'win' });
-    }
-    if (total === 12) {
-      winningAreas.push({ id: 'roll-12', type: 'win' });
-      winningAreas.push({ id: 'any-craps', type: 'win' });
+    } else {
+      losingAreas.push({ id: 'roll-11-1', type: 'lose' });
+      losingAreas.push({ id: 'roll-11-2', type: 'lose' });
     }
 
-    // Hard ways - check both dice are equal
-    if (die1 === die2) {  // Both dice show same number
-      const hardTotal = die1 + die1;  // Calculate total using one die
-      if ([4, 6, 8, 10].includes(hardTotal)) {
-        winningAreas.push({ id: `hard-${hardTotal}`, type: 'win' });
-      }
+    // Hard ways
+    // Hard 4
+    if (total === 4 && die1 === 2 && die2 === 2) {
+      winningAreas.push({ id: 'hard-4', type: 'win' });
+    } else if (total === 7 || (total === 4 && (die1 !== 2 || die2 !== 2))) {
+      losingAreas.push({ id: 'hard-4', type: 'lose' });
+    }
+
+    // Hard 6
+    if (total === 6 && die1 === 3 && die2 === 3) {
+      winningAreas.push({ id: 'hard-6', type: 'win' });
+    } else if (total === 7 || (total === 6 && (die1 !== 3 || die2 !== 3))) {
+      losingAreas.push({ id: 'hard-6', type: 'lose' });
+    }
+
+    // Hard 8
+    if (total === 8 && die1 === 4 && die2 === 4) {
+      winningAreas.push({ id: 'hard-8', type: 'win' });
+    } else if (total === 7 || (total === 8 && (die1 !== 4 || die2 !== 4))) {
+      losingAreas.push({ id: 'hard-8', type: 'lose' });
+    }
+
+    // Hard 10
+    if (total === 10 && die1 === 5 && die2 === 5) {
+      winningAreas.push({ id: 'hard-10', type: 'win' });
+    } else if (total === 7 || (total === 10 && (die1 !== 5 || die2 !== 5))) {
+      losingAreas.push({ id: 'hard-10', type: 'lose' });
+    }
+
+    // Field
+    if ([2, 3, 4, 9, 10, 11, 12].includes(total)) {
+      winningAreas.push({ id: 'field', type: 'win' });
+    } else {
+      losingAreas.push({ id: 'field', type: 'lose' });
     }
 
     // Pass line bets
     if (isComingOut) {
-      // On come out roll
       if (total === 7 || total === 11) {
         winningAreas.push(
           { id: 'pass-line', type: 'win' },
           { id: 'dont-pass', type: 'lose' }
         );
       } else if (total === 2 || total === 3) {
-        winningAreas.push(
-          { id: 'pass-line', type: 'lose' },
-          { id: 'dont-pass', type: 'win' }
-        );
+        losingAreas.push({ id: 'pass-line', type: 'lose' });
+        winningAreas.push({ id: 'dont-pass', type: 'win' });
       } else if (total === 12) {
-        winningAreas.push(
-          { id: 'pass-line', type: 'lose' }
-        );
+        losingAreas.push({ id: 'pass-line', type: 'lose' });
+        // Don't Pass pushes on 12
       }
     } else {
-      // Point is established
       if (total === 7) {
-        // Seven out
-        winningAreas.push(
-          { id: 'pass-line', type: 'lose' },
-          { id: 'dont-pass', type: 'win' },
-          { id: 'come', type: 'win' },
-          { id: 'dont-come', type: 'lose' },
-          // All place bets lose on seven out
-          { id: 'place-4', type: 'lose' },
-          { id: 'place-5', type: 'lose' },
-          { id: 'place-6', type: 'lose' },
-          { id: 'place-8', type: 'lose' },
-          { id: 'place-9', type: 'lose' },
-          { id: 'place-10', type: 'lose' }
-        );
+        losingAreas.push({ id: 'pass-line', type: 'lose' });
+        winningAreas.push({ id: 'dont-pass', type: 'win' });
+        // All place bets lose on seven
+        [4, 5, 6, 8, 9, 10].forEach(num => {
+          losingAreas.push({ id: `place-${num}`, type: 'lose' });
+        });
+        [4, 5, 6, 8, 9, 10].forEach(num => {
+          losingAreas.push({ id: `lay-${num}`, type: 'lose' });
+        });
       } else if (total === point) {
-        // Point is made
         winningAreas.push(
           { id: 'pass-line', type: 'win' },
           { id: 'dont-pass', type: 'lose' },
           { id: `place-${total}`, type: 'win' }
         );
+      } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
+        winningAreas.push({ id: `place-${total}`, type: 'win' });
       }
     }
 
-    // Place bets - Always check if a number hits (except on seven)
-    if (total !== 7 && [4, 5, 6, 8, 9, 10].includes(total)) {
-      winningAreas.push({ id: `place-${total}`, type: 'win' });
-    }
-
-    // Field bets - always active
-    if ([2, 3, 4, 9, 10, 11, 12].includes(total)) {
-      winningAreas.push({ id: 'field', type: 'win' });
-    } else {
-      winningAreas.push({ id: 'field', type: 'lose' });
-    }
-
-    // Come/Don't Come bets (when point is established)
-    if (!isComingOut) {
-      if (total === 7 || total === 11) {
-        winningAreas.push(
-          { id: 'come', type: 'win' },
-          { id: 'dont-come', type: 'lose' }
-        );
-      } else if (total === 2 || total === 3) {
-        winningAreas.push(
-          { id: 'come', type: 'lose' },
-          { id: 'dont-come', type: 'win' }
-        );
-      } else if (total === 12) {
-        winningAreas.push(
-          { id: 'come', type: 'lose' }
-        );
-      }
-    }
-
-    return winningAreas;
+    // Combine winning and losing areas
+    return [...winningAreas, ...losingAreas];
   };
 
   // Determine the outcome of a roll
@@ -196,6 +211,88 @@ const GameState: React.FC<GameStateProps> = ({
     return { type: 'normal', isComingOut: currentIsComingOut };
   };
 
+  const determineLosingAreas = (total: number, die1: number, die2: number, isComingOut: boolean, point: number | null): WinningArea[] => {
+    const losingAreas: WinningArea[] = [];
+
+    // One-roll bets
+    // Any 7 - Loses on anything other than 7
+    if (total !== 7) {
+      losingAreas.push({ id: 'any-7', type: 'lose' });
+    }
+
+    // Any Craps - Loses on anything other than 2, 3, 12
+    if (![2, 3, 12].includes(total)) {
+      losingAreas.push({ id: 'any-craps', type: 'lose' });
+    }
+
+    // Individual number bets
+    // Snake Eyes (2) - Loses on anything other than 2
+    if (total !== 2) {
+      losingAreas.push({ id: 'roll-2', type: 'lose' });
+    }
+
+    // Three (Ace-Deuce) - Loses on anything other than 3
+    if (total !== 3) {
+      losingAreas.push({ id: 'roll-3', type: 'lose' });
+    }
+
+    // Twelve (Boxcars) - Loses on anything other than 12
+    if (total !== 12) {
+      losingAreas.push({ id: 'roll-12', type: 'lose' });
+    }
+
+    // Eleven (Yo) - Loses on anything other than 11
+    if (total !== 11) {
+      losingAreas.push(
+        { id: 'roll-11-1', type: 'lose' },
+        { id: 'roll-11-2', type: 'lose' }
+      );
+    }
+
+    // Hard ways
+    // Hard 4 - Loses on 7 or any other 4
+    if (total === 7 || (total === 4 && (die1 !== 2 || die2 !== 2))) {
+      losingAreas.push({ id: 'hard-4', type: 'lose' });
+    }
+
+    // Hard 6 - Loses on 7 or any other 6
+    if (total === 7 || (total === 6 && (die1 !== 3 || die2 !== 3))) {
+      losingAreas.push({ id: 'hard-6', type: 'lose' });
+    }
+
+    // Hard 8 - Loses on 7 or any other 8
+    if (total === 7 || (total === 8 && (die1 !== 4 || die2 !== 4))) {
+      losingAreas.push({ id: 'hard-8', type: 'lose' });
+    }
+
+    // Hard 10 - Loses on 7 or any other 10
+    if (total === 7 || (total === 10 && (die1 !== 5 || die2 !== 5))) {
+      losingAreas.push({ id: 'hard-10', type: 'lose' });
+    }
+
+    // Field - Loses on 5, 6, 7, 8
+    if ([5, 6, 7, 8].includes(total)) {
+      losingAreas.push({ id: 'field', type: 'lose' });
+    }
+
+    // Pass line bets
+    if (isComingOut) {
+      if ([2, 3, 12].includes(total)) {
+        losingAreas.push({ id: 'pass-line', type: 'lose' });
+      }
+    } else {
+      if (total === 7) {
+        losingAreas.push({ id: 'pass-line', type: 'lose' });
+        // All place bets lose on seven
+        [4, 5, 6, 8, 9, 10].forEach(num => {
+          losingAreas.push({ id: `place-${num}`, type: 'lose' });
+        });
+      }
+    }
+
+    return losingAreas;
+  };
+
   React.useEffect(() => {
     if (isRolling || !diceTotal) return;
 
@@ -213,6 +310,9 @@ const GameState: React.FC<GameStateProps> = ({
     // Determine winning areas
     const winningAreas = determineWinningAreas(diceTotal, isComingOut, point);
     onWinningAreas?.(winningAreas);
+
+    // Determine losing areas
+    const losingAreas = determineLosingAreas(diceTotal, die1, die2, isComingOut, point);
 
     // Broadcast the roll outcome
     onRollOutcome?.({

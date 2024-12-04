@@ -170,6 +170,47 @@ const App: React.FC = () => {
     
     setWinningAreas(areas);
     
+    // Only remove chips from losing areas
+    const losingAreas = areas.filter(area => area.type === 'lose');
+    if (losingAreas.length > 0) {
+      // Get the positions of losing bets for animation
+      const losingBets = bets.filter(bet => 
+        losingAreas.some(area => area.id === bet.areaId)
+      ).map(bet => {
+        const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
+        const tableElement = document.querySelector('.bg-felt-green');
+        
+        if (betElement && tableElement) {
+          const betRect = betElement.getBoundingClientRect();
+          const tableRect = tableElement.getBoundingClientRect();
+          
+          return {
+            ...bet,
+            isWinning: false,
+            position: { 
+              x: betRect.left + (betRect.width / 2),
+              y: betRect.top + (betRect.height / 2)
+            }
+          };
+        }
+        
+        return {
+          ...bet,
+          isWinning: false,
+          position: { x: 0, y: 0 }
+        };
+      });
+
+      // Set the bets that are being animated
+      setAnimatingBets(new Set(losingBets.map(bet => bet.areaId)));
+      setResolvingBets(losingBets);
+
+      // Remove only the losing bets from the table
+      setBets(currentBets => 
+        currentBets.filter(bet => !losingAreas.some(area => area.id === bet.areaId))
+      );
+    }
+    
     // Store the new timeout
     winningAreasTimeout.current = setTimeout(() => {
       setWinningAreas([]);

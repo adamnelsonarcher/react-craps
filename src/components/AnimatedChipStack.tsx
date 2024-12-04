@@ -23,8 +23,8 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
       <motion.div
         className="fixed"
         initial={{ 
-          x: position.x,
-          y: position.y,
+          x: position.x-30,
+          y: position.y-30,
           opacity: 1,
           scale: 1
         }}
