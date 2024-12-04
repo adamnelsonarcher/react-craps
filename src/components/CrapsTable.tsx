@@ -4,6 +4,7 @@ import Dice from './Dice';
 import DiceHistory from './DiceHistory';
 import ChipStack from './ChipStack';
 import DiceArea from './DiceArea';
+import styled from 'styled-components';
 
 // Add chip configuration
 const CHIPS_CONFIG = [
@@ -146,6 +147,39 @@ const DiceControls: React.FC<{
     </div>
   );
 };
+
+interface ChipProps {
+  color: string;
+  selected?: boolean;
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+const Chip: React.FC<ChipProps> = ({ color, selected, children, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`
+      relative
+      w-[clamp(2rem,4vw,3rem)]
+      h-[clamp(2rem,4vw,3rem)]
+      rounded-full
+      flex
+      items-center
+      justify-center
+      font-bold
+      text-[clamp(0.75rem,1.5vw,1rem)]
+      text-white
+      cursor-pointer
+      ${color}
+      ${selected ? 'ring-3 ring-white' : ''}
+      shadow-lg
+      hover:scale-110
+      transition-transform
+    `}
+  >
+    {children}
+  </div>
+);
 
 const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
   selectedChipValue, 

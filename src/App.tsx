@@ -232,9 +232,17 @@ const App: React.FC = () => {
               winningAreas={winningAreas}
             />
             {/* Dice in top right */}
-            <div className="absolute top-4 right-4 flex gap-4 z-10">
-              <Dice value={isRolling ? animationDice.die1 : dice.die1} isRolling={isRolling} />
-              <Dice value={isRolling ? animationDice.die2 : dice.die2} isRolling={isRolling} />
+            <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
+              <Dice 
+                value={isRolling ? animationDice.die1 : dice.die1} 
+                isRolling={isRolling}
+                size="large"
+              />
+              <Dice 
+                value={isRolling ? animationDice.die2 : dice.die2} 
+                isRolling={isRolling}
+                size="large"
+              />
             </div>
             <GameState 
               isRolling={isRolling}

@@ -10,13 +10,13 @@ const Dice: React.FC<DiceProps> = ({ value, isRolling, size = 'large' }) => {
   const gridPositions = Array(9).fill(0);
   
   const sizeClasses = {
-    small: 'w-8 h-8',
-    large: 'w-20 h-20'
+    small: 'w-[clamp(2rem,4vw,2.5rem)] h-[clamp(2rem,4vw,2.5rem)]',
+    large: 'w-[clamp(3rem,6vw,4rem)] h-[clamp(3rem,6vw,4rem)]'
   };
 
   const paddingClasses = {
-    small: 'inset-1',
-    large: 'inset-3'
+    small: 'inset-[15%]',
+    large: 'inset-[20%]'
   };
   
   return (
