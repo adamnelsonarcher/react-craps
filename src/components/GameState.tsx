@@ -1,9 +1,5 @@
 import React from 'react';
-
-interface WinningArea {
-  id: string;
-  type: 'win' | 'lose';
-}
+import { RollOutcome, WinningArea } from '../types/game';
 
 interface GameStateProps {
   isRolling: boolean;
@@ -13,6 +9,7 @@ interface GameStateProps {
   onStateChange?: (isComingOut: boolean, point: number | null) => void;
   onRollType?: (type: 'point-made' | 'craps-out' | 'normal') => void;
   onWinningAreas?: (areas: WinningArea[]) => void;
+  onRollOutcome?: (outcome: RollOutcome & { total: number }) => void;
 }
 
 interface PointMarkerProps {
@@ -50,10 +47,12 @@ const GameState: React.FC<GameStateProps> = ({
   die2,
   onStateChange,
   onRollType,
-  onWinningAreas 
+  onWinningAreas,
+  onRollOutcome 
 }) => {
   const [point, setPoint] = React.useState<number | null>(null);
   const [isComingOut, setIsComingOut] = React.useState(true);
+  const prevRoll = React.useRef({ die1: 0, die2: 0 });
 
   // Point marker positions for each number (moved up to avoid overlap)
   const markerPositions: Record<number, { x: number; y: number }> = {
@@ -177,60 +176,64 @@ const GameState: React.FC<GameStateProps> = ({
     return winningAreas;
   };
 
-  const prevDiceTotal = React.useRef(diceTotal);
+  // Determine the outcome of a roll
+  const determineRollOutcome = (total: number, currentIsComingOut: boolean, currentPoint: number | null): RollOutcome => {
+    if (currentIsComingOut) {
+      if (total === 7 || total === 11) {
+        return { type: 'natural', isComingOut: true };
+      } else if (total === 2 || total === 3 || total === 12) {
+        return { type: 'craps', isComingOut: true };
+      } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
+        return { type: 'point-set', point: total, isComingOut: false };
+      }
+    } else {
+      if (total === 7) {
+        return { type: 'seven-out', point: null, isComingOut: true };
+      } else if (total === currentPoint) {
+        return { type: 'point-made', point: null, isComingOut: true };
+      }
+    }
+    return { type: 'normal', isComingOut: currentIsComingOut };
+  };
 
   React.useEffect(() => {
     if (isRolling || !diceTotal) return;
 
-    let newIsComingOut = isComingOut;
-    let newPoint = point;
-    let rollType: 'point-made' | 'craps-out' | 'normal' = 'normal';
+    // Check if this is actually a new roll
+    if (die1 === prevRoll.current.die1 && die2 === prevRoll.current.die2) {
+      return;
+    }
 
-    // Important: Determine winning areas BEFORE updating state
+    // Update previous roll
+    prevRoll.current = { die1, die2 };
+
+    // Determine the outcome of this roll
+    const outcome = determineRollOutcome(diceTotal, isComingOut, point);
+
+    // Determine winning areas
     const winningAreas = determineWinningAreas(diceTotal, isComingOut, point);
     onWinningAreas?.(winningAreas);
 
-    // Only process game state changes if dice have actually changed
-    if (diceTotal !== prevDiceTotal.current) {
-      prevDiceTotal.current = diceTotal;
+    // Broadcast the roll outcome
+    onRollOutcome?.({
+      ...outcome,
+      total: diceTotal
+    });
 
-      if (isComingOut) {
-        if (diceTotal === 7 || diceTotal === 11) {
-          console.log('Natural!');
-        } else if (diceTotal === 2 || diceTotal === 3 || diceTotal === 12) {
-          console.log('Craps!');
-        } else if ([4, 5, 6, 8, 9, 10].includes(diceTotal)) {
-          // Only set point on valid point numbers
-          newPoint = diceTotal;
-          newIsComingOut = false;
-          console.log(`Point is ${diceTotal}`);
-        }
-      } else {
-        if (diceTotal === 7) {
-          console.log('Seven out!');
-          rollType = 'craps-out';
-          newPoint = null;
-          newIsComingOut = true;
-        } else if (diceTotal === point) {
-          console.log('Point made!');
-          rollType = 'point-made';
-          newPoint = null;
-          newIsComingOut = true;
-        }
-        // If neither 7 nor point is hit, point stays the same
-      }
+    // Update game state based on outcome
+    if (outcome.type !== 'normal') {
+      console.log(`Roll outcome: ${outcome.type}`);
+      setIsComingOut(outcome.isComingOut);
+      setPoint(outcome.point ?? null);
+      onStateChange?.(outcome.isComingOut, outcome.point ?? null);
 
-      // Update state after determining winners
-      setPoint(newPoint);
-      setIsComingOut(newIsComingOut);
-      
-      // Notify parent components
-      onStateChange?.(newIsComingOut, newPoint);
-      if (rollType !== 'normal') {
-        onRollType?.(rollType);
+      if (outcome.type === 'point-made') {
+        onRollType?.('point-made');
+      } else if (outcome.type === 'seven-out') {
+        onRollType?.('craps-out');
       }
     }
-  }, [isRolling, diceTotal]);
+  }, [diceTotal, die1, die2, isRolling]);
 
   return (
     <PointMarker 

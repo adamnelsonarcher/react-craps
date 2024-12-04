@@ -6,6 +6,7 @@ import DiceHistory from './components/DiceHistory';
 import Dice from './components/Dice';
 import GameState from './components/GameState';
 import AnimatedChipStack from './components/AnimatedChipStack';
+import { RollOutcome, WinningArea } from './types/game';
 
 interface DiceRoll {
   die1: number;
@@ -24,11 +25,6 @@ interface Bet {
 interface ResolvingBet extends Bet {
   isWinning: boolean;
   position: { x: number; y: number };
-}
-
-interface WinningArea {
-  id: string;
-  type: 'win' | 'lose';
 }
 
 const App: React.FC = () => {
@@ -189,6 +185,18 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const handleRollOutcome = (outcome: RollOutcome & { total: number }) => {
+    // Update roll history with the new roll
+    setRollHistory(prev => [{
+      die1: dice.die1,
+      die2: dice.die2,
+      total: outcome.total,
+      type: outcome.type === 'point-made' ? 'point-made' 
+          : outcome.type === 'seven-out' ? 'craps-out' 
+          : 'normal'
+    }, ...prev]);
+  };
+
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       <h1 className="text-3xl font-semibold text-white text-center mb-4">RollSim.com</h1>
@@ -283,6 +291,7 @@ const App: React.FC = () => {
         onStateChange={handleGameStateChange}
         onRollType={handleRollType}
         onWinningAreas={handleWinningAreas}
+        onRollOutcome={handleRollOutcome}
       />
 
       {resolvingBets.map((bet, index) => (
