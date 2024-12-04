@@ -374,14 +374,14 @@ const GameState: React.FC<GameStateProps> = ({
     }));
 
     // Add debug logging
-    console.log('=== Roll Debug ===');
-    console.log('Dice:', die1, die2, 'Total:', diceTotal);
-    console.log('Is Coming Out:', isComingOut);
-    console.log('Point:', point);
-    console.log('Outcome:', outcome);
-    console.log('Winning Areas:', winningAreas.filter(area => area.type === 'win').map(area => area.id));
-    console.log('Losing Areas:', winningAreas.filter(area => area.type === 'lose').map(area => area.id));
-    console.log('================');
+    //console.log('=== Roll Debug ===');
+    //console.log('Dice:', die1, die2, 'Total:', diceTotal);
+    //console.log('Is Coming Out:', isComingOut);
+    //console.log('Point:', point);
+    //console.log('Outcome:', outcome);
+    //console.log('Winning Areas:', winningAreas.filter(area => area.type === 'win').map(area => area.id));
+    //console.log('Losing Areas:', winningAreas.filter(area => area.type === 'lose').map(area => area.id));
+    //console.log('================');
     
     // Update timestamp to force re-render of winning areas
     setLastWinTimestamp(Date.now());
