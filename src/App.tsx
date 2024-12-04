@@ -295,6 +295,21 @@ const App: React.FC = () => {
               <Dice value={isRolling ? animationDice.die1 : dice.die1} isRolling={isRolling} />
               <Dice value={isRolling ? animationDice.die2 : dice.die2} isRolling={isRolling} />
             </div>
+            <GameState 
+              isRolling={isRolling}
+              diceTotal={dice.die1 + dice.die2}
+              die1={dice.die1}
+              die2={dice.die2}
+              bets={bets}
+              onStateChange={handleGameStateChange}
+              onRollType={(type) => {
+                if (tableRef.current) {
+                  tableRef.current.resolveBets(type);
+                }
+              }}
+              onWinningAreas={handleWinningAreas}
+              onRollOutcome={handleRollOutcome}
+            />
           </div>
         </div>
 
@@ -326,22 +341,6 @@ const App: React.FC = () => {
         <div className="fixed inset-0 cursor-help pointer-events-none" />
       )}
       
-      <GameState 
-        isRolling={isRolling}
-        diceTotal={dice.die1 + dice.die2}
-        die1={dice.die1}
-        die2={dice.die2}
-        bets={bets}
-        onStateChange={handleGameStateChange}
-        onRollType={(type) => {
-          if (tableRef.current) {
-            tableRef.current.resolveBets(type);
-          }
-        }}
-        onWinningAreas={handleWinningAreas}
-        onRollOutcome={handleRollOutcome}
-      />
-
       {resolvingBets.map((bet, index) => (
         animatingBets.has(bet.areaId) ? (
           <AnimatedChipStack

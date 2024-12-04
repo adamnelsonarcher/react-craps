@@ -566,6 +566,73 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
         //zIndex: -1, // Make sure it doesn't interfere with clicks
         // backgroundColor: 'rgba(0,255,0,0.2)', // Uncomment for debugging
       }
+    },
+    // Add don't come point areas right above come points
+    {
+      id: 'dont-come-4',
+      name: 'Dont Come 4',
+      style: {
+        top: `${16.3 - 1}%`,  // Above come points
+        left: `${22.6 - 1}%`,
+        width: '2%',
+        height: '3.5%',
+        pointerEvents: 'none'  // Make unclickable
+      }
+    },
+    {
+      id: 'dont-come-5',
+      name: 'Dont Come 5',
+      style: {
+        top: `${16.3 - 1}%`,
+        left: `${31.20 - 1}%`,
+        width: '2%',
+        height: '3.5%',
+        pointerEvents: 'none'
+      }
+    },
+    {
+      id: 'dont-come-6',
+      name: 'Dont Come 6',
+      style: {
+        top: `${16.3 - 1}%`,
+        left: `${39.7 - 1}%`,
+        width: '2%',
+        height: '3.5%',
+        pointerEvents: 'none'
+      }
+    },
+    {
+      id: 'dont-come-8',
+      name: 'Dont Come 8',
+      style: {
+        top: `${16.3 - 1}%`,
+        left: `${47.9 - 1}%`,
+        width: '2%',
+        height: '3.5%',
+        pointerEvents: 'none'
+      }
+    },
+    {
+      id: 'dont-come-9',
+      name: 'Dont Come 9',
+      style: {
+        top: `${16.3 - 1}%`,
+        left: `${56.4 - 1}%`,
+        width: '2%',
+        height: '3.5%',
+        pointerEvents: 'none'
+      }
+    },
+    {
+      id: 'dont-come-10',
+      name: 'Dont Come 10',
+      style: {
+        top: `${16.3 - 1}%`,
+        left: `${64.4 - 1}%`,
+        width: '2%',
+        height: '3.5%',
+        pointerEvents: 'none'
+      }
     }
   ];
 
@@ -620,6 +687,9 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     
     // Prevent betting on chip areas directly
     if (areaId.endsWith('-chips')) return;
+    
+    // Prevent betting on come/don't come point numbers
+    if (areaId.startsWith('come-') || areaId.startsWith('dont-come-')) return;
     
     // Prevent pass line and don't pass bets after point is set
     if ((areaId === 'pass-line' || areaId === 'dont-pass') && point !== null) return;
@@ -884,6 +954,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
       <div 
         className="absolute inset-0"
+        //style={{ zIndex: 1 }}
         onMouseMove={handleMouseMove}
         onClick={handleGlobalClick}
       >
