@@ -69,77 +69,115 @@ const GameState: React.FC<GameStateProps> = ({
   const determineWinningAreas = (total: number, isComingOut: boolean, point: number | null): WinningArea[] => {
     const winningAreas: WinningArea[] = [];
 
+    // One-roll bets - ALWAYS check these first
+    if (total === 7) {
+      winningAreas.push({ id: 'any-7', type: 'win' });
+    }
+    if (total === 2) {
+      winningAreas.push({ id: 'roll-2', type: 'win' });
+      winningAreas.push({ id: 'any-craps', type: 'win' });
+    }
+    if (total === 3) {
+      winningAreas.push({ id: 'roll-3', type: 'win' });
+      winningAreas.push({ id: 'any-craps', type: 'win' });
+    }
+    if (total === 11) {
+      winningAreas.push({ id: 'roll-11-1', type: 'win' });
+      winningAreas.push({ id: 'roll-11-2', type: 'win' });
+    }
+    if (total === 12) {
+      winningAreas.push({ id: 'roll-12', type: 'win' });
+      winningAreas.push({ id: 'any-craps', type: 'win' });
+    }
+
+    // Hard ways - check both dice are equal
+    if (die1 === die2) {  // Both dice show same number
+      const hardTotal = die1 + die1;  // Calculate total using one die
+      if ([4, 6, 8, 10].includes(hardTotal)) {
+        winningAreas.push({ id: `hard-${hardTotal}`, type: 'win' });
+      }
+    }
+
+    // Pass line bets
     if (isComingOut) {
-      // Come out roll rules
+      // On come out roll
       if (total === 7 || total === 11) {
-        // Natural
         winningAreas.push(
           { id: 'pass-line', type: 'win' },
           { id: 'dont-pass', type: 'lose' }
         );
       } else if (total === 2 || total === 3) {
-        // Craps
         winningAreas.push(
           { id: 'pass-line', type: 'lose' },
           { id: 'dont-pass', type: 'win' }
         );
       } else if (total === 12) {
-        // Craps - but don't pass pushes
         winningAreas.push(
           { id: 'pass-line', type: 'lose' }
         );
       }
     } else {
-      // Point phase rules
+      // Point is established
       if (total === 7) {
         // Seven out
         winningAreas.push(
           { id: 'pass-line', type: 'lose' },
           { id: 'dont-pass', type: 'win' },
-          { id: `place-4`, type: 'lose' },
-          { id: `place-5`, type: 'lose' },
-          { id: `place-6`, type: 'lose' },
-          { id: `place-8`, type: 'lose' },
-          { id: `place-9`, type: 'lose' },
-          { id: `place-10`, type: 'lose' }
+          { id: 'come', type: 'win' },
+          { id: 'dont-come', type: 'lose' },
+          // All place bets lose on seven out
+          { id: 'place-4', type: 'lose' },
+          { id: 'place-5', type: 'lose' },
+          { id: 'place-6', type: 'lose' },
+          { id: 'place-8', type: 'lose' },
+          { id: 'place-9', type: 'lose' },
+          { id: 'place-10', type: 'lose' }
         );
       } else if (total === point) {
-        // Point made
+        // Point is made
         winningAreas.push(
           { id: 'pass-line', type: 'win' },
-          { id: 'dont-pass', type: 'lose' }
+          { id: 'dont-pass', type: 'lose' },
+          { id: `place-${total}`, type: 'win' }
         );
       }
     }
 
-    // Field bets
+    // Place bets - Always check if a number hits (except on seven)
+    if (total !== 7 && [4, 5, 6, 8, 9, 10].includes(total)) {
+      winningAreas.push({ id: `place-${total}`, type: 'win' });
+    }
+
+    // Field bets - always active
     if ([2, 3, 4, 9, 10, 11, 12].includes(total)) {
       winningAreas.push({ id: 'field', type: 'win' });
     } else {
       winningAreas.push({ id: 'field', type: 'lose' });
     }
 
-    // Place bets (only when point is established)
-    if (!isComingOut && total !== 7) {
-      if ([4, 5, 6, 8, 9, 10].includes(total)) {
-        winningAreas.push({ id: `place-${total}`, type: 'win' });
+    // Come/Don't Come bets (when point is established)
+    if (!isComingOut) {
+      if (total === 7 || total === 11) {
+        winningAreas.push(
+          { id: 'come', type: 'win' },
+          { id: 'dont-come', type: 'lose' }
+        );
+      } else if (total === 2 || total === 3) {
+        winningAreas.push(
+          { id: 'come', type: 'lose' },
+          { id: 'dont-come', type: 'win' }
+        );
+      } else if (total === 12) {
+        winningAreas.push(
+          { id: 'come', type: 'lose' }
+        );
       }
     }
 
-    // Hard ways - check both dice are equal
-    if (total === 4 && die1 === 2 && die2 === 2) winningAreas.push({ id: 'hard-4', type: 'win' });
-    if (total === 6 && die1 === 3 && die2 === 3) winningAreas.push({ id: 'hard-6', type: 'win' });
-    if (total === 8 && die1 === 4 && die2 === 4) winningAreas.push({ id: 'hard-8', type: 'win' });
-    if (total === 10 && die1 === 5 && die2 === 5) winningAreas.push({ id: 'hard-10', type: 'win' });
-
-    // Any 7
-    if (total === 7) winningAreas.push({ id: 'any-7', type: 'win' });
-
-    // Any Craps
-    if ([2, 3, 12].includes(total)) winningAreas.push({ id: 'any-craps', type: 'win' });
-
     return winningAreas;
   };
+
+  const prevDiceTotal = React.useRef(diceTotal);
 
   React.useEffect(() => {
     if (isRolling || !diceTotal) return;
@@ -148,42 +186,49 @@ const GameState: React.FC<GameStateProps> = ({
     let newPoint = point;
     let rollType: 'point-made' | 'craps-out' | 'normal' = 'normal';
 
-    if (isComingOut) {
-      if (diceTotal === 7 || diceTotal === 11) {
-        console.log('Natural!');
-      } else if (diceTotal === 2 || diceTotal === 3 || diceTotal === 12) {
-        console.log('Craps!');
-      } else {
-        newPoint = diceTotal;
-        newIsComingOut = false;
-        console.log(`Point is ${diceTotal}`);
-      }
-    } else {
-      if (diceTotal === 7) {
-        console.log('Seven out!');
-        rollType = 'craps-out';
-        newPoint = null;
-        newIsComingOut = true;
-      } else if (diceTotal === point) {
-        console.log('Point made!');
-        rollType = 'point-made';
-        newPoint = null;
-        newIsComingOut = true;
-      }
-    }
-
-    // Determine winning areas
-    const winningAreas = determineWinningAreas(diceTotal, newIsComingOut, newPoint);
+    // Important: Determine winning areas BEFORE updating state
+    const winningAreas = determineWinningAreas(diceTotal, isComingOut, point);
     onWinningAreas?.(winningAreas);
 
-    // Update state
-    setPoint(newPoint);
-    setIsComingOut(newIsComingOut);
-    
-    // Notify parent components
-    onStateChange?.(newIsComingOut, newPoint);
-    if (rollType !== 'normal') {
-      onRollType?.(rollType);
+    // Only process game state changes if dice have actually changed
+    if (diceTotal !== prevDiceTotal.current) {
+      prevDiceTotal.current = diceTotal;
+
+      if (isComingOut) {
+        if (diceTotal === 7 || diceTotal === 11) {
+          console.log('Natural!');
+        } else if (diceTotal === 2 || diceTotal === 3 || diceTotal === 12) {
+          console.log('Craps!');
+        } else if ([4, 5, 6, 8, 9, 10].includes(diceTotal)) {
+          // Only set point on valid point numbers
+          newPoint = diceTotal;
+          newIsComingOut = false;
+          console.log(`Point is ${diceTotal}`);
+        }
+      } else {
+        if (diceTotal === 7) {
+          console.log('Seven out!');
+          rollType = 'craps-out';
+          newPoint = null;
+          newIsComingOut = true;
+        } else if (diceTotal === point) {
+          console.log('Point made!');
+          rollType = 'point-made';
+          newPoint = null;
+          newIsComingOut = true;
+        }
+        // If neither 7 nor point is hit, point stays the same
+      }
+
+      // Update state after determining winners
+      setPoint(newPoint);
+      setIsComingOut(newIsComingOut);
+      
+      // Notify parent components
+      onStateChange?.(newIsComingOut, newPoint);
+      if (rollType !== 'normal') {
+        onRollType?.(rollType);
+      }
     }
   }, [isRolling, diceTotal]);
 

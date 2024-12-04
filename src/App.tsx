@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import CrapsTable, { CrapsTableRef } from './components/CrapsTable';
 import DiceArea from './components/DiceArea';
 import BettingControls from './components/BettingControls';
@@ -48,6 +48,7 @@ const App: React.FC = () => {
   const [resolvingBets, setResolvingBets] = useState<ResolvingBet[]>([]);
   const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
   const [winningAreas, setWinningAreas] = useState<WinningArea[]>([]);
+  const winningAreasTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -165,13 +166,28 @@ const App: React.FC = () => {
   };
 
   const handleWinningAreas = (areas: WinningArea[]) => {
+    // Clear any existing timeout
+    if (winningAreasTimeout.current) {
+      clearTimeout(winningAreasTimeout.current);
+    }
+    
     setWinningAreas(areas);
     
-    // Increased duration to 3.5 seconds
-    setTimeout(() => {
+    // Store the new timeout
+    winningAreasTimeout.current = setTimeout(() => {
       setWinningAreas([]);
+      winningAreasTimeout.current = null;
     }, 3500);
   };
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (winningAreasTimeout.current) {
+        clearTimeout(winningAreasTimeout.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
@@ -218,6 +234,7 @@ const App: React.FC = () => {
               bets={bets}
               setBets={setBets}
               dice={dice}
+              setDice={setDice}
               isRolling={isRolling}
               point={point}
               winningAreas={winningAreas}

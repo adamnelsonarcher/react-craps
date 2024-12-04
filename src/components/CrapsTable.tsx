@@ -68,7 +68,85 @@ interface CrapsTableProps {
   isRolling: boolean;
   point: number | null;
   winningAreas?: WinningArea[];
+  setDice?: (dice: { die1: number; die2: number }) => void;
 }
+
+// Move DiceControls outside CrapsTable component
+const DiceControls: React.FC<{
+  currentDice: { die1: number; die2: number };
+  onDiceChange: (dice: { die1: number; die2: number }) => void;
+}> = ({ currentDice, onDiceChange }) => {
+  const [tempDice, setTempDice] = useState(currentDice);
+
+  // Add common dice combinations
+  const presets = [
+    { name: "Snake Eyes (2)", die1: 1, die2: 1 },
+    { name: "Yo (11)", die1: 6, die2: 5 },
+    { name: "Box Cars (12)", die1: 6, die2: 6 },
+    { name: "Three Craps", die1: 2, die2: 1 },
+  ];
+
+  return (
+    <div 
+      className="absolute top-24 left-0 bg-black/80 text-white p-4 rounded-lg backdrop-blur-sm"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h3 className="font-bold mb-2">Dice Controls</h3>
+      <div className="flex gap-4">
+        <div>
+          <label className="block text-sm">Die 1</label>
+          <select 
+            value={tempDice.die1}
+            onChange={(e) => setTempDice(prev => ({ ...prev, die1: Number(e.target.value) }))}
+            className="bg-gray-800 rounded px-2 py-1"
+          >
+            {[1,2,3,4,5,6].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm">Die 2</label>
+          <select 
+            value={tempDice.die2}
+            onChange={(e) => setTempDice(prev => ({ ...prev, die2: Number(e.target.value) }))}
+            className="bg-gray-800 rounded px-2 py-1"
+          >
+            {[1,2,3,4,5,6].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="mt-2 flex justify-between items-center">
+        <span className="text-sm">Total: {tempDice.die1 + tempDice.die2}</span>
+        <button 
+          onClick={() => onDiceChange(tempDice)}
+          className="bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-sm"
+        >
+          Set Dice
+        </button>
+      </div>
+      <div className="mt-3 border-t border-gray-600 pt-2">
+        <div className="text-sm font-bold mb-1">Quick Sets:</div>
+        <div className="grid grid-cols-2 gap-1">
+          {presets.map(preset => (
+            <button
+              key={preset.name}
+              onClick={() => {
+                setTempDice({ die1: preset.die1, die2: preset.die2 });
+                onDiceChange({ die1: preset.die1, die2: preset.die2 });
+              }}
+              className="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-xs"
+            >
+              {preset.name}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
   selectedChipValue, 
@@ -81,7 +159,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   dice,
   isRolling,
   point,
-  winningAreas
+  winningAreas,
+  setDice
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -698,6 +777,10 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
               Y: {mousePosition.y.toFixed(2)}%<br />
               Image: {imageSize.width} x {imageSize.height}
             </div>
+            <DiceControls 
+              currentDice={dice}
+              onDiceChange={(newDice) => setDice?.(newDice)}
+            />
             <div className="absolute top-0 right-0 bg-black/50 text-white p-2 max-h-[300px] overflow-y-auto">
               <button 
                 onClick={(e) => {
