@@ -28,20 +28,20 @@ interface PointMarkerProps {
 }
 
 const PointMarker: React.FC<PointMarkerProps> = ({ point, position, isOn }) => {
-  const offPosition = { x: 6, y: -4 };
+  const offPosition = { x: 6, y: 8 };
   const currentPosition = isOn ? position : offPosition;
 
   return (
     <div 
-      className={`absolute w-[5vw] h-[5vw] min-w-[28px] min-h-[28px] max-w-[52px] max-h-[52px]
+      className={`absolute w-[clamp(1.75rem,3.5vw,3.5rem)] h-[clamp(1.75rem,3.5vw,3.5rem)]
                  rounded-full flex items-center justify-center
-                 border-4 transform -translate-x-1/2 -translate-y-1/2
-                 font-bold text-xl transition-all duration-1000 ease-in-out
+                 border-[0.2rem] transform -translate-x-1/2 -translate-y-1/2
+                 font-bold transition-all duration-1000 ease-in-out
                  ${isOn ? 'bg-white border-black text-black' : 'bg-black border-white text-white'}`}
       style={{ 
         left: `${currentPosition.x}%`,
         top: `${currentPosition.y}%`,
-        fontSize: 'clamp(12px, 1.5vw, 20px)',
+        fontSize: 'clamp(0.8rem, 1.6vw, 1.2rem)',
       }}
     >
       {isOn ? 'ON' : 'OFF'}
