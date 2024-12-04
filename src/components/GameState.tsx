@@ -73,18 +73,21 @@ const GameState: React.FC<GameStateProps> = ({
     // Pass line bets - handle come out roll first
     if (isComingOut) {
       if (total === 7 || total === 11) {
-        // Natural - pass line wins
+        // Natural - pass line wins, don't pass loses
         winningAreas.push({ id: 'pass-line', type: 'win' });
-        losingAreas.push({ id: 'dont-pass', type: 'lose' });
+        losingAreas.push(
+          { id: 'dont-pass', type: 'lose' },
+          { id: 'dont-pass-chips', type: 'lose' }
+        );
       } else if (total === 2 || total === 3 || total === 12) {
-        // Craps - pass line loses
+        // Craps - pass line loses, don't pass wins (except push on 12)
         losingAreas.push(
           { id: 'pass-line', type: 'lose' },
           { id: 'pass-line-chips', type: 'lose' }
         );
-        if (total !== 12) {  // Don't pass wins on 2 and 3, pushes on 12
-          winningAreas.push({ id: 'dont-pass', type: 'win' });
-        }
+        winningAreas.push(
+          { id: 'dont-pass', type: 'win' },
+        );
       }
     } else if (point !== null) {
       if (total === point) {
@@ -93,6 +96,10 @@ const GameState: React.FC<GameStateProps> = ({
           //{ id: 'pass-line-chips', type: 'win' }
         );
         losingAreas.push({ id: 'dont-pass', type: 'lose' });
+        losingAreas.push({ id: 'dont-pass-chips', type: 'lose' });
+        losingAreas.push({ id: 'dont-come', type: 'lose' });
+        losingAreas.push({ id: 'dont-come-chips', type: 'lose' });
+        losingAreas.push({ id: `lay-${total}`, type: 'lose' });
         winningAreas.push({ id: `place-${total}`, type: 'win' });
       } else if (total === 7) {
         losingAreas.push(
@@ -205,19 +212,39 @@ const GameState: React.FC<GameStateProps> = ({
       // For new come bets
       if (total === 7 || total === 11) {
         winningAreas.push({ id: 'come', type: 'win' });
-      } else if (total === 2 || total === 3 || total === 12) {
-        losingAreas.push({ id: 'come', type: 'lose' });
+        losingAreas.push(
+          { id: 'dont-come', type: 'lose' },
+          { id: 'dont-come-chips', type: 'lose' }
+        );
+      } else if (total === 2 || total === 3) {
+        losingAreas.push(
+          { id: 'come', type: 'lose' },
+          { id: 'come-chips', type: 'lose' }
+        );
+        winningAreas.push(
+          { id: 'dont-come', type: 'win' },
+          { id: 'dont-come-chips', type: 'win' }
+        );
+      } else if (total === 12) {  // Don't come pushes on 12, just like don't pass
+        losingAreas.push(
+          { id: 'come', type: 'lose' },
+          { id: 'come-chips', type: 'lose' }
+        );
       }
       
-      // For established come points, handle in seven-out case
+      // For established come/don't come points
       if (total === 7) {
         // Come points lose on seven
         [4, 5, 6, 8, 9, 10].forEach(num => {
           losingAreas.push({ id: `come-${num}`, type: 'lose' });
+          // Don't come points win on seven
+          winningAreas.push({ id: `dont-come-${num}`, type: 'win' });
         });
       } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
         // Come point is made
         winningAreas.push({ id: `come-${total}`, type: 'win' });
+        // Don't come point loses
+        losingAreas.push({ id: `dont-come-${total}`, type: 'lose' });
       }
     }
 

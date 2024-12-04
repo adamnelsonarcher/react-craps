@@ -655,13 +655,19 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       
       if (bet.areaId === 'pass-line' || bet.areaId === 'pass-line-chips') {
         isWinning = rollType === 'point-made';
-        console.log(`Pass Line Bet Resolution: ${bet.areaId} isWinning:`, isWinning);
-      } else if (bet.areaId === 'dont-pass') {
-        isWinning = rollType === 'craps-out';
+      } else if (bet.areaId === 'dont-pass' || bet.areaId === 'dont-pass-chips') {
+        // Don't pass wins on craps-out, loses on point-made
+        if (rollType === 'point-made') {
+          isWinning = false;  // Explicitly lose on point-made
+        } else if (rollType === 'craps-out') {
+          isWinning = true;   // Win on seven-out
+        }
+      } else if (bet.areaId === 'come') {
+        isWinning = (dice.die1 + dice.die2 === 7 || dice.die1 + dice.die2 === 11);
+      } else if (bet.areaId === 'dont-come' || bet.areaId === 'dont-come-chips') {
+        isWinning = [2, 3].includes(dice.die1 + dice.die2);
       } else if (bet.areaId === 'any-7') {
-        // Any 7 should win on any 7, regardless of roll type
         isWinning = dice.die1 + dice.die2 === 7;
-        console.log(`Any 7 Bet Resolution: isWinning:`, isWinning);
       }
 
       const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
