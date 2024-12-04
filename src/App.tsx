@@ -242,11 +242,11 @@ const App: React.FC = () => {
 
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
-      <h1 className="text-3xl font-semibold text-white text-center mb-4">RollSim.com</h1>
-      
       <div className="flex-1 flex gap-6">
         {/* Left side - Controls */}
         <div className={`flex-1 flex flex-col gap-4 min-w-[250px] max-w-[400px] relative ${helpMode ? 'pointer-events-none' : ''}`}>
+          <h1 className="text-3xl font-semibold text-white text-center">RollSim.com</h1>
+          
           <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
             <div className="w-[200px] text-left">
               <span className="text-2xl text-green-400 font-bold">Bank: ${bank.toLocaleString()}</span>
