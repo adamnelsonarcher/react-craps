@@ -85,15 +85,17 @@ const App: React.FC = () => {
     }
   };
 
-  const handleRollType = (type: 'point-made' | 'craps-out' | 'normal') => {
-    setRollHistory(prev => prev.length > 0 ? [
-      { ...prev[0], type },
-      ...prev.slice(1)
-    ] : prev);
+  const handleRollOutcome = (outcome: RollOutcome & { total: number }) => {
+    if (!hasRolled) return;
     
-    if (type !== 'normal') {
-      resolveBets(type);
-    }
+    setRollHistory(prev => [{
+      die1: dice.die1,
+      die2: dice.die2,
+      total: outcome.total,
+      type: outcome.type === 'point-made' ? 'point-made' 
+          : outcome.type === 'seven-out' ? 'craps-out' 
+          : 'normal'
+    }, ...prev]);
   };
 
   // Cleanup interval on unmount
@@ -112,54 +114,6 @@ const App: React.FC = () => {
   const handleGameStateChange = (newIsComingOut: boolean, newPoint: number | null) => {
     setIsComingOut(newIsComingOut);
     setPoint(newPoint);
-  };
-
-  const resolveBets = (rollType: 'point-made' | 'craps-out' | 'normal') => {
-    const betsToResolve = bets.map(bet => {
-      let isWinning = false;
-      
-      if (bet.areaId === 'pass-line') {
-        isWinning = rollType === 'point-made';
-      } else if (bet.areaId === 'dont-pass') {
-        isWinning = rollType === 'craps-out';
-      }
-      
-      const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
-      const tableElement = document.querySelector('.bg-felt-green');
-      
-      if (betElement && tableElement) {
-        const betRect = betElement.getBoundingClientRect();
-        const tableRect = tableElement.getBoundingClientRect();
-        
-        return {
-          ...bet,
-          isWinning,
-          position: { 
-            x: betRect.left + (betRect.width / 2),
-            y: betRect.top + (betRect.height / 2)
-          }
-        };
-      }
-      
-      return {
-        ...bet,
-        isWinning,
-        position: { x: 0, y: 0 }
-      };
-    });
-
-    setAnimatingBets(new Set(betsToResolve.map(bet => bet.areaId)));
-    setResolvingBets(betsToResolve);
-    setBets([]);
-    
-    const winnings = betsToResolve.reduce((total, bet) => {
-      if (bet.isWinning) {
-        return total + (bet.amount * 2);
-      }
-      return total;
-    }, 0);
-    
-    setBank(prev => prev + winnings);
   };
 
   const handleWinningAreas = (areas: WinningArea[]) => {
@@ -227,19 +181,6 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleRollOutcome = (outcome: RollOutcome & { total: number }) => {
-    if (!hasRolled) return;
-    
-    setRollHistory(prev => [{
-      die1: dice.die1,
-      die2: dice.die2,
-      total: outcome.total,
-      type: outcome.type === 'point-made' ? 'point-made' 
-          : outcome.type === 'seven-out' ? 'craps-out' 
-          : 'normal'
-    }, ...prev]);
-  };
-
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="flex-1 flex gap-6">
@@ -302,13 +243,8 @@ const App: React.FC = () => {
               die2={dice.die2}
               bets={bets}
               onStateChange={handleGameStateChange}
-              onRollType={(type) => {
-                if (tableRef.current) {
-                  tableRef.current.resolveBets(type);
-                }
-              }}
-              onWinningAreas={handleWinningAreas}
               onRollOutcome={handleRollOutcome}
+              onWinningAreas={handleWinningAreas}
             />
           </div>
         </div>

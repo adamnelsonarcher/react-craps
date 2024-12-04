@@ -53,7 +53,6 @@ interface Bet {
 export interface CrapsTableRef {
   handleUndo: () => void;
   handleClear: () => void;
-  resolveBets: (rollType: 'point-made' | 'craps-out' | 'normal') => void;
 }
 
 interface CrapsTableProps {
@@ -811,8 +810,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   // Expose methods to parent through ref
   useImperativeHandle(ref, () => ({
     handleUndo,
-    handleClear,
-    resolveBets
+    handleClear
   }));
 
   // Add this useEffect to set up the console command
@@ -823,72 +821,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       console.log('Dev tools button enabled');
     };
   }, []);
-
-  const resolveBets = (rollType: 'point-made' | 'craps-out' | 'normal') => {
-    console.log('=== Resolving Bets ===');
-    console.log('Roll Type:', rollType);
-    console.log('Current Bets:', bets);
-
-    const betsToResolve = bets.map(bet => {
-      let isWinning = false;
-      
-      if (bet.areaId === 'pass-line' || bet.areaId === 'pass-line-chips') {
-        isWinning = rollType === 'point-made';
-      } else if (bet.areaId === 'dont-pass' || bet.areaId === 'dont-pass-chips') {
-        if (rollType === 'point-made') {
-          isWinning = false;
-        } else if (rollType === 'craps-out') {
-          isWinning = true;
-        }
-      } else if (bet.areaId === 'come') {
-        isWinning = (dice.die1 + dice.die2 === 7 || dice.die1 + dice.die2 === 11);
-      } else if (bet.areaId === 'dont-come' || bet.areaId === 'dont-come-chips') {
-        isWinning = [2, 3].includes(dice.die1 + dice.die2);
-      } else if (bet.areaId === 'any-7') {
-        isWinning = dice.die1 + dice.die2 === 7;
-      } else if (bet.areaId.startsWith('place-') || bet.areaId.startsWith('buy-')) {
-        if (rollType === 'craps-out') {
-          isWinning = false;
-        } else {
-          isWinning = true;
-        }
-      }
-
-      const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
-      const tableElement = document.querySelector('.bg-felt-green');
-      
-      if (betElement && tableElement) {
-        const betRect = betElement.getBoundingClientRect();
-        const tableRect = tableElement.getBoundingClientRect();
-        
-        return {
-          ...bet,
-          isWinning,
-          position: { 
-            x: betRect.left + (betRect.width / 2),
-            y: betRect.top + (betRect.height / 2)
-          }
-        };
-      }
-      
-      return {
-        ...bet,
-        isWinning,
-        position: { x: 0, y: 0 }
-      };
-    });
-
-    // Update the winning bets
-    const winningBets = betsToResolve.filter(bet => bet.isWinning);
-    const losingBets = betsToResolve.filter(bet => !bet.isWinning);
-
-    // Keep winning bets on the table
-    setBets(winningBets);
-
-    // Animate losing bets away
-    setAnimatingBets(new Set(losingBets.map(bet => bet.areaId)));
-    setResolvingBets(losingBets);
-  };
 
   return (
     <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''}`}>
