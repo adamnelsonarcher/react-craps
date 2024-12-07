@@ -22,10 +22,26 @@ export const PAYOUT_TABLE = {
   },
   
   // Line bets
-  'pass-line': 1,    // 1 to 1
-  'dont-pass': 1,    // 1 to 1
+  'pass-line-chips': 1,    // 1 to 1
+  'dont-pass-chips': 1,    // 1 to 1
   'come': 1,         // 1 to 1
   'dont-come': 1,    // 1 to 1
+  
+  // Come point bets
+  'come-4': 1.8,     // Same as place 4 (9:5)
+  'come-5': 1.4,     // Same as place 5 (7:5)
+  'come-6': 1.167,   // Same as place 6 (7:6)
+  'come-8': 1.167,   // Same as place 8 (7:6)
+  'come-9': 1.4,     // Same as place 9 (7:5)
+  'come-10': 1.8,    // Same as place 10 (9:5)
+  
+  // Don't come point bets
+  'dont-come-4': 0.5,    // 1:2
+  'dont-come-5': 0.667,  // 2:3
+  'dont-come-6': 0.833,  // 5:6
+  'dont-come-8': 0.833,  // 5:6
+  'dont-come-9': 0.667,  // 2:3
+  'dont-come-10': 0.5,   // 1:2
   
   // Place bets
   'place-4': 1.8,    // 9 to 5
