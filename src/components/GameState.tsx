@@ -247,23 +247,23 @@ const GameState: React.FC<GameStateProps> = ({
           });
         });
       }
+    }
 
-      // Handle established come point bets
-      if (total === 7) {
-        // Seven out - all come point bets lose
-        [4, 5, 6, 8, 9, 10].forEach(num => {
-          losingAreas.push({ id: `come-${num}`, type: 'lose' });
-          winningAreas.push({ id: `dont-come-${num}`, type: 'win' });
-        });
-      } else {
-        // Check if we hit any come points
-        [4, 5, 6, 8, 9, 10].forEach(num => {
-          if (total === num) {
-            winningAreas.push({ id: `come-${num}`, type: 'win' });
-            losingAreas.push({ id: `dont-come-${num}`, type: 'lose' });
-          }
-        });
-      }
+    // Handle established come point bets
+    if (total === 7) {
+      // Seven out - all come point bets lose
+      [4, 5, 6, 8, 9, 10].forEach(num => {
+        losingAreas.push({ id: `come-${num}`, type: 'lose' });
+        winningAreas.push({ id: `dont-come-${num}`, type: 'win' });
+      });
+    } else {
+      // Check if we hit any come points
+      [4, 5, 6, 8, 9, 10].forEach(num => {
+        if (total === num) {
+          winningAreas.push({ id: `come-${num}`, type: 'win' });
+          losingAreas.push({ id: `dont-come-${num}`, type: 'lose' });
+        }
+      });
     }
 
     return [...winningAreas, ...losingAreas];

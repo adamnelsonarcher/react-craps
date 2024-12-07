@@ -69,6 +69,7 @@ interface CrapsTableProps {
   point: number | null;
   winningAreas?: WinningArea[];
   setDice?: (dice: { die1: number; die2: number }) => void;
+  movingBetIds: Set<string>;
 }
 
 // Move DiceControls outside CrapsTable component
@@ -210,7 +211,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   isRolling,
   point,
   winningAreas,
-  setDice
+  setDice,
+  movingBetIds,
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -786,29 +788,53 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     });
   };
 
+  // Add this helper function to check if a bet is locked
+  const isLockedBet = (betId: string, point: number | null) => {
+    // Pass line and don't pass bets are locked when point is on
+    if ((betId === 'pass-line-chips' || betId === 'dont-pass-chips') && point !== null) {
+      return true;
+    }
+    // Come point bets are always locked
+    if (betId.startsWith('come-') && betId !== 'come') {
+      return true;
+    }
+    // Don't come point bets are always locked
+    if (betId.startsWith('dont-come-') && betId !== 'dont-come') {
+      return true;
+    }
+    return false;
+  };
+
+  const handleClear = () => {
+    if (bets.length > 0) {
+      // Keep locked bets
+      const betsToKeep = bets.filter(bet => isLockedBet(bet.areaId, point));
+      const betsToRemove = bets.filter(bet => !isLockedBet(bet.areaId, point));
+      
+      const totalBets = betsToRemove.reduce((sum, bet) => sum + bet.amount, 0);
+      const newBank = bank + totalBets;
+      setBank(newBank);
+      setBetHistory(prev => [...prev, bets]);
+      setBets(betsToKeep);
+    }
+  };
+
   const handleUndo = () => {
     if (betHistory.length === 0) return;
     
     const currentBets = bets;
     const previousBets = betHistory[betHistory.length - 1];
     
-    // Keep pass line and don't pass bets if point is set
-    const betsToKeep = point !== null ? 
-      currentBets.filter(bet => 
-        bet.areaId === 'pass-line-chips' || bet.areaId === 'dont-pass-chips'
-      ) : [];
+    // Keep all locked bets from current state
+    const betsToKeep = currentBets.filter(bet => isLockedBet(bet.areaId, point));
     
     // Calculate difference for all non-locked bets
     const currentNonLockedTotal = currentBets
-      .filter(bet => 
-        bet.areaId !== 'pass-line-chips' && bet.areaId !== 'dont-pass-chips'
-      )
+      .filter(bet => !isLockedBet(bet.areaId, point))
       .reduce((sum, bet) => sum + bet.amount, 0);
     
     const previousNonLockedTotal = previousBets
-      .filter(bet => 
-        bet.areaId !== 'pass-line-chips' && bet.areaId !== 'dont-pass-chips'
-      )
+      .filter(bet => !isLockedBet(bet.areaId, point))
       .reduce((sum, bet) => sum + bet.amount, 0);
     
     const difference = currentNonLockedTotal - previousNonLockedTotal;
@@ -818,27 +844,9 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     
     setBets([
       ...betsToKeep,
-      ...previousBets.filter(bet => 
-        bet.areaId !== 'pass-line-chips' && bet.areaId !== 'dont-pass-chips'
-      )
+      ...previousBets.filter(bet => !isLockedBet(bet.areaId, point))
     ]);
     setBetHistory(prev => prev.slice(0, -1));
-  };
-
-  const handleClear = () => {
-    if (bets.length > 0) {
-      // Don't clear pass line or don't pass bets if point is set
-      const betsToKeep = point !== null ? 
-        bets.filter(bet => bet.areaId === 'pass-line-chips' || bet.areaId === 'dont-pass-chips') : [];
-      const betsToRemove = point !== null ? 
-        bets.filter(bet => bet.areaId !== 'pass-line-chips' && bet.areaId !== 'dont-pass-chips') : bets;
-      
-      const totalBets = betsToRemove.reduce((sum, bet) => sum + bet.amount, 0);
-      const newBank = bank + totalBets;
-      setBank(newBank);
-      setBetHistory(prev => [...prev, bets]);
-      setBets(betsToKeep);
-    }
   };
 
   // Add this function to handle help mode clicks
@@ -979,7 +987,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
               }}
             >
               {/* Render chip stack if there's a bet */}
-              {bets.find(bet => bet.areaId === area.id) && (
+              {bets.find(bet => bet.areaId === area.id) && !movingBetIds.has(area.id) && (
                 <ChipStack 
                   {...bets.find(bet => bet.areaId === area.id)!}
                   position={

@@ -6,7 +6,7 @@ import DiceHistory from './components/DiceHistory';
 import Dice from './components/Dice';
 import GameState from './components/GameState';
 import AnimatedChipStack from './components/AnimatedChipStack';
-import { RollOutcome, WinningArea } from './types/game';
+import { RollOutcome, WinningArea, BetMovement } from './types/game';
 
 interface DiceRoll {
   die1: number;
@@ -46,6 +46,11 @@ const App: React.FC = () => {
   const [winningAreas, setWinningAreas] = useState<WinningArea[]>([]);
   const winningAreasTimeout = useRef<NodeJS.Timeout | null>(null);
   const [hasRolled, setHasRolled] = useState(false);
+  const [movingBets, setMovingBets] = useState<(Bet & { 
+    fromPosition: { x: number; y: number };
+    toPosition: { x: number; y: number };
+  })[]>([]);
+  const [movingBetIds, setMovingBetIds] = useState<Set<string>>(new Set());
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -182,6 +187,77 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const handleBetMovement = (movement: BetMovement) => {
+    // If this bet is already being moved, ignore
+    if (movingBetIds.has(movement.fromId)) return;
+
+    const fromElement = document.querySelector(`[data-bet-id="${movement.fromId}"]`);
+    const toElement = document.querySelector(`[data-bet-id="${movement.toId}"]`);
+    const fromChip = fromElement?.querySelector('.chip-container');
+    
+    // Instead of looking for an existing chip, just use the betting area's position
+    if (fromChip && toElement) {
+      const fromRect = fromChip.getBoundingClientRect();
+      const toRect = toElement.getBoundingClientRect();
+
+      // Mark this bet as moving
+      setMovingBetIds(prev => new Set(prev).add(movement.fromId));
+
+      // Add to moving bets
+      setMovingBets(prev => [...prev, {
+        areaId: movement.fromId,
+        amount: movement.amount,
+        color: movement.color,
+        count: movement.count,
+        fromPosition: {
+          x: fromRect.left + (fromRect.width / 2),
+          y: fromRect.top + (fromRect.height / 2)
+        },
+        toPosition: {
+          x: toRect.left + (toRect.width / 2),
+          y: toRect.top + (toRect.height / 2)
+        }
+      }]);
+
+      // After animation completes
+      setTimeout(() => {
+        // Remove the original bet and add the new one in a single update
+        setBets(currentBets => {
+          const remainingBets = currentBets.filter(bet => bet.areaId !== movement.fromId);
+          return [...remainingBets, {
+            areaId: movement.toId,
+            amount: movement.amount,
+            color: movement.color,
+            count: movement.count
+          }];
+        });
+        
+        // Clean up moving states
+        setMovingBets(prev => prev.filter(bet => bet.areaId !== movement.fromId));
+        setMovingBetIds(prev => {
+          const next = new Set(prev);
+          next.delete(movement.fromId);
+          return next;
+        });
+      }, 500);
+    } else {
+      handleBetMovementImmediate(movement);
+    }
+  };
+
+  const handleBetMovementImmediate = (movement: BetMovement) => {
+    setBets(currentBets => {
+      const remainingBets = currentBets.filter(bet => bet.areaId !== movement.fromId);
+      const newBet = {
+        areaId: movement.toId,
+        amount: movement.amount,
+        color: movement.color,
+        count: movement.count
+      };
+      return [...remainingBets, newBet];
+    });
+  };
+
   return (
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="flex-1 flex gap-6">
@@ -235,6 +311,7 @@ const App: React.FC = () => {
                 isRolling={isRolling}
                 point={point}
                 winningAreas={winningAreas}
+                movingBetIds={movingBetIds}
               />
               {/* Dice in top right */}
               <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
@@ -258,6 +335,7 @@ const App: React.FC = () => {
                 onStateChange={handleGameStateChange}
                 onRollOutcome={handleRollOutcome}
                 onWinningAreas={handleWinningAreas}
+                onMoveBet={handleBetMovement}
               />
             </div>
           </div>
@@ -311,6 +389,16 @@ const App: React.FC = () => {
             }}
           />
         ) : null
+      ))}
+      {movingBets.map((bet, index) => (
+        <AnimatedChipStack
+          key={`moving-${bet.areaId}-${index}`}
+          amount={bet.amount}
+          color={bet.color}
+          position={bet.fromPosition}
+          toPosition={bet.toPosition}
+          isMoving={true}
+        />
       ))}
     </div>
   );
