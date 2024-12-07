@@ -128,8 +128,31 @@ const GameState: React.FC<GameStateProps> = ({
           winningAreas.push({ id: `lay-${num}`, type: 'win' });
         });
       } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
-        winningAreas.push({ id: `place-${total}`, type: 'win' });
-        losingAreas.push({ id: `lay-${total}`, type: 'lose' });
+        // Point number rolled - move the bet to the come/don't come point
+        const comeBets = bets.filter(bet => bet.areaId === 'come');
+        const dontComeBets = bets.filter(bet => bet.areaId === 'dont-come');
+
+        // Move come bets
+        comeBets.forEach(bet => {
+          onMoveBet?.({
+            fromId: 'come',
+            toId: `come-${total}`,
+            amount: bet.amount,
+            color: bet.color,
+            count: bet.count
+          });
+        });
+
+        // Move don't come bets
+        dontComeBets.forEach(bet => {
+          onMoveBet?.({
+            fromId: 'dont-come',
+            toId: `dont-come-${total}`,
+            amount: bet.amount,
+            color: bet.color,
+            count: bet.count
+          });
+        });
       }
     }
 

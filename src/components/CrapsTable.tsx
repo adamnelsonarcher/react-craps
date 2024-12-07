@@ -190,13 +190,7 @@ const NON_HIGHLIGHTING_AREAS = [
   'come-6',
   'come-8',
   'come-9',
-  'come-10',
-  'dont-come-4',
-  'dont-come-5',
-  'dont-come-6',
-  'dont-come-8',
-  'dont-come-9',
-  'dont-come-10'
+  'come-10'
 ];
 
 const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
