@@ -330,12 +330,23 @@ const App: React.FC = () => {
         // Remove the original bet and add the new one in a single update
         setBets(currentBets => {
           const remainingBets = currentBets.filter(bet => bet.areaId !== movement.fromId);
-          return [...remainingBets, {
+          
+          // Check if a bet already exists in the destination
+          const existingBet = remainingBets.find(bet => bet.areaId === movement.toId);
+          if (existingBet) {
+            // If it exists, don't add a new bet
+            return remainingBets;
+          }
+          
+          // If no existing bet, add the new one
+          const newBets = [...remainingBets, {
             areaId: movement.toId,
             amount: movement.amount,
             color: movement.color,
             count: movement.count
           }];
+          console.log('Bets after movement:', newBets);
+          return newBets;
         });
         
         // Clean up moving states
