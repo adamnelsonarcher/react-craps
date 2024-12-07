@@ -619,7 +619,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     // Add don't come point areas right above come points
     {
       id: 'dont-come-4',
-      name: 'Dont Come 4',
+      name: "Don't Come 4",
       style: {
         top: `${16.3 - 1}%`,  // Above come points
         left: `${22.6 - 1}%`,
@@ -630,7 +630,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     },
     {
       id: 'dont-come-5',
-      name: 'Dont Come 5',
+      name: "Don't Come 5",
       style: {
         top: `${16.3 - 1}%`,
         left: `${31.20 - 1}%`,
@@ -641,7 +641,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     },
     {
       id: 'dont-come-6',
-      name: 'Dont Come 6',
+      name: "Don't Come 6",
       style: {
         top: `${16.3 - 1}%`,
         left: `${39.7 - 1}%`,
@@ -652,7 +652,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     },
     {
       id: 'dont-come-8',
-      name: 'Dont Come 8',
+      name: "Don't Come 8",
       style: {
         top: `${16.3 - 1}%`,
         left: `${47.9 - 1}%`,
@@ -663,7 +663,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     },
     {
       id: 'dont-come-9',
-      name: 'Dont Come 9',
+      name: "Don't Come 9",
       style: {
         top: `${16.3 - 1}%`,
         left: `${56.4 - 1}%`,
@@ -674,7 +674,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     },
     {
       id: 'dont-come-10',
-      name: 'Dont Come 10',
+      name: "Don't Come 10",
       style: {
         top: `${16.3 - 1}%`,
         left: `${64.4 - 1}%`,
