@@ -105,6 +105,12 @@ const GameState: React.FC<GameStateProps> = ({
         );
       }
     } else if (point !== null) {
+
+      winningAreas.push({ id: `place-${total}`, type: 'win' });
+      winningAreas.push({ id: `buy-${total}`, type: 'win' });
+      winningAreas.push({ id: `come-${total}`, type: 'win' });
+      losingAreas.push({ id: `lay-${total}`, type: 'lose' });
+
       if (total === point) {
         winningAreas.push(
           { id: 'pass-line', type: 'win' },
@@ -114,8 +120,6 @@ const GameState: React.FC<GameStateProps> = ({
         losingAreas.push({ id: 'dont-pass-chips', type: 'lose' });
         losingAreas.push({ id: 'dont-come', type: 'lose' });
         losingAreas.push({ id: 'dont-come-chips', type: 'lose' });
-        losingAreas.push({ id: `lay-${total}`, type: 'lose' });
-        winningAreas.push({ id: `place-${total}`, type: 'win' });
       } else if (total === 7) {
         losingAreas.push(
           { id: 'pass-line', type: 'lose' },
@@ -125,6 +129,7 @@ const GameState: React.FC<GameStateProps> = ({
         // All place bets lose on seven
         [4, 5, 6, 8, 9, 10].forEach(num => {
           losingAreas.push({ id: `place-${num}`, type: 'lose' });
+          losingAreas.push({ id: `buy-${num}`, type: 'lose' });
           winningAreas.push({ id: `lay-${num}`, type: 'win' });
         });
       } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
@@ -280,13 +285,8 @@ const GameState: React.FC<GameStateProps> = ({
         winningAreas.push({ id: `dont-come-${num}`, type: 'win' });
       });
     } else {
-      // Check if we hit any come points
-      [4, 5, 6, 8, 9, 10].forEach(num => {
-        if (total === num) {
-          winningAreas.push({ id: `come-${num}`, type: 'win' });
-          losingAreas.push({ id: `dont-come-${num}`, type: 'lose' });
-        }
-      });
+      winningAreas.push({ id: `come-${total}`, type: 'win' });
+      losingAreas.push({ id: `dont-come-${total}`, type: 'lose' });
     }
 
     return [...winningAreas, ...losingAreas];
