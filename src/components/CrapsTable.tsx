@@ -731,6 +731,9 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   };
 
   const handleAreaClick = (areaId: string) => {
+    // Add early return if rolling
+    if (isRolling) return;
+    
     if (!selectedChipValue) return;
     if (selectedChipValue > bank) return;
     
@@ -961,8 +964,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       )}
 
       <div 
-        className="absolute inset-0"
-        //style={{ zIndex: 1 }}
+        className={`absolute inset-0 ${isRolling ? 'pointer-events-none' : ''}`}
+        style={{ zIndex: 1 }}
         onMouseMove={handleMouseMove}
         onClick={handleGlobalClick}
       >
