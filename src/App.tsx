@@ -7,6 +7,7 @@ import Dice from './components/Dice';
 import GameState from './components/GameState';
 import AnimatedChipStack from './components/AnimatedChipStack';
 import { RollOutcome, WinningArea, BetMovement } from './types/game';
+import { PAYOUT_TABLE } from './utils/payouts';
 
 interface DiceRoll {
   die1: number;
@@ -133,7 +134,84 @@ const App: React.FC = () => {
     
     setWinningAreas(areas);
     
-    // Only remove chips from losing areas
+    // Calculate dice total
+    const total = dice.die1 + dice.die2;
+    
+    // Process winning bets first
+    const winningAreas = areas.filter(area => area.type === 'win');
+    if (winningAreas.length > 0) {
+      // Get positions of winning bets for animation
+      const winningBets = bets.filter(bet => 
+        winningAreas.some(area => area.id === bet.areaId)
+      ).map(bet => {
+        const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
+        const chipElement = betElement?.querySelector('.absolute');
+        const tableElement = document.querySelector('.bg-felt-green');
+        
+        if (chipElement && tableElement) {
+          const chipRect = chipElement.getBoundingClientRect();
+          
+          // Calculate winnings before removing the bet
+          const payout = PAYOUT_TABLE[bet.areaId as keyof typeof PAYOUT_TABLE];
+          if (payout) {
+            let winAmount = 0;
+            
+            if (typeof payout === 'number') {
+              winAmount = bet.amount * payout;
+            } else if ('base' in payout) {
+              if (bet.areaId === 'field') {
+                const baseWin = bet.amount * payout.base;
+                if (total === 2) {
+                  winAmount = bet.amount * payout['2'];
+                } else if (total === 12) {
+                  winAmount = bet.amount * payout['12'];
+                } else {
+                  winAmount = baseWin;
+                }
+              }
+            } else if ('multiplier' in payout) {
+              winAmount = bet.amount * payout.multiplier;
+              const commission = bet.amount * payout.commission;
+              winAmount -= commission;
+            }
+            
+            // Add original bet amount back plus winnings
+            setBank(prev => prev + bet.amount + winAmount);
+          }
+
+          return {
+            ...bet,
+            isWinning: true,
+            position: { 
+              x: chipRect.left + (chipRect.width / 2),
+              y: chipRect.top + (chipRect.height / 2)
+            }
+          };
+        }
+        
+        return {
+          ...bet,
+          isWinning: true,
+          position: { x: 0, y: 0 }
+        };
+      });
+
+      // Set the bets that are being animated
+      setAnimatingBets(prev => 
+        new Set([
+          ...Array.from(prev), 
+          ...winningBets.map(bet => bet.areaId)
+        ])
+      );
+      setResolvingBets(prev => [...prev, ...winningBets]);
+
+      // Remove the winning bets from the table
+      setBets(currentBets => 
+        currentBets.filter(bet => !winningAreas.some(area => area.id === bet.areaId))
+      );
+    }
+    
+    // Process losing bets (existing code)
     const losingAreas = areas.filter(area => area.type === 'lose');
     if (losingAreas.length > 0) {
       // Get the positions of losing bets for animation
