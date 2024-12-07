@@ -185,7 +185,7 @@ const App: React.FC = () => {
     <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       <div className="flex-1 flex gap-6">
         {/* Main container */}
-        <div className="flex flex-row gap-4 h-full max-w-[1600px] mx-auto p-4">
+        <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto p-4">
           {/* Left side - Betting Controls */}
           <div className="flex-[1]">
             <div className={`flex-1 flex flex-col gap-4 min-w-[8vw] max-w-[23vw] relative ${helpMode ? 'pointer-events-none' : ''}`}>
@@ -270,8 +270,9 @@ const App: React.FC = () => {
               ) : (
                 rollHistory.slice(0, Math.min(15, rollHistory.length)).map((roll, index) => (
                   <div 
-                    key={`roll-${roll.die1}-${roll.die2}-${index}`}
-                    className={`flex justify-center items-center gap-1 ${index === 0 && !isRolling ? 'animate-slideIn' : ''} 
+                    key={`roll-${rollHistory.length - index}`}
+                    className={`flex justify-center items-center gap-1 
+                               ${index === 0 ? 'animate-slideIn' : ''} 
                                p-0.5 rounded-md
                                ${roll.type === 'craps-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
                                ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}

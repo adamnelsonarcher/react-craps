@@ -24,7 +24,8 @@ module.exports = {
         'table': 'inset 0 0 50px rgba(0, 0, 0, 0.5)',
       },
       animation: {
-        'flash-win': 'flash-win 3s ease-out'
+        'flash-win': 'flash-win 3s ease-out',
+        slideIn: 'slideIn 0.3s ease-out forwards'
       },
       height: {
         'screen': '100vh',
@@ -37,7 +38,7 @@ module.exports = {
       },
       keyframes: {
         slideIn: {
-          '0%': { transform: 'translateY(100%)', opacity: '0' },
+          '0%': { transform: 'translateY(-100%)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' }
         },
         'flash-win': {
