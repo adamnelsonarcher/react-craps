@@ -45,7 +45,11 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
     };
   
   return (
-    <div className="absolute" style={{ ...positionStyle, width: chipSize, height: chipSize }}>
+    <div 
+      className="absolute chip-container"
+      style={{ ...positionStyle, width: chipSize, height: chipSize }}
+      data-position={position}
+    >
       {/* Stack of chips */}
       {chips.map((_, index) => (
         <div

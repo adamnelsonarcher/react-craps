@@ -132,18 +132,19 @@ const App: React.FC = () => {
         losingAreas.some(area => area.id === bet.areaId)
       ).map(bet => {
         const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
+        const chipElement = betElement?.querySelector('.absolute'); // Get the chip stack container
         const tableElement = document.querySelector('.bg-felt-green');
         
-        if (betElement && tableElement) {
-          const betRect = betElement.getBoundingClientRect();
+        if (chipElement && tableElement) {
+          const chipRect = chipElement.getBoundingClientRect();
           const tableRect = tableElement.getBoundingClientRect();
           
           return {
             ...bet,
             isWinning: false,
             position: { 
-              x: betRect.left + (betRect.width / 2),
-              y: betRect.top + (betRect.height / 2)
+              x: chipRect.left + (chipRect.width / 2),
+              y: chipRect.top + (chipRect.height / 2)
             }
           };
         }
