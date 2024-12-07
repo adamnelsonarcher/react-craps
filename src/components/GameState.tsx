@@ -114,7 +114,7 @@ const GameState: React.FC<GameStateProps> = ({
       if (total === point) {
         winningAreas.push(
           { id: 'pass-line', type: 'win' },
-          //{ id: 'pass-line-chips', type: 'win' }
+          { id: 'pass-line-chips', type: 'win' }
         );
         losingAreas.push({ id: 'dont-pass', type: 'lose' });
         losingAreas.push({ id: 'dont-pass-chips', type: 'lose' });
