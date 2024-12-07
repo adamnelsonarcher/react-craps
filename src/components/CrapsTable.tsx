@@ -70,6 +70,8 @@ interface CrapsTableProps {
   winningAreas?: WinningArea[];
   setDice?: (dice: { die1: number; die2: number }) => void;
   movingBetIds: Set<string>;
+  betHistory: Bet[][];
+  setBetHistory: (history: Bet[][] | ((prev: Bet[][]) => Bet[][])) => void;
 }
 
 // Move DiceControls outside CrapsTable component
@@ -207,6 +209,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   winningAreas,
   setDice,
   movingBetIds,
+  betHistory,
+  setBetHistory,
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -214,7 +218,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   const [clickLog, setClickLog] = useState<string[]>([]);
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
-  const [betHistory, setBetHistory] = useState<Bet[][]>([]);  // Stack of bet states
   const [quickRoll, setQuickRoll] = useState(false);
   const [showDevToolsButton, setShowDevToolsButton] = useState(false);
   const [helpText, setHelpText] = useState<string | null>(null);

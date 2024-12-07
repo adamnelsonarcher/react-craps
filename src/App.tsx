@@ -51,6 +51,7 @@ const App: React.FC = () => {
     toPosition: { x: number; y: number };
   })[]>([]);
   const [movingBetIds, setMovingBetIds] = useState<Set<string>>(new Set());
+  const [betHistory, setBetHistory] = useState<Bet[][]>([]);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -101,6 +102,9 @@ const App: React.FC = () => {
           : outcome.type === 'seven-out' ? 'craps-out' 
           : 'normal'
     }, ...prev]);
+
+    // Clear bet history after each roll
+    setBetHistory([]);
   };
 
   // Cleanup interval on unmount
@@ -312,6 +316,8 @@ const App: React.FC = () => {
                 point={point}
                 winningAreas={winningAreas}
                 movingBetIds={movingBetIds}
+                betHistory={betHistory}
+                setBetHistory={setBetHistory}
               />
               {/* Dice in top right */}
               <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
