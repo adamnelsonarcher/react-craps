@@ -222,15 +222,20 @@ const GameState: React.FC<GameStateProps> = ({
       });
     }
 
-    // Come bets - only active after a point is established
+    // Come bets - only process when point is established (not coming out)
     if (!isComingOut) {
-      // For new come bets
       if (total === 7 || total === 11) {
+        // Natural - come wins, don't come loses
         winningAreas.push({ id: 'come', type: 'win' });
+        losingAreas.push({ id: 'dont-come', type: 'lose' });
       } else if (total === 2 || total === 3 || total === 12) {
+        // Craps - come loses, don't come wins (except push on 12 for don't come)
         losingAreas.push({ id: 'come', type: 'lose' });
+        if (total !== 12) {  // Don't come wins on 2 and 3, pushes on 12
+          winningAreas.push({ id: 'dont-come', type: 'win' });
+        }
       } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
-        // Instead of marking come as losing, move the bet
+        // Point number rolled - move the bet to the come point
         const comeBets = bets.filter(bet => bet.areaId === 'come');
         comeBets.forEach(bet => {
           onMoveBet?.({
@@ -240,6 +245,23 @@ const GameState: React.FC<GameStateProps> = ({
             color: bet.color,
             count: bet.count
           });
+        });
+      }
+
+      // Handle established come point bets
+      if (total === 7) {
+        // Seven out - all come point bets lose
+        [4, 5, 6, 8, 9, 10].forEach(num => {
+          losingAreas.push({ id: `come-${num}`, type: 'lose' });
+          winningAreas.push({ id: `dont-come-${num}`, type: 'win' });
+        });
+      } else {
+        // Check if we hit any come points
+        [4, 5, 6, 8, 9, 10].forEach(num => {
+          if (total === num) {
+            winningAreas.push({ id: `come-${num}`, type: 'win' });
+            losingAreas.push({ id: `dont-come-${num}`, type: 'lose' });
+          }
         });
       }
     }

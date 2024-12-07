@@ -721,11 +721,14 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     // Prevent betting on chip areas directly
     if (areaId.endsWith('-chips')) return;
     
-    // Prevent betting on come/don't come point numbers
+    // Prevent betting on come/don't come point numbers directly
     if (areaId.startsWith('come-') || areaId.startsWith('dont-come-')) return;
     
     // Prevent pass line and don't pass bets after point is set
     if ((areaId === 'pass-line' || areaId === 'dont-pass') && point !== null) return;
+    
+    // Prevent come and don't come bets before point is set
+    if ((areaId === 'come' || areaId === 'dont-come') && point === null) return;
     
     const chipAreaId = areaId === 'pass-line' ? 'pass-line-chips' :
                       areaId === 'dont-pass' ? 'dont-pass-chips' :
