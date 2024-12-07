@@ -8,6 +8,8 @@ import GameState from './components/GameState';
 import AnimatedChipStack from './components/AnimatedChipStack';
 import { RollOutcome, WinningArea, BetMovement } from './types/game';
 import { PAYOUT_TABLE } from './utils/payouts';
+import ProfitDisplay from './components/ProfitDisplay';
+import AnimatedBalance from './components/AnimatedBalance';
 
 interface DiceRoll {
   die1: number;
@@ -54,6 +56,7 @@ const App: React.FC = () => {
   const [movingBetIds, setMovingBetIds] = useState<Set<string>>(new Set());
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);
   const [keepWinningBets, setKeepWinningBets] = useState(false);
+  const [lastProfit, setLastProfit] = useState(0);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -138,6 +141,8 @@ const App: React.FC = () => {
     // Calculate dice total
     const total = dice.die1 + dice.die2;
     
+    let totalProfit = 0; // Track total profit for this roll
+    
     // Process winning bets first
     const winningAreas = areas.filter(area => area.type === 'win');
     if (winningAreas.length > 0) {
@@ -176,11 +181,14 @@ const App: React.FC = () => {
               winAmount -= commission;
             }
             
-            // Add only the winnings (not the original bet) if keeping bets up
+            // Add to total profit
+            totalProfit += winAmount;
+            
+            // Add winnings to bank
             if (keepWinningBets && !bet.areaId.startsWith('come-') && !bet.areaId.startsWith('dont-come-')) {
-              setBank(prev => prev + winAmount); // Only add winnings
+              setBank(prev => prev + winAmount);
             } else {
-              setBank(prev => prev + bet.amount + winAmount); // Add original bet + winnings
+              setBank(prev => prev + bet.amount + winAmount);
             }
           }
 
@@ -200,6 +208,9 @@ const App: React.FC = () => {
           position: { x: 0, y: 0 }
         };
       });
+
+      // Set the profit for display
+      setLastProfit(totalProfit);
 
       // Only animate and remove specific bets
       const betsToRemove = winningBets.filter(bet => 
@@ -365,10 +376,17 @@ const App: React.FC = () => {
               
               <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
                 <div className="w-[200px] text-left">
-                  <span className="text-2xl text-green-400 font-bold">Bank: ${bank.toLocaleString()}</span>
+                  <span className="text-2xl text-green-400 font-bold">
+                    Bank: <AnimatedBalance 
+                      value={bank} 
+                      animate={lastProfit > 0}
+                    />
+                  </span>
                 </div>
                 <div className="w-[200px] text-right">
-                  <span className="text-2xl text-yellow-400 font-bold">Wager: ${calculateTotalWager(bets).toLocaleString()}</span>
+                  <span className="text-2xl text-yellow-400 font-bold">
+                    Wager: ${calculateTotalWager(bets).toLocaleString()}
+                  </span>
                 </div>
               </div>
               
@@ -378,8 +396,6 @@ const App: React.FC = () => {
                 onUndo={() => tableRef.current?.handleUndo()}
                 onClear={() => tableRef.current?.handleClear()}
                 bank={bank}
-                keepWinningBets={keepWinningBets}
-                onKeepWinningBetsChange={setKeepWinningBets}
               />
               
               <DiceArea 
@@ -388,6 +404,16 @@ const App: React.FC = () => {
                 quickRoll={quickRoll}
                 onQuickRollChange={setQuickRoll}
               />
+
+              <label className="bg-gray-800/50 rounded-lg p-4 backdrop-blur-sm flex items-center gap-2 text-white cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={keepWinningBets}
+                  onChange={(e) => setKeepWinningBets(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                Keep Winning Bets Up
+              </label>
             </div>
           </div>
 
@@ -435,6 +461,10 @@ const App: React.FC = () => {
                 onRollOutcome={handleRollOutcome}
                 onWinningAreas={handleWinningAreas}
                 onMoveBet={handleBetMovement}
+              />
+              <ProfitDisplay 
+                amount={lastProfit}
+                onComplete={() => setLastProfit(0)}
               />
             </div>
           </div>
