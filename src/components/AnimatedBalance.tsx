@@ -12,24 +12,31 @@ const AnimatedBalance: React.FC<AnimatedBalanceProps> = ({ value, className, ani
   
   useEffect(() => {
     if (animate) {
-      // Linear animation with fixed duration
       frameAnimate(motionValue, value, {
-        duration: 0.8,  // Half second duration
-        ease: "linear"  // Linear interpolation
+        duration: 0.8,
+        ease: "linear"
       });
     } else {
-      // Instant update
       motionValue.set(value);
     }
   }, [value, animate, motionValue]);
 
-  const formattedValue = useTransform(motionValue, (latest) => {
-    return `$${Math.floor(latest).toLocaleString()}`;
+  const dollars = useTransform(motionValue, (latest) => {
+    const parts = latest.toFixed(2).split('.');
+    return `$${parseInt(parts[0]).toLocaleString()}`;
+  });
+
+  const cents = useTransform(motionValue, (latest) => {
+    const parts = latest.toFixed(2).split('.');
+    return `.${parts[1]}`;
   });
 
   return (
     <motion.span className={className}>
-      {formattedValue}
+      <motion.span>{dollars}</motion.span>
+      <motion.span className="text-[0.7em] opacity-75">
+        {cents}
+      </motion.span>
     </motion.span>
   );
 };

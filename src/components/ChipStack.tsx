@@ -20,7 +20,7 @@ const CHIP_VALUES = [
 ];
 
 const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId, isOff = false, isLocked = false }) => {
-  console.log('ChipStack rendered with:', { amount, position, areaId });
+  // console.log('ChipStack rendered with:', { amount, position, areaId });
   
   const optimalChip = CHIP_VALUES.find(chip => amount >= chip.value) || CHIP_VALUES[CHIP_VALUES.length - 1];
   const chipCount = Math.min(5, Math.ceil(amount / optimalChip.value));
