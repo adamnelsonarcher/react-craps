@@ -881,6 +881,23 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     };
   }, []);
 
+  // Add this helper function to check if an area is accessible
+  const isAreaAccessible = (areaId: string): boolean => {
+    // Can't bet on chip areas directly
+    if (areaId.endsWith('-chips')) return false;
+    
+    // Can't bet on come/don't come point numbers directly
+    if (areaId.startsWith('come-') || areaId.startsWith('dont-come-')) return false;
+    
+    // Can't bet on pass line or don't pass after point is set
+    if ((areaId === 'pass-line' || areaId === 'dont-pass') && point !== null) return false;
+    
+    // Can't bet on come or don't come before point is set
+    if ((areaId === 'come' || areaId === 'dont-come') && point === null) return false;
+
+    return true;
+  };
+
   return (
     <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''}`}>
       {/* Hover Indicator */}
@@ -964,10 +981,14 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
               style={{
                 ...area.style,
                 backgroundColor: !shouldHighlight && hoveredArea === area.id 
-                  ? 'rgba(255, 255, 255, 0.1)' 
+                  ? (isAreaAccessible(area.id) 
+                      ? 'rgba(255, 255, 255, 0.1)' 
+                      : 'rgba(255, 0, 0, 0.1)')
                   : 'transparent',
                 border: hoveredArea === area.id 
-                  ? '2px solid rgba(255, 255, 255, 0.3)' 
+                  ? `2px solid ${isAreaAccessible(area.id) 
+                      ? 'rgba(255, 255, 255, 0.1)' 
+                      : 'rgba(255, 0, 0, 0.1)'}`
                   : '2px solid transparent',
                 pointerEvents: 'all',
               }}
