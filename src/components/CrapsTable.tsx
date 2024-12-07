@@ -181,6 +181,23 @@ const Chip: React.FC<ChipProps> = ({ color, selected, children, onClick }) => (
   </div>
 );
 
+const NON_HIGHLIGHTING_AREAS = [
+  'pass-line-chips',
+  'dont-pass-chips',
+  'come-4',
+  'come-5',
+  'come-6',
+  'come-8',
+  'come-9',
+  'come-10',
+  'dont-come-4',
+  'dont-come-5',
+  'dont-come-6',
+  'dont-come-8',
+  'dont-come-9',
+  'dont-come-10'
+];
+
 const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({ 
   selectedChipValue, 
   bank, 
@@ -931,16 +948,17 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
           const isWinning = winningAreas?.some(
             winArea => winArea.id === area.id && winArea.type === 'win'
           );
+          const shouldHighlight = isWinning && !NON_HIGHLIGHTING_AREAS.includes(area.id);
 
           return (
             <div
               key={area.id}
               className={`absolute cursor-pointer transition-all duration-200
-                          ${isWinning ? 'animate-flash-win bg-[rgba(255,255,200,0.25)]' : ''}`}
+                          ${shouldHighlight ? 'animate-flash-win bg-[rgba(255,255,200,0.25)]' : ''}`}
               data-bet-id={area.id}
               style={{
                 ...area.style,
-                backgroundColor: !isWinning && hoveredArea === area.id 
+                backgroundColor: !shouldHighlight && hoveredArea === area.id 
                   ? 'rgba(255, 255, 255, 0.1)' 
                   : 'transparent',
                 border: hoveredArea === area.id 
