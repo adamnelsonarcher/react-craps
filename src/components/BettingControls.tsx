@@ -51,6 +51,8 @@ interface BettingControlsProps {
   onUndo: () => void;
   onClear: () => void;
   bank: number;
+  keepWinningBets: boolean;
+  onKeepWinningBetsChange: (value: boolean) => void;
 }
 
 const BettingControls: React.FC<BettingControlsProps> = ({ 
@@ -58,7 +60,9 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   selectedChipValue,
   onUndo,
   onClear,
-  bank
+  bank,
+  keepWinningBets,
+  onKeepWinningBetsChange
 }) => {
   const chipConfigs: ChipConfig[] = [
     { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-300' },
@@ -85,6 +89,15 @@ const BettingControls: React.FC<BettingControlsProps> = ({
           );
         })}
       </div>
+      <label className="flex items-center gap-2 text-white cursor-pointer">
+        <input
+          type="checkbox"
+          checked={keepWinningBets}
+          onChange={(e) => onKeepWinningBetsChange(e.target.checked)}
+          className="w-4 h-4 rounded"
+        />
+        Keep Winning Bets Up
+      </label>
       <div className="grid grid-cols-2 gap-3">
         <button 
           className="btn bg-yellow-600 text-white hover:bg-yellow-500 

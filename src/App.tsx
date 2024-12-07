@@ -53,6 +53,7 @@ const App: React.FC = () => {
   })[]>([]);
   const [movingBetIds, setMovingBetIds] = useState<Set<string>>(new Set());
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);
+  const [keepWinningBets, setKeepWinningBets] = useState(false);
 
   const handleRoll = () => {
     if (isRolling) return;
@@ -175,8 +176,12 @@ const App: React.FC = () => {
               winAmount -= commission;
             }
             
-            // Add original bet amount back plus winnings
-            setBank(prev => prev + bet.amount + winAmount);
+            // Add only the winnings (not the original bet) if keeping bets up
+            if (keepWinningBets && !bet.areaId.startsWith('come-') && !bet.areaId.startsWith('dont-come-')) {
+              setBank(prev => prev + winAmount); // Only add winnings
+            } else {
+              setBank(prev => prev + bet.amount + winAmount); // Add original bet + winnings
+            }
           }
 
           return {
@@ -196,19 +201,27 @@ const App: React.FC = () => {
         };
       });
 
-      // Set the bets that are being animated
-      setAnimatingBets(prev => 
-        new Set([
-          ...Array.from(prev), 
-          ...winningBets.map(bet => bet.areaId)
-        ])
+      // Only animate and remove specific bets
+      const betsToRemove = winningBets.filter(bet => 
+        bet.areaId.startsWith('come-') || 
+        bet.areaId.startsWith('dont-come-') || 
+        !keepWinningBets
       );
-      setResolvingBets(prev => [...prev, ...winningBets]);
 
-      // Remove the winning bets from the table
-      setBets(currentBets => 
-        currentBets.filter(bet => !winningAreas.some(area => area.id === bet.areaId))
-      );
+      if (betsToRemove.length > 0) {
+        setAnimatingBets(prev => 
+          new Set([
+            ...Array.from(prev), 
+            ...betsToRemove.map(bet => bet.areaId)
+          ])
+        );
+        setResolvingBets(prev => [...prev, ...betsToRemove]);
+
+        // Remove only specific bets from the table
+        setBets(currentBets => 
+          currentBets.filter(bet => !betsToRemove.some(removeBet => removeBet.areaId === bet.areaId))
+        );
+      }
     }
     
     // Process losing bets (existing code)
@@ -365,6 +378,8 @@ const App: React.FC = () => {
                 onUndo={() => tableRef.current?.handleUndo()}
                 onClear={() => tableRef.current?.handleClear()}
                 bank={bank}
+                keepWinningBets={keepWinningBets}
+                onKeepWinningBetsChange={setKeepWinningBets}
               />
               
               <DiceArea 
