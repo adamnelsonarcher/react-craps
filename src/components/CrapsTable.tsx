@@ -73,6 +73,7 @@ interface CrapsTableProps {
   betHistory: Bet[][];
   setBetHistory: (history: Bet[][] | ((prev: Bet[][]) => Bet[][])) => void;
   onPredeterminedRoll: (roll: { die1: number; die2: number }) => void;
+  onDeleteBet?: (betId: string) => void;
 }
 
 // Move DiceControls outside CrapsTable component
@@ -213,6 +214,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   betHistory,
   setBetHistory,
   onPredeterminedRoll,
+  onDeleteBet,
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -225,6 +227,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   const [helpText, setHelpText] = useState<string | null>(null);
   const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
   const [resolvingBets, setResolvingBets] = useState<(Bet & { isWinning: boolean; position: { x: number; y: number } })[]>([]);
+  const [deleteMode, setDeleteMode] = useState(false);
 
   // Constants based on your measurements for 4
   const numberWidth = 29.92 - 21.67;  // ~8.25%
@@ -903,8 +906,26 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     return true;
   };
 
+  // Add handler for chip click in delete mode
+  const handleChipClick = (betId: string) => {
+    if (!deleteMode) return;
+    if (isLockedBet(betId, point)) return; // Can't delete locked bets
+    
+    // Return bet amount to bank
+    const bet = bets.find(b => b.areaId === betId);
+    if (bet) {
+      const newBank = bank + bet.amount;
+      setBank(newBank);
+      setBets((prev: Bet[]) => prev.filter(b => b.areaId !== betId));
+      setBetHistory((prev: Bet[][]) => [...prev, bets]);
+    }
+    
+    // Optional: Turn off delete mode after successful deletion
+    setDeleteMode(false);
+  };
+
   return (
-    <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''}`}>
+    <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''} ${deleteMode ? 'cursor-pointer' : ''}`}>
       {/* Hover Indicator */}
       <div className="absolute -top-12 left-0 right-0 flex justify-center z-[900]">
         {hoveredArea && (
@@ -965,6 +986,22 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
         </div>
       )}
 
+      {/* Add Delete Mode Button */}
+      <button 
+        className={`absolute bottom-4 left-28 z-50 px-4 h-8 rounded-full 
+                    flex items-center justify-center gap-2
+                    ${deleteMode ? 'bg-red-500' : 'bg-gray-600'} 
+                    text-white font-bold text-sm
+                    hover:bg-opacity-90 transition-colors
+                    ring-2 ring-white/50 shadow-lg`}
+        onClick={() => {
+          setDeleteMode(!deleteMode);
+          setHelpMode(false); // Turn off help mode if it's on
+        }}
+      >
+        {deleteMode ? 'Cancel Delete' : 'Delete Bet'}
+      </button>
+
       <div 
         className={`absolute inset-0 ${isRolling ? 'pointer-events-none' : ''}`}
         style={{ zIndex: 1 }}
@@ -1011,25 +1048,33 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
             >
               {/* Render chip stack if there's a bet */}
               {bets.find(bet => bet.areaId === area.id) && !movingBetIds.has(area.id) && (
-                <ChipStack 
-                  {...bets.find(bet => bet.areaId === area.id)!}
-                  position={
-                    area.id === 'pass-line' || area.id === 'dont-pass'
-                      ? 'custom'
-                      : area.id.startsWith('place-') ? 'bottom-offset'
-                      : 'center'
+                <div onClick={(e) => {
+                  e.stopPropagation();
+                  if (deleteMode) {
+                    handleChipClick(area.id);
                   }
-                  areaId={area.id}
-                  isOff={!point && (
-                    area.id.startsWith('place-') || 
-                    area.id.startsWith('buy-') || 
-                    area.id.startsWith('lay-')
-                  )}
-                  isLocked={point !== null && (
-                    area.id === 'pass-line-chips' || 
-                    area.id === 'dont-pass-chips'
-                  )}
-                />
+                }}>
+                  <ChipStack 
+                    {...bets.find(bet => bet.areaId === area.id)!}
+                    position={
+                      area.id === 'pass-line' || area.id === 'dont-pass'
+                        ? 'custom'
+                        : area.id.startsWith('place-') ? 'bottom-offset'
+                        : 'center'
+                    }
+                    areaId={area.id}
+                    isOff={!point && (
+                      area.id.startsWith('place-') || 
+                      area.id.startsWith('buy-') || 
+                      area.id.startsWith('lay-')
+                    )}
+                    isLocked={point !== null && (
+                      area.id === 'pass-line-chips' || 
+                      area.id === 'dont-pass-chips'
+                    )}
+                    deletable={deleteMode && !isLockedBet(area.id, point)}
+                  />
+                </div>
               )}
             </div>
           );

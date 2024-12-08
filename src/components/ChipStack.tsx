@@ -8,6 +8,7 @@ interface ChipStackProps {
   areaId?: string;
   isOff?: boolean;
   isLocked?: boolean;
+  deletable?: boolean;
 }
 
 const CHIP_VALUES = [
@@ -19,7 +20,7 @@ const CHIP_VALUES = [
   { value: 1, color: 'bg-gray-200' }     // Light Gray (was white)
 ];
 
-const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId, isOff = false, isLocked = false }) => {
+const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId, isOff = false, isLocked = false, deletable = false }) => {
   // console.log('ChipStack rendered with:', { amount, position, areaId });
   
   const optimalChip = CHIP_VALUES.find(chip => amount >= chip.value) || CHIP_VALUES[CHIP_VALUES.length - 1];
@@ -46,7 +47,9 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
   
   return (
     <div 
-      className="absolute chip-container"
+      className={`absolute chip-container
+        ${deletable ? 'hover:opacity-50 cursor-pointer' : ''}
+        transition-opacity duration-150`}
       style={{ ...positionStyle, width: chipSize, height: chipSize }}
       data-position={position}
     >
@@ -93,6 +96,15 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
                       bg-black/80 text-white px-2 py-0.5 rounded-full text-xs
                       font-bold whitespace-nowrap">
           LOCKED
+        </div>
+      )}
+
+      {/* Add delete indicator */}
+      {deletable && (
+        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2
+                      bg-red-500/80 text-white px-2 py-0.5 rounded-full text-xs
+                      font-bold whitespace-nowrap">
+          CLICK TO DELETE
         </div>
       )}
     </div>
