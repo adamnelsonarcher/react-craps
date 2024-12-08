@@ -20,30 +20,64 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   isMoving,
   onAnimationComplete
 }) => {
+  console.log('AnimatedChipStack render:', {
+    amount,
+    color,
+    position,
+    isWinning,
+    isMoving,
+    variant: isMoving ? "moving" : (isWinning ? "winning" : "losing"),
+    initial: {
+      x: isWinning ? window.innerWidth - 200 : position.x-30,
+      y: isWinning ? 100 : position.y-30
+    }
+  });
+
   const chipSize = '2.3rem';
-  
+
+  const variants = {
+    initial: {
+      x: isWinning ? window.innerWidth - 200 : position.x-30,
+      y: isWinning ? 100 : position.y-30,
+      opacity: 1,
+      scale: 1
+    },
+    winning: {
+      x: [window.innerWidth - 200, position.x-30, 200],
+      y: [100, position.y-30, 100],
+      opacity: [1, 1, 0],
+      scale: [1, 1.2, 0.8],
+      transition: { 
+        duration: 1.5,
+        times: [0, 0.4, 1],
+        ease: "easeInOut"
+      }
+    },
+    moving: {
+      x: toPosition ? toPosition.x-30 : 0,
+      y: toPosition ? toPosition.y-30 : 0,
+      opacity: 1,
+      scale: 1,
+      rotate: 0,
+      transition: { duration: 0.5, ease: "easeInOut" }
+    },
+    losing: {
+      x: position.x + 200,
+      y: position.y - 200,
+      opacity: 0,
+      scale: 0.8,
+      rotate: -45,
+      transition: { duration: 1.2, ease: "easeInOut" }
+    }
+  };
+
   return (
     <AnimatePresence>
       <motion.div
         className="fixed"
-        initial={{ 
-          x: position.x-30,
-          y: position.y-30,
-          opacity: 1,
-          scale: 1
-        }}
-        animate={{ 
-          x: isMoving ? toPosition!.x-30 : (isWinning ? window.innerWidth - 200 : position.x + 200),
-          y: isMoving ? toPosition!.y-30 : (isWinning ? 100 : position.y - 200),
-          opacity: isMoving ? 1 : 0,
-          scale: isMoving ? 1 : (isWinning ? 1.2 : 0.8),
-          rotate: isMoving ? 0 : (isWinning ? 45 : -45)
-        }}
-        exit={{ opacity: 0 }}
-        transition={{ 
-          duration: isMoving ? 0.5 : 1.2,
-          ease: "easeInOut"
-        }}
+        initial="initial"
+        animate={isMoving ? "moving" : (isWinning ? "winning" : "losing")}
+        variants={variants}
         onAnimationComplete={onAnimationComplete}
         style={{ 
           width: chipSize, 
