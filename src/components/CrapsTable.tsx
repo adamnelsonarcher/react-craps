@@ -249,17 +249,26 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
   // Add this object for betting area descriptions
   const bettingDescriptions: Record<string, string> = {
-    'pass-line': 'Pass Line: The most common bet. Win if first roll is 7/11, lose on 2/3/12. Any other number becomes the "point" - you win if point is rolled again before a 7.',
-    'dont-pass': "Don't Pass: Opposite of Pass Line. Win on 2/3, lose on 7/11, push on 12. After point, win if 7 comes before point.",
-    'come': 'Come: Like a Pass Line bet, but made after the point. Win on 7/11, lose on 2/3/12.',
-    'dont-come': "Don't Come: Opposite of Come bet. Win on 2/3, lose on 7/11, push on 12.",
-    'field': 'Field: One-roll bet. Win on 2,3,4,9,10,11,12. 2 and 12 typically pay double.',
-    'any-7': 'Any Seven: One-roll bet. Win if next roll is 7.',
-    'any-craps': 'Any Craps: One-roll bet. Win if next roll is 2, 3, or 12.',
-    'hard-4': 'Hard 4: Win if 2-2 is rolled before any 7 or "easy" 4 (3-1).',
-    'hard-6': 'Hard 6: Win if 3-3 is rolled before any 7 or "easy" 6 (4-2, 5-1).',
-    'hard-8': 'Hard 8: Win if 4-4 is rolled before any 7 or "easy" 8 (5-3, 6-2).',
-    'hard-10': 'Hard 10: Win if 5-5 is rolled before any 7 or "easy" 10 (6-4).',
+    'pass-line': 'Pass Line\nMost common bet. Win on 7/11, lose on 2/3/12 on come out roll.\nIf point is set (4,5,6,8,9,10), win if point is rolled again before 7.',
+    
+    'dont-pass': "Don't Pass\nOpposite of Pass Line. Win on 2/3, lose on 7/11, push on 12 on come out roll.\nIf point is set, win if 7 comes before point.",
+    
+    'come': 'Come\nSame as Pass Line but made after point is established.\nWin on 7/11, lose on 2/3/12. Any other number becomes your Come point.',
+    
+    'dont-come': "Don't Come\nOpposite of Come bet. Made after point is established.\nWin on 2/3, lose on 7/11, push on 12. If number is rolled, win if 7 comes first.",
+    
+    'field': 'Field\nOne-roll bet. Win on 2,3,4,9,10,11,12.\n2 and 12 pay double (2:1).\nAll others pay even money (1:1).',
+    
+    'any-7': 'Any Seven\nOne-roll bet.\nWin if next roll is 7 (pays 4:1).',
+    
+    'any-craps': 'Any Craps\nOne-roll bet.\nWin if next roll is 2, 3, or 12 (pays 7:1).',
+    
+    
+    'hard-6': 'Hard 6\nWin if 3-3 is rolled before any 7 or "easy" 6 (4-2, 5-1).\nPays 9:1.',
+    
+    'hard-8': 'Hard 8\nWin if 4-4 is rolled before any 7 or "easy" 8 (5-3, 6-2).\nPays 9:1.',
+    
+    'hard-10': 'Hard 10\nWin if 5-5 is rolled before any 7 or "easy" 10 (6-4).\nPays 7:1.',
   };
 
   const generateNumberAreas = () => {
@@ -857,19 +866,18 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
   // Add this function to handle help mode clicks
   const handleHelpClick = (areaId: string) => {
-    const baseAreaId = areaId.split('-').slice(0, 2).join('-'); // Handle numbered bets like 'place-6'
+    const baseAreaId = areaId.split('-').slice(0, 2).join('-');
     let description = bettingDescriptions[baseAreaId] || '';
     
-    // Handle place/buy/lay bets
     if (areaId.startsWith('place-')) {
       const number = areaId.split('-')[1];
-      description = `Place ${number}: Bet that ${number} will be rolled before a 7. Better odds than buying.`;
+      description = `Place ${number}\nBet that ${number} will be rolled before 7.\nPlace Bet Payouts:\n4 and 10 - 9:5\n5 and 9 - 7:5\n6 and 8 - 7:6`;
     } else if (areaId.startsWith('buy-')) {
       const number = areaId.split('-')[1];
-      description = `Buy ${number}: Like a place bet, but with better payouts and a 5% commission.`;
+      description = `Buy ${number}\nSame as Place bet but with better odds and 5% commission.\nPays true odds:\n4 and 10 - 2:1\n5 and 9 - 3:2\n6 and 8 - 6:5`;
     } else if (areaId.startsWith('lay-')) {
       const number = areaId.split('-')[1];
-      description = `Lay ${number}: Bet against ${number}. Win if 7 comes before ${number}, with a 5% commission.`;
+      description = `Lay ${number}\nBet against ${number}. Win if 7 comes before ${number}.\n5% commission on win amount.\nPays true odds:\n4 and 10 - 1:2\n5 and 9 - 2:3\n6 and 8 - 5:6`;
     }
     
     setHelpText(description);
@@ -924,8 +932,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
   return (
     <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''} ${deleteMode ? 'cursor-pointer' : ''}`}>
-      {/* Hover Indicator */}
-      <div className="absolute -top-12 left-0 right-0 flex justify-center z-[900]">
+      {/* Hover Indicator - moved to bottom and adjusted left */}
+      <div className="absolute -bottom-0 left-[40%] transform -translate-x-1/2 flex justify-center z-[900]">
         {hoveredArea && (
           <div className="bg-black/70 text-white px-4 py-2 rounded-full
                         font-bold text-lg transition-opacity duration-150">
@@ -976,11 +984,19 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
       {/* Help Text Popup */}
       {helpText && helpMode && (
-        <div className="absolute bottom-4 left-28 z-50
-                        bg-black/90 text-white p-3 rounded-lg
+        <div className="absolute bottom-16 left-28 z-50 
+                        bg-black/90 text-white p-4 rounded-lg
                         shadow-lg backdrop-blur-sm
-                        max-w-[300px]">
-          <p className="text-sm leading-tight">{helpText}</p>
+                        max-w-[300px]
+                        transform translate-y-full
+                        max-h-[calc(100vh-16rem)] 
+                        overflow-y-auto">
+          {helpText.split('\n').map((line, i) => (
+            <React.Fragment key={i}>
+              {line}
+              <br />
+            </React.Fragment>
+          ))}
         </div>
       )}
 
