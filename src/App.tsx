@@ -59,6 +59,16 @@ const App: React.FC = () => {
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);
   const [keepWinningBets, setKeepWinningBets] = useState(false);
   const [lastProfit, setLastProfit] = useState(0);
+  const [deleteMode, setDeleteMode] = useState(false);
+
+  const handleGlobalClick = (e: React.MouseEvent) => {
+    if (deleteMode) {
+      const clickedOnChip = (e.target as HTMLElement).closest('.chip-container');
+      if (!clickedOnChip) {
+        setDeleteMode(false);
+      }
+    }
+  };
 
   const handleRoll = (forcedRoll?: { die1: number; die2: number }) => {
     if (isRolling) return;
@@ -382,7 +392,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800">
+    <div 
+      className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800"
+      onClick={handleGlobalClick}
+    >
       <div className="flex-1 flex gap-6">
         {/* Main container */}
         <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto p-4">
@@ -412,6 +425,8 @@ const App: React.FC = () => {
                 selectedChipValue={selectedChipValue}
                 onUndo={() => tableRef.current?.handleUndo()}
                 onClear={() => tableRef.current?.handleClear()}
+                onToggleDelete={() => setDeleteMode(!deleteMode)}
+                deleteMode={deleteMode}
                 bank={bank}
               />
               
@@ -455,6 +470,7 @@ const App: React.FC = () => {
                 betHistory={betHistory}
                 setBetHistory={setBetHistory}
                 onPredeterminedRoll={(roll) => handleRoll(roll)}
+                deleteMode={deleteMode}
               />
               {/* Dice in top right */}
               <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">

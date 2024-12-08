@@ -50,6 +50,8 @@ interface BettingControlsProps {
   selectedChipValue: number | null;
   onUndo: () => void;
   onClear: () => void;
+  onToggleDelete: () => void;
+  deleteMode: boolean;
   bank: number;
 }
 
@@ -58,6 +60,8 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   selectedChipValue,
   onUndo,
   onClear,
+  onToggleDelete,
+  deleteMode,
   bank,
 }) => {
   const chipConfigs: ChipConfig[] = [
@@ -85,20 +89,27 @@ const BettingControls: React.FC<BettingControlsProps> = ({
           );
         })}
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <button 
-          className="btn bg-yellow-600 text-white hover:bg-yellow-500 
-                     focus:ring-yellow-500 text-lg py-4"
+      <div className="grid grid-cols-3 gap-3">
+        <button
+          className="btn bg-blue-800 text-white hover:bg-blue-600 
+                      text-base py-3"
           onClick={onUndo}
         >
           Undo Bet
         </button>
-        <button 
-          className="btn bg-red-600 text-white hover:bg-red-500 
-                     focus:ring-red-500 text-lg py-4"
+        <button
+          className="btn bg-blue-800 text-white hover:bg-blue-600 
+                    text-base py-3"
           onClick={onClear}
         >
           Clear All
+        </button>
+        <button
+          onClick={onToggleDelete}
+          className={`btn ${deleteMode ? 'bg-red-600 hover:bg-red-800' : 'bg-blue-800 hover:bg-blue-600'} 
+                     text-white text-base py-3`}
+        >
+          {deleteMode ? 'Cancel' : 'Delete'}
         </button>
       </div>
     </div>

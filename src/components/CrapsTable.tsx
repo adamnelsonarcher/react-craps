@@ -74,6 +74,7 @@ interface CrapsTableProps {
   setBetHistory: (history: Bet[][] | ((prev: Bet[][]) => Bet[][])) => void;
   onPredeterminedRoll: (roll: { die1: number; die2: number }) => void;
   onDeleteBet?: (betId: string) => void;
+  deleteMode: boolean;
 }
 
 // Move DiceControls outside CrapsTable component
@@ -215,6 +216,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   setBetHistory,
   onPredeterminedRoll,
   onDeleteBet,
+  deleteMode,
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -227,7 +229,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   const [helpText, setHelpText] = useState<string | null>(null);
   const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
   const [resolvingBets, setResolvingBets] = useState<(Bet & { isWinning: boolean; position: { x: number; y: number } })[]>([]);
-  const [deleteMode, setDeleteMode] = useState(false);
 
   // Constants based on your measurements for 4
   const numberWidth = 29.92 - 21.67;  // ~8.25%
@@ -919,9 +920,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       setBets((prev: Bet[]) => prev.filter(b => b.areaId !== betId));
       setBetHistory((prev: Bet[][]) => [...prev, bets]);
     }
-    
-    // Optional: Turn off delete mode after successful deletion
-    setDeleteMode(false);
   };
 
   return (
@@ -985,22 +983,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
           <p className="text-sm leading-tight">{helpText}</p>
         </div>
       )}
-
-      {/* Add Delete Mode Button */}
-      <button 
-        className={`absolute bottom-4 left-28 z-50 px-4 h-8 rounded-full 
-                    flex items-center justify-center gap-2
-                    ${deleteMode ? 'bg-red-500' : 'bg-gray-600'} 
-                    text-white font-bold text-sm
-                    hover:bg-opacity-90 transition-colors
-                    ring-2 ring-white/50 shadow-lg`}
-        onClick={() => {
-          setDeleteMode(!deleteMode);
-          setHelpMode(false); // Turn off help mode if it's on
-        }}
-      >
-        {deleteMode ? 'Cancel Delete' : 'Delete Bet'}
-      </button>
 
       <div 
         className={`absolute inset-0 ${isRolling ? 'pointer-events-none' : ''}`}
