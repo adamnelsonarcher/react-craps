@@ -42,7 +42,7 @@ const ProfitDisplay: React.FC<ProfitDisplayProps> = ({ amount, onComplete }) => 
           }}
           onAnimationComplete={onComplete}
           className="absolute bottom-16 left-[30%] transform -translate-x-1/2
-                     text-5xl font-bold text-green-400 z-50
+                     text-5xl font-bold text-green-400 z-[1000]
                      bg-black/30 px-6 py-3 rounded-lg backdrop-blur-sm
                      shadow-lg border border-green-500/30
                      flex items-center gap-2"

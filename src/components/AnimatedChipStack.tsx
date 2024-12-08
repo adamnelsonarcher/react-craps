@@ -80,7 +80,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
           width: chipSize, 
           height: chipSize,
           transform: 'translate(-50%, -50%)',
-          zIndex: 1000
+          zIndex: 900
         }}
       >
         <div className={`absolute ${color} rounded-full 

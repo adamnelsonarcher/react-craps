@@ -906,7 +906,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   return (
     <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''}`}>
       {/* Hover Indicator */}
-      <div className="absolute -top-12 left-0 right-0 flex justify-center">
+      <div className="absolute -top-12 left-0 right-0 flex justify-center z-[900]">
         {hoveredArea && (
           <div className="bg-black/70 text-white px-4 py-2 rounded-full
                         font-bold text-lg transition-opacity duration-150">
