@@ -37,26 +37,19 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   const [animationStage, setAnimationStage] = React.useState<'start' | 'atBet' | 'toBank'>('start');
   
   React.useEffect(() => {
-    console.log('Animation stage changed to:', animationStage);
+    // console.log('Animation stage changed to:', animationStage);
   }, [animationStage]);
 
   // Track animation progress
   React.useEffect(() => {
     const unsubscribeX = x.onChange(latest => {
-      const currentScale = scale.get();
-      console.log('Animation update:', {
-        x: latest,
-        targetX: position.x-30,
-        diff: Math.abs(latest - (position.x-30)),
-        scale: currentScale,
-        stage: animationStage
-      });
+      const currentScale = scale.get()
 
       if (Math.abs(latest - (position.x-30)) < 1 && currentScale > 1) {
-        console.log('Setting atBet stage');
+        //console.log('Setting atBet stage');
         setAnimationStage('atBet');
       } else if (latest < 250) {  // Changed condition for bank stage
-        console.log('Setting toBank stage');
+        //console.log('Setting toBank stage');
         setAnimationStage('toBank');
       }
     });
@@ -80,6 +73,14 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
         return amount;
     }
   }, [amount, totalAmount, animationStage, showTotalAtBet]);
+
+  // Format amount based on animation type
+  const formatAmount = (value: number) => {
+    if (isWinning) {
+      return value.toFixed(2);  // Only show decimals for winning chips
+    }
+    return Math.round(value).toLocaleString();  // Round to whole number for losing/moving chips
+  };
 
   const variants = {
     initial: {
@@ -157,7 +158,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
                       bg-black/80 text-white px-1.5 py-0 rounded text-sm
                       whitespace-nowrap z-50 font-bold
                       border border-white/30 select-none">
-          ${displayAmount.toFixed(2)}
+          ${formatAmount(displayAmount)}
         </div>
       </motion.div>
     </AnimatePresence>
