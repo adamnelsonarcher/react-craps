@@ -96,7 +96,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
                       bg-black/80 text-white px-1.5 py-0 rounded text-sm
                       whitespace-nowrap z-50 font-bold
                       border border-white/30 select-none">
-          ${amount}
+          ${amount.toFixed(2)}
         </div>
       </motion.div>
     </AnimatePresence>
