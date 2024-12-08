@@ -452,7 +452,7 @@ const App: React.FC = () => {
               
               <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
                 <div className="w-[200px] text-left">
-                  <span className="text-2xl text-green-400 font-bold">
+                  <span className="text-xl text-green-400 font-bold">
                     Bank: <AnimatedBalance 
                       value={bank} 
                       animate={lastProfit > 0}
@@ -460,7 +460,7 @@ const App: React.FC = () => {
                   </span>
                 </div>
                 <div className="w-[200px] text-right">
-                  <span className="text-2xl text-yellow-400 font-bold">
+                  <span className="text-xl text-yellow-400 font-bold">
                     Wager: ${calculateTotalWager(bets).toLocaleString()}
                   </span>
                 </div>
