@@ -84,9 +84,9 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
         }}
       >
         <div className={`absolute ${color} rounded-full 
-                      border-2 border-white shadow-lg
+                      border-2 ${color === 'bg-gray-200' ? 'border-gray-600' : 'border-white'} shadow-lg
                       transition-all duration-150
-                      ring-1 ring-white/20`}
+                      ring-1 ${color === 'bg-gray-200' ? 'ring-gray-600/20' : 'ring-white/20'}`}
           style={{
             width: chipSize,
             height: chipSize,
@@ -95,7 +95,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
         <div className="absolute top-1.5 left-1/2 -translate-x-1/2 
                       bg-black/80 text-white px-1.5 py-0 rounded text-sm
                       whitespace-nowrap z-50 font-bold
-                      border border-white/30">
+                      border border-white/30 select-none">
           ${amount}
         </div>
       </motion.div>

@@ -55,9 +55,9 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
         <div
           key={index}
           className={`absolute ${optimalChip.color} rounded-full 
-                     border-2 border-white shadow-lg
+                     border-2 ${optimalChip.color === 'bg-gray-200' ? 'border-gray-600' : 'border-white'} shadow-lg
                      transition-all duration-150
-                     ring-1 ring-white/20
+                     ring-1 ${optimalChip.color === 'bg-gray-200' ? 'ring-gray-600/20' : 'ring-white/20'}
                      ${optimalChip.color === 'bg-gray-200' ? 'text-black' : 'text-white'}
                      ${isOff ? 'opacity-75' : ''}`}
           style={{
