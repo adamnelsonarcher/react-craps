@@ -217,8 +217,12 @@ const App: React.FC = () => {
                 y: chipRect.top + (chipRect.height / 2)
               },
               winAmount: winAmount,
-              totalAmount: keepWinningBets ? winAmount : bet.amount + winAmount,
-              showTotalAtBet: !keepWinningBets
+              totalAmount: bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-') 
+                ? bet.amount + winAmount 
+                : (keepWinningBets ? winAmount : bet.amount + winAmount),
+              showTotalAtBet: bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-') 
+                ? true 
+                : !keepWinningBets
             } as ResolvingBet;
           }
         }
