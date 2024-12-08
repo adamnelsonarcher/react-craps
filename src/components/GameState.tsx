@@ -63,7 +63,7 @@ const GameState: React.FC<GameStateProps> = ({
 }) => {
   const [point, setPoint] = React.useState<number | null>(null);
   const [isComingOut, setIsComingOut] = React.useState(true);
-  const prevRoll = React.useRef({ die1: 0, die2: 0 });
+  const prevRoll = React.useRef({ die1: 0, die2: 0, timestamp: 0 });
   const [lastWinTimestamp, setLastWinTimestamp] = React.useState(0);
   const [hasRolled, setHasRolled] = React.useState(false);
 
@@ -315,16 +315,21 @@ const GameState: React.FC<GameStateProps> = ({
   React.useEffect(() => {
     if (isRolling || !diceTotal) return;
 
-    // Check if this is actually a new roll
-    if (die1 === prevRoll.current.die1 && die2 === prevRoll.current.die2) {
+    const currentTimestamp = Date.now();
+
+    // Check if this is actually a new roll by comparing timestamps
+    // Only skip if the roll happened within the last 50ms
+    if (currentTimestamp - prevRoll.current.timestamp < 50 &&
+        die1 === prevRoll.current.die1 && 
+        die2 === prevRoll.current.die2) {
       return;
     }
 
     // Set hasRolled to true when we get a new roll
     setHasRolled(true);
 
-    // Update previous roll
-    prevRoll.current = { die1, die2 };
+    // Update previous roll with timestamp
+    prevRoll.current = { die1, die2, timestamp: currentTimestamp };
 
     // Only process winning areas if we've had an actual roll
     if (hasRolled) {

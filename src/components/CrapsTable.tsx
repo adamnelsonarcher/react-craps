@@ -72,6 +72,7 @@ interface CrapsTableProps {
   movingBetIds: Set<string>;
   betHistory: Bet[][];
   setBetHistory: (history: Bet[][] | ((prev: Bet[][]) => Bet[][])) => void;
+  onPredeterminedRoll: (roll: { die1: number; die2: number }) => void;
 }
 
 // Move DiceControls outside CrapsTable component
@@ -127,7 +128,7 @@ const DiceControls: React.FC<{
           onClick={() => onDiceChange(tempDice)}
           className="bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded text-sm"
         >
-          Set Dice
+          Roll These Dice
         </button>
       </div>
       <div className="mt-3 border-t border-gray-600 pt-2">
@@ -211,6 +212,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   movingBetIds,
   betHistory,
   setBetHistory,
+  onPredeterminedRoll,
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -1043,7 +1045,10 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
             </div>
             <DiceControls 
               currentDice={dice}
-              onDiceChange={(newDice) => setDice?.(newDice)}
+              onDiceChange={(newDice) => {
+                console.log('Dev tools setting dice:', newDice); // Debug log
+                onPredeterminedRoll(newDice);
+              }}
             />
             <div className="absolute top-0 right-0 bg-black/50 text-white p-2 max-h-[300px] overflow-y-auto">
               <button 

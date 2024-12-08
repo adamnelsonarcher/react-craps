@@ -60,23 +60,38 @@ const App: React.FC = () => {
   const [keepWinningBets, setKeepWinningBets] = useState(false);
   const [lastProfit, setLastProfit] = useState(0);
 
-  const handleRoll = () => {
+  const handleRoll = (forcedRoll?: { die1: number; die2: number }) => {
     if (isRolling) return;
 
     const rollDice = () => {
+      // Make sure we have valid numbers for both dice
+      if (forcedRoll && typeof forcedRoll.die1 === 'number' && typeof forcedRoll.die2 === 'number') {
+        console.log('Using forced roll:', forcedRoll);
+        return { 
+          ...forcedRoll,
+          total: forcedRoll.die1 + forcedRoll.die2
+        };
+      }
+
+      // Default random roll
       const die1 = Math.floor(Math.random() * 6) + 1;
       const die2 = Math.floor(Math.random() * 6) + 1;
       const total = die1 + die2;
-      
+      console.log('Using random roll:', { die1, die2, total });
       return { die1, die2, total };
     };
 
+    // Store the roll result before animation starts
+    const roll = rollDice();
+
     if (quickRoll) {
-      const roll = rollDice();
+      console.log('Quick roll result:', roll);
       setDice({ die1: roll.die1, die2: roll.die2 });
       setHasRolled(true);
     } else {
       setIsRolling(true);
+      
+      console.log('Stored roll for animation:', roll);
       
       const interval = setInterval(() => {
         setAnimationDice({
@@ -88,7 +103,7 @@ const App: React.FC = () => {
       setAnimationInterval(interval);
 
       setTimeout(() => {
-        const roll = rollDice();
+        console.log('Setting final dice values:', roll);
         clearInterval(interval);
         setAnimationInterval(null);
         setDice({ die1: roll.die1, die2: roll.die2 });
@@ -439,6 +454,7 @@ const App: React.FC = () => {
                 movingBetIds={movingBetIds}
                 betHistory={betHistory}
                 setBetHistory={setBetHistory}
+                onPredeterminedRoll={(roll) => handleRoll(roll)}
               />
               {/* Dice in top right */}
               <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
