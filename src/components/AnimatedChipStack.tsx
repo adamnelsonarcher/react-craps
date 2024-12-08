@@ -20,19 +20,6 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   isMoving,
   onAnimationComplete
 }) => {
-  console.log('AnimatedChipStack render:', {
-    amount,
-    color,
-    position,
-    isWinning,
-    isMoving,
-    variant: isMoving ? "moving" : (isWinning ? "winning" : "losing"),
-    initial: {
-      x: isWinning ? window.innerWidth - 200 : position.x-30,
-      y: isWinning ? 100 : position.y-30
-    }
-  });
-
   const chipSize = '2.3rem';
 
   const variants = {
@@ -43,13 +30,23 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
       scale: 1
     },
     winning: {
-      x: [window.innerWidth - 200, position.x-30, 200],
-      y: [100, position.y-30, 100],
-      opacity: [1, 1, 0],
-      scale: [1, 1.2, 0.8],
+      x: [
+        window.innerWidth - 200,  // Start from dice
+        position.x-30,            // Move to bet
+        position.x-30,            // Stay at bet
+        200                       // Move to bank
+      ],
+      y: [
+        100,                      // Start from dice
+        position.y-30,            // Move to bet
+        position.y-30,            // Stay at bet
+        100                       // Move to bank
+      ],
+      opacity: [1, 1, 1, 1, 0],
+      scale: [1, 1.1, 1.1, 0.8],
       transition: { 
-        duration: 1.5,
-        times: [0, 0.4, 1],
+        duration: 2.5,
+        times: [0, 0.3, 0.7, 0.8, 1],
         ease: "easeInOut"
       }
     },

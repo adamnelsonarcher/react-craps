@@ -59,14 +59,6 @@ const App: React.FC = () => {
   const [keepWinningBets, setKeepWinningBets] = useState(false);
   const [lastProfit, setLastProfit] = useState(0);
 
-  useEffect(() => {
-    console.log('State update:', {
-      winningBets,
-      losingBets: Array.from(losingBets),
-      animatingBets: Array.from(animatingBets),
-    });
-  }, [winningBets, losingBets, animatingBets]);
-
   const handleRoll = () => {
     if (isRolling) return;
 
@@ -158,7 +150,6 @@ const App: React.FC = () => {
       const newWinningBets = bets.filter(bet => 
         winningAreas.some(area => area.id === bet.areaId)
       ).map(bet => {
-        console.log('Processing winning bet:', bet);
         const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
         const chipElement = betElement?.querySelector('.absolute');
         const tableElement = document.querySelector('.bg-felt-green');
@@ -212,19 +203,12 @@ const App: React.FC = () => {
         return null;
       }).filter((bet): bet is ResolvingBet => bet !== null);
 
-      console.log('Winning bets array:', newWinningBets);
-
       // Set the profit for display
       setLastProfit(totalProfit);
 
       // Add ALL winning bets to animation first
       setWinningBets(newWinningBets);
       setAnimatingBets(new Set(newWinningBets.map(bet => bet.areaId)));
-      console.log('After setting animation states:', {
-        winningBets,
-        animatingBets: Array.from(animatingBets),
-        losingBets
-      });
 
       // Then filter which ones should be removed from the table
       const betsToRemove = newWinningBets.filter(bet => 
@@ -234,9 +218,12 @@ const App: React.FC = () => {
       );
 
       if (betsToRemove.length > 0) {
-        setBets(currentBets => 
-          currentBets.filter(bet => !betsToRemove.some(removeBet => removeBet.areaId === bet.areaId))
-        );
+        // Delay bet removal until animation reaches betting spot
+        setTimeout(() => {
+          setBets(currentBets => 
+            currentBets.filter(bet => !betsToRemove.some(removeBet => removeBet.areaId === bet.areaId))
+          );
+        }, 750); // 30% of 2.5s = 750ms (when chips reach betting spot)
       }
     }
     
@@ -348,7 +335,6 @@ const App: React.FC = () => {
             color: movement.color,
             count: movement.count
           }];
-          console.log('Bets after movement:', newBets);
           return newBets;
         });
         
