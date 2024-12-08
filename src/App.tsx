@@ -28,6 +28,7 @@ interface Bet {
 interface ResolvingBet extends Bet {
   isWinning: boolean;
   position: { x: number; y: number };
+  winAmount?: number;
 }
 
 const App: React.FC = () => {
@@ -196,7 +197,8 @@ const App: React.FC = () => {
               position: { 
                 x: chipRect.left + (chipRect.width / 2),
                 y: chipRect.top + (chipRect.height / 2)
-              }
+              },
+              winAmount: winAmount
             } as ResolvingBet;
           }
         }
@@ -504,7 +506,7 @@ const App: React.FC = () => {
       {winningBets.map((bet, index) => (
         <AnimatedChipStack
           key={`winning-${bet.areaId}-${index}`}
-          amount={bet.amount}
+          amount={bet.winAmount || bet.amount}
           color={bet.color}
           position={bet.position}
           isWinning={true}
