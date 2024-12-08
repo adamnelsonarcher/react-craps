@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation, useMotionValue } from 'framer-motion';
 
 interface AnimatedChipStackProps {
   amount: number;
@@ -9,6 +9,13 @@ interface AnimatedChipStackProps {
   isWinning?: boolean;
   isMoving?: boolean;
   onAnimationComplete?: () => void;
+  totalAmount?: number;
+  showTotalAtBet?: boolean;
+}
+
+interface AnimationProgress {
+  x: number;
+  scale: number;
 }
 
 const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
@@ -18,9 +25,61 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   toPosition,
   isWinning,
   isMoving,
-  onAnimationComplete
+  onAnimationComplete,
+  totalAmount,
+  showTotalAtBet
 }) => {
   const chipSize = '2.3rem';
+  const controls = useAnimation();
+  const x = useMotionValue(0);
+  const scale = useMotionValue(1);
+
+  const [animationStage, setAnimationStage] = React.useState<'start' | 'atBet' | 'toBank'>('start');
+  
+  React.useEffect(() => {
+    console.log('Animation stage changed to:', animationStage);
+  }, [animationStage]);
+
+  // Track animation progress
+  React.useEffect(() => {
+    const unsubscribeX = x.onChange(latest => {
+      const currentScale = scale.get();
+      console.log('Animation update:', {
+        x: latest,
+        targetX: position.x-30,
+        diff: Math.abs(latest - (position.x-30)),
+        scale: currentScale,
+        stage: animationStage
+      });
+
+      if (Math.abs(latest - (position.x-30)) < 1 && currentScale > 1) {
+        console.log('Setting atBet stage');
+        setAnimationStage('atBet');
+      } else if (latest < 250) {  // Changed condition for bank stage
+        console.log('Setting toBank stage');
+        setAnimationStage('toBank');
+      }
+    });
+
+    return () => {
+      unsubscribeX();
+    };
+  }, [x, scale, position.x, animationStage]);
+
+  const displayAmount = React.useMemo(() => {
+    if (!showTotalAtBet || !totalAmount) return amount;
+    
+    switch(animationStage) {
+      case 'start':
+        return amount;
+      case 'atBet':
+        return totalAmount;
+      case 'toBank':
+        return totalAmount;
+      default:
+        return amount;
+    }
+  }, [amount, totalAmount, animationStage, showTotalAtBet]);
 
   const variants = {
     initial: {
@@ -33,13 +92,13 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
       x: [
         window.innerWidth - 200,  // Start from dice
         position.x-30,            // Move to bet
-        position.x-30,            // Stay at bet
+        position.x-30,            // Stay at bet briefly
         200                       // Move to bank
       ],
       y: [
         100,                      // Start from dice
         position.y-30,            // Move to bet
-        position.y-30,            // Stay at bet
+        position.y-30,            // Stay at bet briefly
         100                       // Move to bank
       ],
       opacity: [1, 1, 1, 1, 0],
@@ -75,13 +134,15 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
         initial="initial"
         animate={isMoving ? "moving" : (isWinning ? "winning" : "losing")}
         variants={variants}
-        onAnimationComplete={onAnimationComplete}
         style={{ 
           width: chipSize, 
           height: chipSize,
           transform: 'translate(-50%, -50%)',
-          zIndex: 900
+          zIndex: 900,
+          x,
+          scale
         }}
+        onAnimationComplete={onAnimationComplete}
       >
         <div className={`absolute ${color} rounded-full 
                       border-2 ${color === 'bg-gray-200' ? 'border-gray-600' : 'border-white'} shadow-lg
@@ -96,7 +157,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
                       bg-black/80 text-white px-1.5 py-0 rounded text-sm
                       whitespace-nowrap z-50 font-bold
                       border border-white/30 select-none">
-          ${amount.toFixed(2)}
+          ${displayAmount.toFixed(2)}
         </div>
       </motion.div>
     </AnimatePresence>

@@ -16,4 +16,16 @@ export interface BetMovement {
   amount: number;
   color: string;
   count: number;
+}
+
+export interface ResolvingBet {
+  areaId: string;
+  amount: number;
+  color: string;
+  count: number;
+  isWinning: boolean;
+  position: { x: number; y: number };
+  winAmount?: number;
+  totalAmount?: number;
+  showTotalAtBet?: boolean;
 } 

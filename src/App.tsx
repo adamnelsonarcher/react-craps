@@ -6,7 +6,7 @@ import DiceHistory from './components/DiceHistory';
 import Dice from './components/Dice';
 import GameState from './components/GameState';
 import AnimatedChipStack from './components/AnimatedChipStack';
-import { RollOutcome, WinningArea, BetMovement } from './types/game';
+import { RollOutcome, WinningArea, BetMovement, ResolvingBet } from './types/game';
 import { PAYOUT_TABLE } from './utils/payouts';
 import ProfitDisplay from './components/ProfitDisplay';
 import AnimatedBalance from './components/AnimatedBalance';
@@ -23,12 +23,6 @@ interface Bet {
   amount: number;
   color: string;
   count: number;
-}
-
-interface ResolvingBet extends Bet {
-  isWinning: boolean;
-  position: { x: number; y: number };
-  winAmount?: number;
 }
 
 const App: React.FC = () => {
@@ -215,7 +209,6 @@ const App: React.FC = () => {
               setBank(prev => prev + bet.amount + winAmount);
             }
 
-            // Create resolving bet
             return {
               ...bet,
               isWinning: true,
@@ -223,7 +216,9 @@ const App: React.FC = () => {
                 x: chipRect.left + (chipRect.width / 2),
                 y: chipRect.top + (chipRect.height / 2)
               },
-              winAmount: winAmount
+              winAmount: winAmount,
+              totalAmount: keepWinningBets ? winAmount : bet.amount + winAmount,
+              showTotalAtBet: !keepWinningBets
             } as ResolvingBet;
           }
         }
@@ -545,6 +540,8 @@ const App: React.FC = () => {
           color={bet.color}
           position={bet.position}
           isWinning={true}
+          totalAmount={bet.totalAmount}
+          showTotalAtBet={bet.showTotalAtBet}
           onAnimationComplete={() => {
             setAnimatingBets(prev => {
               const next = new Set(prev);
