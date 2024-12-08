@@ -476,7 +476,10 @@ const App: React.FC = () => {
             <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
             <div className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
               {rollHistory.length === 0 ? (
-                <div className="text-gray-400 text-center italic text-xs"> </div>
+                <div className="flex justify-center items-center gap-1 p-0.5 rounded-md h-[2.5rem] opacity-0">
+                  <Dice value={1} isRolling={false} size="small" />
+                  <Dice value={1} isRolling={false} size="small" />
+                </div>
               ) : (
                 rollHistory.slice(0, Math.min(15, rollHistory.length)).map((roll, index) => (
                   <div 
