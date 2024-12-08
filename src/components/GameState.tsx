@@ -19,6 +19,7 @@ interface GameStateProps {
   onWinningAreas?: (areas: WinningArea[]) => void;
   onRollOutcome?: (outcome: RollOutcome & { total: number }) => void;
   onMoveBet?: (movement: BetMovement) => void;
+  animatingBets: Set<string>;
 }
 
 interface PointMarkerProps {
@@ -59,7 +60,8 @@ const GameState: React.FC<GameStateProps> = ({
   onRollType,
   onWinningAreas,
   onRollOutcome,
-  onMoveBet
+  onMoveBet,
+  animatingBets
 }) => {
   const [point, setPoint] = React.useState<number | null>(null);
   const [isComingOut, setIsComingOut] = React.useState(true);
@@ -133,30 +135,36 @@ const GameState: React.FC<GameStateProps> = ({
           winningAreas.push({ id: `lay-${num}`, type: 'win' });
         });
       } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
-        // Point number rolled - move the bet to the come/don't come point
+        // Point number rolled - check if we can move the bet to the come/don't come point
         const comeBets = bets.filter(bet => bet.areaId === 'come');
         const dontComeBets = bets.filter(bet => bet.areaId === 'dont-come');
 
-        // Move come bets
+        // Move come bets if target isn't animating
         comeBets.forEach(bet => {
-          onMoveBet?.({
-            fromId: 'come',
-            toId: `come-${total}`,
-            amount: bet.amount,
-            color: bet.color,
-            count: bet.count
-          });
+          const targetId = `come-${total}`;
+          if (!animatingBets.has(targetId)) {  // Only move if target isn't animating
+            onMoveBet?.({
+              fromId: 'come',
+              toId: targetId,
+              amount: bet.amount,
+              color: bet.color,
+              count: bet.count
+            });
+          }
         });
 
-        // Move don't come bets
+        // Move don't come bets if target isn't animating
         dontComeBets.forEach(bet => {
-          onMoveBet?.({
-            fromId: 'dont-come',
-            toId: `dont-come-${total}`,
-            amount: bet.amount,
-            color: bet.color,
-            count: bet.count
-          });
+          const targetId = `dont-come-${total}`;
+          if (!animatingBets.has(targetId)) {  // Only move if target isn't animating
+            onMoveBet?.({
+              fromId: 'dont-come',
+              toId: targetId,
+              amount: bet.amount,
+              color: bet.color,
+              count: bet.count
+            });
+          }
         });
       }
     }

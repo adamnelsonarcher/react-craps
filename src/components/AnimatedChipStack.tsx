@@ -8,7 +8,9 @@ interface AnimatedChipStackProps {
   toPosition?: { x: number; y: number };
   isWinning?: boolean;
   isMoving?: boolean;
+  isWaiting?: boolean;
   onAnimationComplete?: () => void;
+  onWaitComplete?: () => void;
   totalAmount?: number;
   showTotalAtBet?: boolean;
 }
@@ -25,7 +27,9 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   toPosition,
   isWinning,
   isMoving,
+  isWaiting,
   onAnimationComplete,
+  onWaitComplete,
   totalAmount,
   showTotalAtBet
 }) => {
@@ -125,7 +129,17 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
       scale: 0.8,
       rotate: -45,
       transition: { duration: 1.2, ease: "easeInOut" }
-    }
+    },
+    waiting: {
+      x: position.x-30,
+      y: position.y-30,
+      opacity: 1,
+      scale: 1,
+      transition: { 
+        duration: 1.5,
+        onComplete: () => onWaitComplete?.()
+      }
+    },
   };
 
   return (
@@ -133,7 +147,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
       <motion.div
         className="fixed"
         initial="initial"
-        animate={isMoving ? "moving" : (isWinning ? "winning" : "losing")}
+        animate={isWaiting ? "waiting" : (isMoving ? "moving" : (isWinning ? "winning" : "losing"))}
         variants={variants}
         style={{ 
           width: chipSize, 

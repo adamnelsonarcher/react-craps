@@ -48,12 +48,17 @@ const App: React.FC = () => {
   const [movingBets, setMovingBets] = useState<(Bet & { 
     fromPosition: { x: number; y: number };
     toPosition: { x: number; y: number };
+    initialPosition?: { x: number; y: number };
   })[]>([]);
   const [movingBetIds, setMovingBetIds] = useState<Set<string>>(new Set());
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);
   const [keepWinningBets, setKeepWinningBets] = useState(false);
   const [lastProfit, setLastProfit] = useState(0);
   const [deleteMode, setDeleteMode] = useState(false);
+  const [waitingBets, setWaitingBets] = useState<(Bet & { 
+    position: { x: number; y: number };
+    targetPosition: { x: number; y: number };
+  })[]>([]);
 
   const handleGlobalClick = (e: React.MouseEvent) => {
     if (deleteMode) {
@@ -246,10 +251,31 @@ const App: React.FC = () => {
       if (betsToRemove.length > 0) {
         // Delay bet removal until animation reaches betting spot
         setTimeout(() => {
-          setBets(currentBets => 
-            currentBets.filter(bet => !betsToRemove.some(removeBet => removeBet.areaId === bet.areaId))
-          );
-        }, 750); // 30% of 2.5s = 750ms (when chips reach betting spot)
+          setBets(currentBets => {
+            // Create a map of bets to remove by areaId
+            const betsToRemoveMap = new Map<string, ResolvingBet>();
+            betsToRemove.forEach(bet => {
+              // For come/don't-come bets that are moving, don't add them to removal map
+              if ((bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-')) && 
+                  movingBetIds.has('come') || movingBetIds.has('dont-come')) {
+                return;
+              }
+              betsToRemoveMap.set(bet.areaId, bet);
+            });
+
+            // Filter out bets that should be removed
+            return currentBets.filter(bet => {
+              // If this is a come/don't-come point bet and we're moving a new bet there,
+              // keep the existing bet
+              if ((bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-')) && 
+                  (movingBetIds.has('come') || movingBetIds.has('dont-come'))) {
+                return true;
+              }
+              // Otherwise, remove if it's in our removal map
+              return !betsToRemoveMap.has(bet.areaId);
+            });
+          });
+        }, 750);
       }
     }
     
@@ -310,14 +336,15 @@ const App: React.FC = () => {
   }, []);
 
   const handleBetMovement = (movement: BetMovement) => {
-    // If this bet is already being moved, ignore
     if (movingBetIds.has(movement.fromId)) return;
 
     const fromElement = document.querySelector(`[data-bet-id="${movement.fromId}"]`);
     const toElement = document.querySelector(`[data-bet-id="${movement.toId}"]`);
     const fromChip = fromElement?.querySelector('.chip-container');
     
-    // Instead of looking for an existing chip, just use the betting area's position
+    // Check if there's an existing bet in the target area
+    const existingBet = bets.find(bet => bet.areaId === movement.toId);
+    
     if (fromChip && toElement) {
       const fromRect = fromChip.getBoundingClientRect();
       const toRect = toElement.getBoundingClientRect();
@@ -325,53 +352,54 @@ const App: React.FC = () => {
       // Mark this bet as moving
       setMovingBetIds(prev => new Set(prev).add(movement.fromId));
 
-      // Add to moving bets
-      setMovingBets(prev => [...prev, {
-        areaId: movement.fromId,
-        amount: movement.amount,
-        color: movement.color,
-        count: movement.count,
-        fromPosition: {
-          x: fromRect.left + (fromRect.width / 2),
-          y: fromRect.top + (fromRect.height / 2)
-        },
-        toPosition: {
-          x: toRect.left + (toRect.width / 2),
-          y: toRect.top + (toRect.height / 2)
-        }
-      }]);
-
-      // After animation completes
-      setTimeout(() => {
-        // Remove the original bet and add the new one in a single update
-        setBets(currentBets => {
-          const remainingBets = currentBets.filter(bet => bet.areaId !== movement.fromId);
-          
-          // Check if a bet already exists in the destination
-          const existingBet = remainingBets.find(bet => bet.areaId === movement.toId);
-          if (existingBet) {
-            // If it exists, don't add a new bet
-            return remainingBets;
+      if (existingBet) {
+        // Add to waiting bets if there's an existing bet
+        setWaitingBets(prev => [...prev, {
+          areaId: movement.fromId,
+          amount: movement.amount,
+          color: movement.color,
+          count: movement.count,
+          position: {
+            x: fromRect.left + (fromRect.width / 2),
+            y: fromRect.top + (fromRect.height / 2)
+          },
+          targetPosition: {
+            x: toRect.left + (toRect.width / 2),
+            y: toRect.top + (toRect.height / 2)
           }
-          
-          // If no existing bet, add the new one
-          const newBets = [...remainingBets, {
-            areaId: movement.toId,
-            amount: movement.amount,
-            color: movement.color,
-            count: movement.count
-          }];
-          return newBets;
-        });
-        
-        // Clean up moving states
-        setMovingBets(prev => prev.filter(bet => bet.areaId !== movement.fromId));
-        setMovingBetIds(prev => {
-          const next = new Set(prev);
-          next.delete(movement.fromId);
-          return next;
-        });
-      }, 500);
+        }]);
+
+        // Remove original bet only when waiting animation starts
+        setBets(currentBets => 
+          currentBets.filter(bet => bet.areaId !== movement.fromId)
+        );
+      } else {
+        // If no existing bet, proceed with immediate movement
+        setMovingBets(prev => [...prev, {
+          areaId: movement.fromId,
+          amount: movement.amount,
+          color: movement.color,
+          count: movement.count,
+          fromPosition: {
+            x: fromRect.left + (fromRect.width / 2),
+            y: fromRect.top + (fromRect.height / 2)
+          },
+          toPosition: {
+            x: toRect.left + (toRect.width / 2),
+            y: toRect.top + (toRect.height / 2)
+          }
+        }]);
+
+        // Remove original bet when movement starts
+        setBets(currentBets => 
+          currentBets.filter(bet => bet.areaId !== movement.fromId)
+        );
+
+        // Add the new bet after movement completes
+        setTimeout(() => {
+          handleBetPlacement(movement, toRect);
+        }, 500);
+      }
     } else {
       handleBetMovementImmediate(movement);
     }
@@ -389,6 +417,25 @@ const App: React.FC = () => {
       return [...remainingBets, newBet];
     });
   };
+
+  const handleBetPlacement = (movement: BetMovement, rect: DOMRect) => {
+    setBets(currentBets => [...currentBets, {
+      areaId: movement.toId,
+      amount: movement.amount,
+      color: movement.color,
+      count: movement.count
+    }]);
+
+    // Clean up moving states
+    setMovingBets(prev => prev.filter(bet => bet.areaId !== movement.fromId));
+    setMovingBetIds(prev => {
+      const next = new Set(prev);
+      next.delete(movement.fromId);
+      return next;
+    });
+  };
+
+  const diceTotal = dice.die1 + dice.die2;
 
   return (
     <div 
@@ -494,6 +541,7 @@ const App: React.FC = () => {
                 onRollOutcome={handleRollOutcome}
                 onWinningAreas={handleWinningAreas}
                 onMoveBet={handleBetMovement}
+                animatingBets={animatingBets}
               />
               <ProfitDisplay 
                 amount={lastProfit}
@@ -576,6 +624,7 @@ const App: React.FC = () => {
         />
       ))}
 
+      {/* Moving bet animations */}
       {movingBets.map((bet, index) => (
         <AnimatedChipStack
           key={`moving-${bet.areaId}-${index}`}
@@ -584,6 +633,51 @@ const App: React.FC = () => {
           position={bet.fromPosition}
           toPosition={bet.toPosition}
           isMoving={true}
+          onAnimationComplete={() => {
+            setMovingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+            setMovingBetIds(prev => {
+              const next = new Set(prev);
+              next.delete(bet.areaId);
+              return next;
+            });
+          }}
+        />
+      ))}
+
+      {/* Waiting bet animations */}
+      {waitingBets.map((bet, index) => (
+        <AnimatedChipStack
+          key={`waiting-${bet.areaId}-${index}`}
+          amount={bet.amount}
+          color={bet.color}
+          position={bet.position}
+          isWaiting={true}
+          onWaitComplete={() => {
+            // Wait for winning animation to complete before starting movement
+            setTimeout(() => {
+              // Start the movement animation
+              setMovingBets(prev => [...prev, {
+                ...bet,
+                fromPosition: bet.position,
+                toPosition: bet.targetPosition
+              }]);
+              setWaitingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+              
+              // Add the new bet after movement completes
+              setTimeout(() => {
+                handleBetPlacement(
+                  {
+                    fromId: bet.areaId,
+                    toId: bet.areaId.replace('come', `come-${diceTotal}`),
+                    amount: bet.amount,
+                    color: bet.color,
+                    count: bet.count
+                  },
+                  { left: bet.targetPosition.x, top: bet.targetPosition.y, width: 0, height: 0 } as DOMRect
+                );
+              }, 500);
+            }, 1500);  // Wait for winning animation to complete
+          }}
         />
       ))}
     </div>
