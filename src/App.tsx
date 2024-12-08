@@ -439,114 +439,119 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className="relative h-screen w-screen p-4 flex flex-col bg-gradient-to-br from-gray-900 to-gray-800"
+      className="relative h-screen w-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden"
       onClick={handleGlobalClick}
     >
-      <div className="flex-1 flex gap-6">
+      <div className="flex-1 flex gap-4 p-2 max-h-screen">
         {/* Main container */}
-        <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto p-4">
-          {/* Left side - Betting Controls */}
-          <div className="flex-[1]">
-            <div className={`flex-1 flex flex-col gap-4 min-w-[8vw] max-w-[23vw] relative ${helpMode ? 'pointer-events-none' : ''}`}>
-              <h1 className="text-3xl font-semibold text-white text-center">RollSim.com</h1>
-              
-              <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg flex justify-between items-center">
-                <div className="w-[200px] text-left">
-                  <span className="text-xl text-green-400 font-bold">
-                    Bank: <AnimatedBalance 
-                      value={bank} 
-                      animate={lastProfit > 0}
-                    />
-                  </span>
+        <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto">
+          {/* Left side - Game board and controls in column */}
+          <div className="flex-[3.8] flex flex-col gap-2 h-full">
+            {/* Game board - reduced size */}
+            <div className="h-[60%] flex items-center justify-center bg-felt-green rounded-xl p-4 shadow-table">
+              <div className="w-full h-full relative">
+                <div className="absolute inset-0">
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-full aspect-[2/1] relative">
+                      <CrapsTable 
+                        ref={tableRef}
+                        selectedChipValue={selectedChipValue}
+                        bank={bank}
+                        setBank={setBank}
+                        helpMode={helpMode}
+                        setHelpMode={setHelpMode}
+                        bets={bets}
+                        setBets={setBets}
+                        dice={dice}
+                        setDice={setDice}
+                        isRolling={isRolling}
+                        point={point}
+                        winningAreas={winningAreas}
+                        movingBetIds={movingBetIds}
+                        betHistory={betHistory}
+                        setBetHistory={setBetHistory}
+                        onPredeterminedRoll={(roll) => handleRoll(roll)}
+                        deleteMode={deleteMode}
+                      />
+                      {/* Dice in top right */}
+                      <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
+                        <Dice 
+                          value={isRolling ? animationDice.die1 : dice.die1} 
+                          isRolling={isRolling}
+                          size="large"
+                        />
+                        <Dice 
+                          value={isRolling ? animationDice.die2 : dice.die2} 
+                          isRolling={isRolling}
+                          size="large"
+                        />
+                      </div>
+                      <GameState 
+                        isRolling={isRolling}
+                        diceTotal={dice.die1 + dice.die2}
+                        die1={dice.die1}
+                        die2={dice.die2}
+                        bets={bets}
+                        onStateChange={handleGameStateChange}
+                        onRollOutcome={handleRollOutcome}
+                        onWinningAreas={handleWinningAreas}
+                        onMoveBet={handleBetMovement}
+                        animatingBets={animatingBets}
+                      />
+                      <ProfitDisplay 
+                        amount={lastProfit}
+                        onComplete={() => setLastProfit(0)}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="w-[200px] text-right">
-                  <span className="text-xl text-yellow-400 font-bold">
+              </div>
+            </div>
+
+            {/* Betting Controls */}
+            <div className={`h-[40%] flex flex-col gap-2 ${helpMode ? 'pointer-events-none' : ''}`}>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold text-white whitespace-nowrap">RollSim.com</h1>
+                
+                <div className="bg-gray-800 rounded-lg p-3 flex-1 flex justify-between items-center shadow-lg">
+                  <span className="text-xl text-green-400 font-bold whitespace-nowrap">
+                    Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
+                  </span>
+                  <span className="text-xl text-yellow-400 font-bold whitespace-nowrap">
                     Wager: ${calculateTotalWager(bets).toLocaleString()}
                   </span>
                 </div>
               </div>
               
-              <BettingControls 
-                onChipSelect={setSelectedChipValue}
-                selectedChipValue={selectedChipValue}
-                onUndo={() => tableRef.current?.handleUndo()}
-                onClear={() => tableRef.current?.handleClear()}
-                onToggleDelete={() => setDeleteMode(!deleteMode)}
-                deleteMode={deleteMode}
-                bank={bank}
-              />
-              
-              <DiceArea 
-                onRoll={handleRoll} 
-                isRolling={isRolling} 
-                quickRoll={quickRoll}
-                onQuickRollChange={setQuickRoll}
-              />
-
-              <label className="bg-gray-800/50 rounded-lg p-4 backdrop-blur-sm flex items-center gap-2 text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={keepWinningBets}
-                  onChange={(e) => setKeepWinningBets(e.target.checked)}
-                  className="w-4 h-4 rounded"
+              <div className="flex gap-2 flex-1">
+                <BettingControls 
+                  onChipSelect={setSelectedChipValue}
+                  selectedChipValue={selectedChipValue}
+                  onUndo={() => tableRef.current?.handleUndo()}
+                  onClear={() => tableRef.current?.handleClear()}
+                  onToggleDelete={() => setDeleteMode(!deleteMode)}
+                  deleteMode={deleteMode}
+                  bank={bank}
                 />
-                Keep Winning Bets Up
-              </label>
-            </div>
-          </div>
-
-          {/* Center - Table */}
-          <div className="flex-[2.8] flex items-center justify-center bg-felt-green rounded-xl p-4 shadow-table">
-            <div className="w-full aspect-[2/1] relative">
-              <CrapsTable 
-                ref={tableRef}
-                selectedChipValue={selectedChipValue}
-                bank={bank}
-                setBank={setBank}
-                helpMode={helpMode}
-                setHelpMode={setHelpMode}
-                bets={bets}
-                setBets={setBets}
-                dice={dice}
-                setDice={setDice}
-                isRolling={isRolling}
-                point={point}
-                winningAreas={winningAreas}
-                movingBetIds={movingBetIds}
-                betHistory={betHistory}
-                setBetHistory={setBetHistory}
-                onPredeterminedRoll={(roll) => handleRoll(roll)}
-                deleteMode={deleteMode}
-              />
-              {/* Dice in top right */}
-              <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
-                <Dice 
-                  value={isRolling ? animationDice.die1 : dice.die1} 
-                  isRolling={isRolling}
-                  size="large"
-                />
-                <Dice 
-                  value={isRolling ? animationDice.die2 : dice.die2} 
-                  isRolling={isRolling}
-                  size="large"
-                />
+                
+                <div className="flex flex-col gap-2 flex-1">
+                  <DiceArea 
+                    onRoll={handleRoll} 
+                    isRolling={isRolling} 
+                    quickRoll={quickRoll}
+                    onQuickRollChange={setQuickRoll}
+                  />
+                  <label className="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2 text-white cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={keepWinningBets}
+                      onChange={(e) => setKeepWinningBets(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    Keep Winning Bets Up
+                  </label>
+                </div>
               </div>
-              <GameState 
-                isRolling={isRolling}
-                diceTotal={dice.die1 + dice.die2}
-                die1={dice.die1}
-                die2={dice.die2}
-                bets={bets}
-                onStateChange={handleGameStateChange}
-                onRollOutcome={handleRollOutcome}
-                onWinningAreas={handleWinningAreas}
-                onMoveBet={handleBetMovement}
-                animatingBets={animatingBets}
-              />
-              <ProfitDisplay 
-                amount={lastProfit}
-                onComplete={() => setLastProfit(0)}
-              />
             </div>
           </div>
 
@@ -576,7 +581,6 @@ const App: React.FC = () => {
               )}
             </div>
           </div>
-
         </div>
       </div>
 
