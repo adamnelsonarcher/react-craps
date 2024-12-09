@@ -33,7 +33,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   totalAmount,
   showTotalAtBet
 }) => {
-  const chipSize = '2.3rem';
+  const chipSize = '2.6rem';
   const controls = useAnimation();
   const x = useMotionValue(0);
   const scale = useMotionValue(1);

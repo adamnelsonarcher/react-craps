@@ -28,7 +28,7 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
   const chips = Array(chipCount).fill(null);
   
   // Increased size for chips (15% larger)
-  const chipSize = '2.4rem'; // Previous was 2rem (w-8 = 2rem)
+  const chipSize = '2.6rem'; // Previous was 2rem (w-8 = 2rem)
   
   const positionStyle: React.CSSProperties = 
     position === 'bottom' ? { 
