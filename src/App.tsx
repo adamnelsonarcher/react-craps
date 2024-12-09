@@ -473,8 +473,21 @@ const App: React.FC = () => {
                         onPredeterminedRoll={(roll) => handleRoll(roll)}
                         deleteMode={deleteMode}
                       />
+                      
+                      {/* Additional Roll Dice button */}
+                      <button
+                        onClick={() => !isRolling && handleRoll()}
+                        disabled={isRolling}
+                        className={`absolute right-[5.74%] top-[24%] w-[10.09%] h-[5.78%]  
+                                   bg-[#1a472a] hover:bg-[#143621] text-white font-bold rounded
+                                   ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}
+                                   shadow-lg text-sm z-20`}
+                      >
+                        Roll Dice
+                      </button>
+
                       {/* Dice in top right */}
-                      <div className="absolute top-[10%] right-[5%] flex gap-4 z-10">
+                      <div className="absolute top-[10%] right-[5%] flex gap-4 z-10 scale-125">
                         <Dice 
                           value={isRolling ? animationDice.die1 : dice.die1} 
                           isRolling={isRolling}
