@@ -98,13 +98,13 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
         window.innerWidth - 200,  // Start from dice
         position.x-30,            // Move to bet
         position.x-30,            // Stay at bet briefly
-        200                       // Move to bank
+        300                       // Move to new bank location (left side)
       ],
       y: [
         100,                      // Start from dice
         position.y-30,            // Move to bet
         position.y-30,            // Stay at bet briefly
-        100                       // Move to bank
+        window.innerHeight  // Move to bottom of screen
       ],
       opacity: [1, 1, 1, 1, 0],
       scale: [1, 1.1, 1.1, 0.8],
