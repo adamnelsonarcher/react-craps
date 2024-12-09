@@ -101,7 +101,7 @@ const ChipStack: React.FC<ChipStackProps> = ({
       <div className="absolute top-1.5 left-1/2 -translate-x-1/2 
                     bg-black/80 text-white px-1.5 py-0 rounded text-sm
                     whitespace-nowrap z-50 font-bold
-                    border border-white/30">
+                    border border-white/30 select-none">
         ${amount}
       </div>
 
@@ -110,7 +110,7 @@ const ChipStack: React.FC<ChipStackProps> = ({
         <div className="absolute -top-4 left-1/2 -translate-x-1/2
                       bg-red-600 text-white px-1.5 py-0.5 rounded-sm text-xs
                       whitespace-nowrap z-50 font-bold
-                      border border-white/30">
+                      border border-white/30 select-none">
           OFF
         </div>
       )}
@@ -119,7 +119,7 @@ const ChipStack: React.FC<ChipStackProps> = ({
       {isLocked && (
         <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2
                       bg-black/80 text-white px-2 py-0.5 rounded-full text-xs
-                      font-bold whitespace-nowrap">
+                      font-bold whitespace-nowrap select-none">
           LOCKED
         </div>
       )}
@@ -128,7 +128,7 @@ const ChipStack: React.FC<ChipStackProps> = ({
       {deletable && (
         <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2
                       bg-red-500/80 text-white px-2 py-0.5 rounded-full text-xs
-                      font-bold whitespace-nowrap">
+                      font-bold whitespace-nowrap select-none">
           CLICK TO DELETE
         </div>
       )}
