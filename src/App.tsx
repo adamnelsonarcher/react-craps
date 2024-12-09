@@ -521,14 +521,17 @@ const App: React.FC = () => {
               </div>
 
               {/* Keep Winning Bets checkbox - positioned absolutely */}
-              <label className="absolute bottom-[3%] right-[83.8%] flex items-center gap-2 text-white cursor-pointer text-base bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm">
-                <input
-                  type="checkbox"
-                  checked={keepWinningBets}
-                  onChange={(e) => setKeepWinningBets(e.target.checked)}
-                  className="w-4 h-4 rounded"
-                />
-                Keep Winning Bets Up
+              <label className="absolute bottom-[3%] right-[83.8%] flex items-center gap-2 text-white cursor-pointer text-base 
+                               bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none">
+                <div className="flex items-center gap-2 pointer-events-none">
+                  <input
+                    type="checkbox"
+                    checked={keepWinningBets}
+                    onChange={(e) => setKeepWinningBets(e.target.checked)}
+                    className="w-4 h-4 rounded pointer-events-auto"
+                  />
+                  <span>Keep Winning Bets Up</span>
+                </div>
               </label>
             </div>
 

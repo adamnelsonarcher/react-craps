@@ -745,7 +745,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     ));
   };
 
-  const handleAreaClick = (areaId: string) => {
+  const handleAreaClick = (areaId: string, rect: DOMRect) => {
     // Add early return if rolling
     if (isRolling) return;
     
@@ -1040,7 +1040,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                 if (helpMode) {
                   handleHelpClick(area.id);
                 } else {
-                  handleAreaClick(area.id);
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  handleAreaClick(area.id, rect);
                 }
               }}
             >
@@ -1071,6 +1072,9 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                       area.id === 'dont-pass-chips'
                     )}
                     deletable={deleteMode && !isLockedBet(area.id, point)}
+                    deleteMode={deleteMode}
+                    handleChipClick={handleChipClick}
+                    handleAreaClick={handleAreaClick}
                   />
                 </div>
               )}

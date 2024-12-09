@@ -9,6 +9,9 @@ interface ChipStackProps {
   isOff?: boolean;
   isLocked?: boolean;
   deletable?: boolean;
+  deleteMode?: boolean;
+  handleChipClick?: (areaId: string) => void;
+  handleAreaClick?: (areaId: string, rect: DOMRect) => void;
 }
 
 const CHIP_VALUES = [
@@ -20,7 +23,17 @@ const CHIP_VALUES = [
   { value: 1, color: 'bg-gray-200' }     // Light Gray (was white)
 ];
 
-const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', areaId, isOff = false, isLocked = false, deletable = false }) => {
+const ChipStack: React.FC<ChipStackProps> = ({ 
+  amount, 
+  position = 'center', 
+  areaId = '', 
+  isOff = false, 
+  isLocked = false, 
+  deletable = false,
+  deleteMode = false,
+  handleChipClick,
+  handleAreaClick
+}) => {
   // console.log('ChipStack rendered with:', { amount, position, areaId });
   
   const optimalChip = CHIP_VALUES.find(chip => amount >= chip.value) || CHIP_VALUES[CHIP_VALUES.length - 1];
@@ -52,6 +65,18 @@ const ChipStack: React.FC<ChipStackProps> = ({ amount, position = 'center', area
         transition-opacity duration-150`}
       style={{ ...positionStyle, width: chipSize, height: chipSize }}
       data-position={position}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (deleteMode && handleChipClick) {
+          handleChipClick(areaId);
+        } else if (handleAreaClick) {
+          const areaElement = document.querySelector(`[data-bet-id="${areaId}"]`);
+          if (areaElement) {
+            const rect = areaElement.getBoundingClientRect();
+            handleAreaClick(areaId, rect);
+          }
+        }
+      }}
     >
       {/* Stack of chips */}
       {chips.map((_, index) => (
