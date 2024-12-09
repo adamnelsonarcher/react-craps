@@ -749,24 +749,29 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     // Add early return if rolling
     if (isRolling) return;
     
+    // Map chip areas to their parent betting areas
+    const mappedAreaId = areaId === 'pass-line-chips' ? 'pass-line' :
+                        areaId === 'dont-pass-chips' ? 'dont-pass' :
+                        areaId;
+    
     if (!selectedChipValue) return;
     if (selectedChipValue > bank) return;
     
-    // Prevent betting on chip areas directly
-    if (areaId.endsWith('-chips')) return;
+    // Prevent betting on chip areas directly (except for pass-line-chips and dont-pass-chips)
+    if (areaId.endsWith('-chips') && !['pass-line-chips', 'dont-pass-chips'].includes(areaId)) return;
     
     // Prevent betting on come/don't come point numbers directly
     if (areaId.startsWith('come-') || areaId.startsWith('dont-come-')) return;
     
     // Prevent pass line and don't pass bets after point is set
-    if ((areaId === 'pass-line' || areaId === 'dont-pass') && point !== null) return;
+    if ((mappedAreaId === 'pass-line' || mappedAreaId === 'dont-pass') && point !== null) return;
     
     // Prevent come and don't come bets before point is set
-    if ((areaId === 'come' || areaId === 'dont-come') && point === null) return;
+    if ((mappedAreaId === 'come' || mappedAreaId === 'dont-come') && point === null) return;
     
-    const chipAreaId = areaId === 'pass-line' ? 'pass-line-chips' :
-                      areaId === 'dont-pass' ? 'dont-pass-chips' :
-                      areaId;
+    const chipAreaId = mappedAreaId === 'pass-line' ? 'pass-line-chips' :
+                      mappedAreaId === 'dont-pass' ? 'dont-pass-chips' :
+                      mappedAreaId;
     
     setBetHistory(prev => [...prev, bets]);
     const newBank = bank - selectedChipValue;
