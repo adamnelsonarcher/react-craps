@@ -937,190 +937,151 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
   return (
     <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''} ${deleteMode ? 'cursor-pointer' : ''}`}>
-      {/* Hover Indicator - moved to bottom and adjusted left */}
-      <div className="absolute -bottom-0 left-[40%] transform -translate-x-1/2 flex justify-center z-[900]">
-        {hoveredArea && (
-          <div className="bg-black/70 text-white px-4 py-2 rounded-full
-                        font-bold text-lg transition-opacity duration-150">
-            {bettingAreas.find(area => 
-              area.id === hoveredArea && 
-              !area.id.includes('number') && 
-              !area.id.includes('full')
-            )?.name}
-          </div>
-        )}
-      </div>
-
+      {/* Board Image Layer - Red outline */}
       <img 
         src={boardLayout}
         alt="Craps Table Layout"
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain outline outline-4 outline-red-500"
         onLoad={(e) => setImageSize({
           width: e.currentTarget.naturalWidth,
           height: e.currentTarget.naturalHeight
         })}
       />
       
-      {/* Dev tools button - only show if enabled */}
-      {showDevToolsButton && (
-        <button 
-          className="absolute bottom-2 left-2 z-50 bg-blue-500 text-white px-2 py-1 rounded"
-          onClick={() => setShowDevTools(!showDevTools)}
-        >
-          {showDevTools ? 'Hide' : 'Show'} Dev Tools
-        </button>
-      )}
-
-      {/* Help Mode Button */}
-      <button 
-        className={`absolute bottom-20 left-4 z-50 px-4 h-8 rounded-full 
-                    flex items-center justify-center gap-2
-                    ${helpMode ? 'bg-blue-500' : 'bg-gray-600'} 
-                    text-white font-bold text-lg
-                    hover:bg-opacity-90 transition-colors
-                    ring-2 ring-white/50 shadow-lg`}
-        onClick={() => {
-          setHelpMode(!helpMode);
-          setHelpText(null);
-        }}
-      >
-        ? {helpMode && <span className="text-sm font-normal">Help</span>}
-      </button>
-
-      {/* Help Text Popup */}
-      {helpText && helpMode && (
-        <div className="absolute bottom-16 left-28 z-50 
-                        bg-black/90 text-white p-4 rounded-lg
-                        shadow-lg backdrop-blur-sm
-                        max-w-[300px]
-                        transform translate-y-full
-                        max-h-[calc(100vh-16rem)] 
-                        overflow-y-auto">
-          {helpText.split('\n').map((line, i) => (
-            <React.Fragment key={i}>
-              {line}
-              <br />
-            </React.Fragment>
-          ))}
+      {/* Betting Areas Layer - Blue outline */}
+      <div className="absolute inset-0 outline outline-4 outline-blue-500">
+        {/* Hover Indicator */}
+        <div className="absolute -bottom-0 left-[40%] transform -translate-x-1/2 flex justify-center z-[900]">
+          {hoveredArea && (
+            <div className="bg-black/70 text-white px-4 py-2 rounded-full
+                          font-bold text-lg transition-opacity duration-150">
+              {bettingAreas.find(area => 
+                area.id === hoveredArea && 
+                !area.id.includes('number') && 
+                !area.id.includes('full')
+              )?.name}
+            </div>
+          )}
         </div>
-      )}
 
-      <div 
-        className={`absolute inset-0 ${isRolling ? 'pointer-events-none' : ''}`}
-        style={{ zIndex: 1 }}
-        onMouseMove={handleMouseMove}
-        onClick={handleGlobalClick}
-      >
-        {visibleBettingAreas.map((area) => {
-          const isWinning = winningAreas?.some(
-            winArea => winArea.id === area.id && winArea.type === 'win'
-          );
-          const shouldHighlight = isWinning && !NON_HIGHLIGHTING_AREAS.includes(area.id);
+        {/* Betting areas */}
+        <div 
+          className={`absolute inset-0 ${isRolling ? 'pointer-events-none' : ''}`}
+          style={{ zIndex: 1 }}
+          onMouseMove={handleMouseMove}
+          onClick={handleGlobalClick}
+        >
+          {visibleBettingAreas.map((area) => {
+            const isWinning = winningAreas?.some(
+              winArea => winArea.id === area.id && winArea.type === 'win'
+            );
+            const shouldHighlight = isWinning && !NON_HIGHLIGHTING_AREAS.includes(area.id);
 
-          return (
-            <div
-              key={area.id}
-              className={`absolute cursor-pointer transition-all duration-200
-                          ${shouldHighlight ? 'animate-flash-win bg-[rgba(255,255,200,0.25)]' : ''}`}
-              data-bet-id={area.id}
-              style={{
-                ...area.style,
-                backgroundColor: !shouldHighlight && hoveredArea === area.id 
-                  ? (isAreaAccessible(area.id) 
-                      ? 'rgba(255, 255, 255, 0.1)' 
-                      : 'rgba(255, 0, 0, 0.1)')
-                  : 'transparent',
-                border: hoveredArea === area.id 
-                  ? `2px solid ${isAreaAccessible(area.id) 
-                      ? 'rgba(255, 255, 255, 0.1)' 
-                      : 'rgba(255, 0, 0, 0.1)'}`
-                  : '2px solid transparent',
-                pointerEvents: 'all',
-              }}
-              onMouseEnter={() => setHoveredArea(area.id)}
-              onMouseLeave={() => setHoveredArea(null)}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (showDevTools) return;
-                if (helpMode) {
-                  handleHelpClick(area.id);
-                } else {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  handleAreaClick(area.id, rect);
-                }
-              }}
-            >
-              {/* Render chip stack if there's a bet */}
-              {bets.find(bet => bet.areaId === area.id) && !movingBetIds.has(area.id) && (
-                <div onClick={(e) => {
-                  e.stopPropagation();
-                  if (deleteMode) {
-                    handleChipClick(area.id);
-                  }
-                }}>
-                  <ChipStack 
-                    {...bets.find(bet => bet.areaId === area.id)!}
-                    position={
-                      area.id === 'pass-line' || area.id === 'dont-pass'
-                        ? 'custom'
-                        : area.id.startsWith('place-') ? 'bottom-offset'
-                        : 'center'
-                    }
-                    areaId={area.id}
-                    isOff={!point && (
-                      area.id.startsWith('place-') || 
-                      area.id.startsWith('buy-') || 
-                      area.id.startsWith('lay-')
-                    )}
-                    isLocked={point !== null && (
-                      area.id === 'pass-line-chips' || 
-                      area.id === 'dont-pass-chips'
-                    )}
-                    deletable={deleteMode && !isLockedBet(area.id, point)}
-                    deleteMode={deleteMode}
-                    handleChipClick={handleChipClick}
-                    handleAreaClick={handleAreaClick}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Dev Tools Overlay */}
-        {showDevTools && (
-          <>
-            <div className="absolute top-12 left-0 bg-black/50 text-white p-2 text-sm">
-              X: {mousePosition.x.toFixed(2)}%<br />
-              Y: {mousePosition.y.toFixed(2)}%<br />
-              Image: {imageSize.width} x {imageSize.height}
-            </div>
-            <DiceControls 
-              currentDice={dice}
-              onDiceChange={(newDice) => {
-                console.log('Dev tools setting dice:', newDice); // Debug log
-                onPredeterminedRoll(newDice);
-              }}
-            />
-            <div className="absolute top-0 right-0 bg-black/50 text-white p-2 max-h-[300px] overflow-y-auto">
-              <button 
+            return (
+              <div
+                key={area.id}
+                className={`absolute cursor-pointer transition-all duration-200
+                            ${shouldHighlight ? 'animate-flash-win bg-[rgba(255,255,200,0.25)]' : ''}`}
+                data-bet-id={area.id}
+                style={{
+                  ...area.style,
+                  backgroundColor: !shouldHighlight && hoveredArea === area.id 
+                    ? (isAreaAccessible(area.id) 
+                        ? 'rgba(255, 255, 255, 0.1)' 
+                        : 'rgba(255, 0, 0, 0.1)')
+                    : 'transparent',
+                  border: hoveredArea === area.id 
+                    ? `2px solid ${isAreaAccessible(area.id) 
+                        ? 'rgba(255, 255, 255, 0.1)' 
+                        : 'rgba(255, 0, 0, 0.1)'}`
+                    : '2px solid transparent',
+                  pointerEvents: 'all',
+                }}
+                onMouseEnter={() => setHoveredArea(area.id)}
+                onMouseLeave={() => setHoveredArea(null)}
                 onClick={(e) => {
                   e.stopPropagation();
-                  copyToClipboard();
+                  if (showDevTools) return;
+                  if (helpMode) {
+                    handleHelpClick(area.id);
+                  } else {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    handleAreaClick(area.id, rect);
+                  }
                 }}
-                className="bg-blue-500 text-white px-2 py-1 rounded mb-2"
               >
-                Copy Log
-              </button>
-              <div className="text-sm">
-                {clickLog.map((entry, index) => (
-                  <div key={index}>{entry}</div>
-                ))}
+                {/* Render chip stack if there's a bet */}
+                {bets.find(bet => bet.areaId === area.id) && !movingBetIds.has(area.id) && (
+                  <div onClick={(e) => {
+                    e.stopPropagation();
+                    if (deleteMode) {
+                      handleChipClick(area.id);
+                    }
+                  }}>
+                    <ChipStack 
+                      {...bets.find(bet => bet.areaId === area.id)!}
+                      position={
+                        area.id === 'pass-line' || area.id === 'dont-pass'
+                          ? 'custom'
+                          : area.id.startsWith('place-') ? 'bottom-offset'
+                          : 'center'
+                      }
+                      areaId={area.id}
+                      isOff={!point && (
+                        area.id.startsWith('place-') || 
+                        area.id.startsWith('buy-') || 
+                        area.id.startsWith('lay-')
+                      )}
+                      isLocked={point !== null && (
+                        area.id === 'pass-line-chips' || 
+                        area.id === 'dont-pass-chips'
+                      )}
+                      deletable={deleteMode && !isLockedBet(area.id, point)}
+                      deleteMode={deleteMode}
+                      handleChipClick={handleChipClick}
+                      handleAreaClick={handleAreaClick}
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-          </>
-        )}
-      </div>    
+            );
+          })}
+
+          {/* Dev Tools Overlay */}
+          {showDevTools && (
+            <>
+              <div className="absolute top-12 left-0 bg-black/50 text-white p-2 text-sm">
+                X: {mousePosition.x.toFixed(2)}%<br />
+                Y: {mousePosition.y.toFixed(2)}%<br />
+                Image: {imageSize.width} x {imageSize.height}
+              </div>
+              <DiceControls 
+                currentDice={dice}
+                onDiceChange={(newDice) => {
+                  console.log('Dev tools setting dice:', newDice); // Debug log
+                  onPredeterminedRoll(newDice);
+                }}
+              />
+              <div className="absolute top-0 right-0 bg-black/50 text-white p-2 max-h-[300px] overflow-y-auto">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyToClipboard();
+                  }}
+                  className="bg-blue-500 text-white px-2 py-1 rounded mb-2"
+                >
+                  Copy Log
+                </button>
+                <div className="text-sm">
+                  {clickLog.map((entry, index) => (
+                    <div key={index}>{entry}</div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>      
   );
 });
