@@ -437,14 +437,31 @@ const App: React.FC = () => {
 
   const diceTotal = dice.die1 + dice.die2;
 
+  useEffect(() => {
+    const handleResize = () => {
+      const minWidth = 1150;
+      const minHeight = 1010;
+      
+      // Calculate scale based on height only
+      const scale = Math.min(1, (window.innerHeight - 40) / minHeight);  // 40px buffer
+      
+      document.documentElement.style.setProperty('--ui-scale', scale.toString());
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div 
       className="relative h-screen w-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden"
       onClick={handleGlobalClick}
     >
-      <div className="flex-1 flex gap-4 p-2 max-h-screen">
+      <div className="flex-1 flex justify-center items-center p-2 max-h-screen">
         {/* Main container */}
-        <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto">
+        <div className="flex flex-row gap-4 h-[1010px] min-w-[1150px] scale-[var(--ui-scale,1)] origin-center">
           {/* Left side - Game board and controls in column */}
           <div className="flex-[3.8] flex flex-col gap-2 h-full min-h-0">  {/* Added min-h-0 */}
             {/* Game board */}
