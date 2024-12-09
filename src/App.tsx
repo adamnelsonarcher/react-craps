@@ -446,9 +446,9 @@ const App: React.FC = () => {
         {/* Main container */}
         <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto">
           {/* Left side - Game board and controls in column */}
-          <div className="flex-[3.8] flex flex-col gap-2 h-full">
-            {/* Game board - reduced size */}
-            <div className="h-[60%] flex items-center justify-center bg-felt-green rounded-xl p-4 shadow-table">
+          <div className="flex-[3.8] flex flex-col gap-2 h-full min-h-0">  {/* Added min-h-0 */}
+            {/* Game board */}
+            <div className="h-[85%] flex items-center justify-center bg-felt-green rounded-xl p-3 shadow-table min-h-0">  {/* Changed from 70% to 75% */}
               <div className="w-full h-full relative">
                 <div className="absolute inset-0">
                   <div className="w-full h-full flex items-center justify-center">
@@ -509,21 +509,13 @@ const App: React.FC = () => {
             </div>
 
             {/* Betting Controls */}
-            <div className={`h-[40%] flex flex-col gap-2 ${helpMode ? 'pointer-events-none' : ''}`}>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold text-white whitespace-nowrap">RollSim.com</h1>
-                
-                <div className="bg-gray-800 rounded-lg p-3 flex-1 flex justify-between items-center shadow-lg">
-                  <span className="text-xl text-green-400 font-bold whitespace-nowrap">
-                    Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
-                  </span>
-                  <span className="text-xl text-yellow-400 font-bold whitespace-nowrap">
-                    Wager: ${calculateTotalWager(bets).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 flex-1">
+            <div className={`h-[25%] flex flex-col gap-0 ${helpMode ? 'pointer-events-none' : ''} min-h-0`}>  {/* Changed from 30% to 25% */}
+              {/* Title only */}
+              <h1 className="text-xl font-semibold text-white whitespace-nowrap">RollSim.com</h1>
+
+              {/* Main controls row - single line */}
+              <div className="flex gap-4 items-center flex-1 bg-gray-800/50 rounded-lg p-2">
+                {/* Left section - Betting Controls with Bank/Wager info */}
                 <BettingControls 
                   onChipSelect={setSelectedChipValue}
                   selectedChipValue={selectedChipValue}
@@ -532,8 +524,22 @@ const App: React.FC = () => {
                   onToggleDelete={() => setDeleteMode(!deleteMode)}
                   deleteMode={deleteMode}
                   bank={bank}
+                  bankDisplay={
+                    <div className="flex flex-col justify-center">
+                      <span className="text-lg text-green-400 font-bold whitespace-nowrap">
+                        Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
+                      </span>
+                      <span className="text-lg text-yellow-400 font-bold whitespace-nowrap">
+                        Wager: ${calculateTotalWager(bets).toLocaleString()}
+                      </span>
+                    </div>
+                  }
                 />
-                
+
+                {/* Vertical divider */}
+                <div className="h-8 w-px bg-gray-600/50" />
+
+                {/* Right section - Dice and Settings */}
                 <div className="flex flex-col gap-2 flex-1">
                   <DiceArea 
                     onRoll={handleRoll} 
@@ -541,12 +547,13 @@ const App: React.FC = () => {
                     quickRoll={quickRoll}
                     onQuickRollChange={setQuickRoll}
                   />
-                  <label className="bg-gray-800/50 rounded-lg p-2 flex items-center gap-2 text-white cursor-pointer">
+
+                  <label className="flex items-center gap-2 text-white cursor-pointer text-sm">
                     <input
                       type="checkbox"
                       checked={keepWinningBets}
                       onChange={(e) => setKeepWinningBets(e.target.checked)}
-                      className="w-4 h-4 rounded"
+                      className="w-3 h-3 rounded"
                     />
                     Keep Winning Bets Up
                   </label>

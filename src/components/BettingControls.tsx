@@ -53,6 +53,7 @@ interface BettingControlsProps {
   onToggleDelete: () => void;
   deleteMode: boolean;
   bank: number;
+  bankDisplay: React.ReactNode;
 }
 
 const BettingControls: React.FC<BettingControlsProps> = ({ 
@@ -63,6 +64,7 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   onToggleDelete,
   deleteMode,
   bank,
+  bankDisplay,
 }) => {
   const chipConfigs: ChipConfig[] = [
     { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-300' },
@@ -74,43 +76,50 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   ];
 
   return (
-    <div className="bg-gray-800/50 rounded-lg p-6 flex flex-col gap-6 backdrop-blur-sm">
-      <div className="grid grid-cols-3 gap-4 justify-items-center">
-        {chipConfigs.map((config) => {
-          const isAffordable = bank >= config.value;
-          return (
-            <Chip 
-              key={config.value} 
-              {...config}
-              isSelected={selectedChipValue === config.value}
-              onClick={() => isAffordable && onChipSelect(config.value)}
-              disabled={!isAffordable}
-            />
-          );
-        })}
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <button
-          className="btn bg-gray-500 text-white hover:bg-gray-600 
-                      text-base py-3"
-          onClick={onUndo}
-        >
-          Undo Bet
-        </button>
-        <button
-          className="btn bg-gray-500 text-white hover:bg-gray-600 
-                    text-base py-3"
-          onClick={onClear}
-        >
-          Clear All
-        </button>
-        <button
-          onClick={onToggleDelete}
-          className={`btn ${deleteMode ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-500 hover:bg-gray-600'} 
-                     text-white text-base py-3`}
-        >
-          {deleteMode ? 'Cancel' : 'Delete'}
-        </button>
+    <div className="bg-gray-800/50 rounded-lg p-2 flex flex-col gap-2 backdrop-blur-sm min-h-0">
+      <div className="flex gap-4 items-start">
+        {bankDisplay}
+
+        <div className="flex gap-4">
+          {chipConfigs.map((config) => {
+            const isAffordable = bank >= config.value;
+            return (
+              <Chip 
+                key={config.value} 
+                {...config}
+                isSelected={selectedChipValue === config.value}
+                onClick={() => isAffordable && onChipSelect(config.value)}
+                disabled={!isAffordable}
+              />
+            );
+          })}
+        </div>
+
+        <div className="h-full w-px bg-gray-600/50" />
+
+        <div className="flex gap-2">
+          <button
+            className="btn bg-gray-500 text-white hover:bg-gray-600 
+                        text-base py-1 px-3 w-24"
+            onClick={onUndo}
+          >
+            Undo Bet
+          </button>
+          <button
+            className="btn bg-gray-500 text-white hover:bg-gray-600 
+                        text-base py-1 px-3 w-24"
+            onClick={onClear}
+          >
+            Clear All
+          </button>
+          <button
+            onClick={onToggleDelete}
+            className={`btn ${deleteMode ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-500 hover:bg-gray-600'} 
+                         text-white text-base py-1 px-3 w-24`}
+          >
+            {deleteMode ? 'Cancel' : 'Delete'}
+          </button>
+        </div>
       </div>
     </div>
   );
