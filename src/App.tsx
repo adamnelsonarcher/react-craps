@@ -437,283 +437,179 @@ const App: React.FC = () => {
 
   const diceTotal = dice.die1 + dice.die2;
 
+  useEffect(() => {
+    const updateContainerSize = () => {
+      const container = document.querySelector('.bg-felt-green');
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        document.documentElement.style.setProperty('--container-width', `${rect.width}px`);
+        document.documentElement.style.setProperty('--container-height', `${rect.height}px`);
+      }
+    };
+
+    window.addEventListener('resize', updateContainerSize);
+    updateContainerSize();
+
+    return () => window.removeEventListener('resize', updateContainerSize);
+  }, []);
+
   return (
-    <div 
-      className="relative h-screen w-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden"
-      onClick={handleGlobalClick}
-    >
-      <div className="flex-1 flex gap-4 p-2 max-h-screen">
-        {/* Main container */}
-        <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto">
-          {/* Left side - Game board and controls in column */}
-          <div className="flex-[3.8] flex flex-col gap-2 h-full min-h-0">  {/* Added min-h-0 */}
-            {/* Game board */}
-            <div className="h-[110%] flex items-center justify-center bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative">  {/* Added pt-8 for extra top padding */}
-              <div className="w-full h-full relative">
-                <div className="absolute inset-0">
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-full aspect-[2/1] relative">
-                      <CrapsTable 
-                        ref={tableRef}
-                        selectedChipValue={selectedChipValue}
-                        bank={bank}
-                        setBank={setBank}
-                        helpMode={helpMode}
-                        setHelpMode={setHelpMode}
-                        bets={bets}
-                        setBets={setBets}
-                        dice={dice}
-                        setDice={setDice}
-                        isRolling={isRolling}
-                        point={point}
-                        winningAreas={winningAreas}
-                        movingBetIds={movingBetIds}
-                        betHistory={betHistory}
-                        setBetHistory={setBetHistory}
-                        onPredeterminedRoll={(roll) => handleRoll(roll)}
-                        deleteMode={deleteMode}
-                      />
-                      
-                      {/* Additional Roll Dice button */}
-                      <button
-                        onClick={() => !isRolling && handleRoll()}
-                        disabled={isRolling}
-                        className={`absolute right-[5.74%] top-[24%] w-[10.09%] h-[5.78%]  
-                                   bg-[#1a472a] hover:bg-[#143621] text-white font-bold rounded
-                                   ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}
-                                   shadow-lg text-sm z-20`}
-                      >
-                        Roll Dice
-                      </button>
-
-                      {/* Dice in top right */}
-                      <div className="absolute top-[10%] right-[5%] flex gap-4 z-10 scale-125">
-                        <Dice 
-                          value={isRolling ? animationDice.die1 : dice.die1} 
-                          isRolling={isRolling}
-                          size="large"
-                        />
-                        <Dice 
-                          value={isRolling ? animationDice.die2 : dice.die2} 
-                          isRolling={isRolling}
-                          size="large"
-                        />
-                      </div>
-                      <GameState 
-                        isRolling={isRolling}
-                        diceTotal={dice.die1 + dice.die2}
-                        die1={dice.die1}
-                        die2={dice.die2}
-                        bets={bets}
-                        onStateChange={handleGameStateChange}
-                        onRollOutcome={handleRollOutcome}
-                        onWinningAreas={handleWinningAreas}
-                        onMoveBet={handleBetMovement}
-                        animatingBets={animatingBets}
-                      />
-                      <ProfitDisplay 
-                        amount={lastProfit}
-                        onComplete={() => setLastProfit(0)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Keep Winning Bets checkbox - positioned absolutely */}
-              <label className="absolute bottom-[3%] right-[83.8%] flex items-center gap-2 text-white cursor-pointer text-base 
-                               bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none">
-                <div className="flex items-center gap-2 pointer-events-none">
-                  <input
-                    type="checkbox"
-                    checked={keepWinningBets}
-                    onChange={(e) => setKeepWinningBets(e.target.checked)}
-                    className="w-4 h-4 rounded pointer-events-auto"
-                  />
-                  <span>Keep Winning Bets Up</span>
-                </div>
-              </label>
-            </div>
-
-            {/* Betting Controls */}
-            <div className={`h-[15%] ${helpMode ? 'pointer-events-none' : ''} min-h-0`}>
-              <div className="flex gap-4 items-stretch h-full bg-gray-800/50 rounded-lg px-3">  {/* Changed items-center to items-stretch, increased px-2 to px-3 */}
-                <BettingControls 
-                  onChipSelect={setSelectedChipValue}
+    <div className="h-screen w-screen bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden">
+      <div className="h-full w-full max-w-[1800px] mx-auto flex gap-2 p-2">
+        {/* Main content area with betting controls */}
+        <div className="flex-1 flex flex-col gap-2">
+          {/* Game board area - fills available space */}
+          <div className="flex-1 bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative">
+            <div className="w-full h-full flex items-center justify-center">
+              {/* This container will maintain 2:1 ratio and fit within the green area */}
+              <div className="relative w-full h-full" style={{ 
+                maxWidth: 'min(100%, calc(var(--container-height) * 2))',
+                maxHeight: 'min(100%, calc(var(--container-width) / 2))',
+                aspectRatio: '2/1',
+              }}>
+                <CrapsTable 
+                  ref={tableRef}
                   selectedChipValue={selectedChipValue}
-                  onUndo={() => tableRef.current?.handleUndo()}
-                  onClear={() => tableRef.current?.handleClear()}
-                  onToggleDelete={() => setDeleteMode(!deleteMode)}
-                  deleteMode={deleteMode}
                   bank={bank}
-                  bankDisplay={
-                    <div className="flex flex-col justify-center w-[200px]">
-                      <span className="text-2xl text-green-400 font-bold whitespace-nowrap">
-                        Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
-                      </span>
-                      <span className="text-2xl text-yellow-400 font-bold whitespace-nowrap">
-                        Wager: ${calculateTotalWager(bets).toLocaleString()}
-                      </span>
-                    </div>
-                  }
+                  setBank={setBank}
+                  helpMode={helpMode}
+                  setHelpMode={setHelpMode}
+                  bets={bets}
+                  setBets={setBets}
+                  dice={dice}
+                  setDice={setDice}
+                  isRolling={isRolling}
+                  point={point}
+                  winningAreas={winningAreas}
+                  movingBetIds={movingBetIds}
+                  betHistory={betHistory}
+                  setBetHistory={setBetHistory}
+                  onPredeterminedRoll={(roll) => handleRoll(roll)}
+                  deleteMode={deleteMode}
                 />
+                
+                {/* Additional Roll Dice button */}
+                <button
+                  onClick={() => !isRolling && handleRoll()}
+                  disabled={isRolling}
+                  className={`absolute right-[5.74%] top-[24%] w-[10.09%] h-[5.78%]  
+                             bg-[#1a472a] hover:bg-[#143621] text-white font-bold rounded
+                             ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}
+                             shadow-lg text-sm z-20`}
+                >
+                  Roll Dice
+                </button>
 
-                <div className="h-full w-px bg-gray-600/50" />
-
-                {/* Right section - Dice and Quick Roll */}
-                <div className="flex-1 flex flex-col gap-2 py-2">
-                  <div className="flex-1 flex flex-col gap-2">
-                    <DiceArea 
-                      onRoll={handleRoll} 
-                      isRolling={isRolling} 
-                      quickRoll={quickRoll}
-                      onQuickRollChange={setQuickRoll}
-                      className="w-40 h-full"
-                    />
-                    <label className="flex items-center gap-2 text-white cursor-pointer text-sm">
-                      <input
-                        type="checkbox"
-                        checked={quickRoll}
-                        onChange={(e) => setQuickRoll(e.target.checked)}
-                        className="w-4 h-4 rounded"
-                      />
-                      Quick Roll
-                    </label>
-                  </div>
+                {/* Dice in top right */}
+                <div className="absolute top-[10%] right-[5%] flex gap-4 z-10 scale-125">
+                  <Dice 
+                    value={isRolling ? animationDice.die1 : dice.die1} 
+                    isRolling={isRolling}
+                    size="large"
+                  />
+                  <Dice 
+                    value={isRolling ? animationDice.die2 : dice.die2} 
+                    isRolling={isRolling}
+                    size="large"
+                  />
                 </div>
+                <GameState 
+                  isRolling={isRolling}
+                  diceTotal={dice.die1 + dice.die2}
+                  die1={dice.die1}
+                  die2={dice.die2}
+                  bets={bets}
+                  onStateChange={handleGameStateChange}
+                  onRollOutcome={handleRollOutcome}
+                  onWinningAreas={handleWinningAreas}
+                  onMoveBet={handleBetMovement}
+                  animatingBets={animatingBets}
+                />
+                <ProfitDisplay 
+                  amount={lastProfit}
+                  onComplete={() => setLastProfit(0)}
+                />
               </div>
             </div>
           </div>
 
-          {/* Right side - Roll History */}
-          <div className="w-18 bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
-            <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
-            <div className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
-              {rollHistory.length === 0 ? (
-                <div className="flex justify-center items-center gap-1 p-0.5 rounded-md h-[2.5rem] opacity-0">
-                  <Dice value={1} isRolling={false} size="small" />
-                  <Dice value={1} isRolling={false} size="small" />
-                </div>
-              ) : (
-                rollHistory.slice(0, Math.min(15, rollHistory.length)).map((roll, index) => (
-                  <div 
-                    key={`roll-${rollHistory.length - index}`}
-                    className={`flex justify-center items-center gap-1 
-                               ${index === 0 ? 'animate-slideIn' : ''} 
-                               p-0.5 rounded-md
-                               ${roll.type === 'craps-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
-                               ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
-                  >
-                    <Dice value={roll.die1} isRolling={false} size="small" />
-                    <Dice value={roll.die2} isRolling={false} size="small" />
+          {/* Keep existing betting controls */}
+          <div className={`h-[15%] ${helpMode ? 'pointer-events-none' : ''} min-h-0`}>
+            <div className="flex gap-4 items-stretch h-full bg-gray-800/50 rounded-lg px-3">
+              <BettingControls 
+                onChipSelect={setSelectedChipValue}
+                selectedChipValue={selectedChipValue}
+                onUndo={() => tableRef.current?.handleUndo()}
+                onClear={() => tableRef.current?.handleClear()}
+                onToggleDelete={() => setDeleteMode(!deleteMode)}
+                deleteMode={deleteMode}
+                bank={bank}
+                bankDisplay={
+                  <div className="flex flex-col justify-center w-[200px]">
+                    <span className="text-2xl text-green-400 font-bold whitespace-nowrap">
+                      Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
+                    </span>
+                    <span className="text-2xl text-yellow-400 font-bold whitespace-nowrap">
+                      Wager: ${calculateTotalWager(bets).toLocaleString()}
+                    </span>
                   </div>
-                ))
-              )}
+                }
+              />
+
+              <div className="h-full w-px bg-gray-600/50" />
+
+              {/* Right section - Dice and Quick Roll */}
+              <div className="flex-1 flex flex-col gap-2 py-2">
+                <div className="flex-1 flex flex-col gap-2">
+                  <DiceArea 
+                    onRoll={handleRoll} 
+                    isRolling={isRolling} 
+                    quickRoll={quickRoll}
+                    onQuickRollChange={setQuickRoll}
+                    className="w-40 h-full"
+                  />
+                  <label className="flex items-center gap-2 text-white cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      checked={quickRoll}
+                      onChange={(e) => setQuickRoll(e.target.checked)}
+                      className="w-4 h-4 rounded"
+                    />
+                    Quick Roll
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Keep existing roll history */}
+        <div className="w-18 bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
+          <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
+          <div className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
+            {rollHistory.length === 0 ? (
+              <div className="flex justify-center items-center gap-1 p-0.5 rounded-md h-[2.5rem] opacity-0">
+                <Dice value={1} isRolling={false} size="small" />
+                <Dice value={1} isRolling={false} size="small" />
+              </div>
+            ) : (
+              rollHistory.slice(0, Math.min(15, rollHistory.length)).map((roll, index) => (
+                <div 
+                  key={`roll-${rollHistory.length - index}`}
+                  className={`flex justify-center items-center gap-1 
+                             ${index === 0 ? 'animate-slideIn' : ''} 
+                             p-0.5 rounded-md
+                             ${roll.type === 'craps-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
+                             ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
+                >
+                  <Dice value={roll.die1} isRolling={false} size="small" />
+                  <Dice value={roll.die2} isRolling={false} size="small" />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
-
-      {helpMode && (
-        <div className="fixed inset-0 cursor-help pointer-events-none" />
-      )}
-      
-      {/* Winning bet animations */}
-      {winningBets.map((bet, index) => (
-        <AnimatedChipStack
-          key={`winning-${bet.areaId}-${index}`}
-          amount={bet.winAmount || bet.amount}
-          color={bet.color}
-          position={bet.position}
-          isWinning={true}
-          totalAmount={bet.totalAmount}
-          showTotalAtBet={bet.showTotalAtBet}
-          onAnimationComplete={() => {
-            setAnimatingBets(prev => {
-              const next = new Set(prev);
-              next.delete(bet.areaId);
-              return next;
-            });
-            setWinningBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-          }}
-        />
-      ))}
-
-      {/* Losing bet animations */}
-      {losingBets.map((bet, index) => (
-        <AnimatedChipStack
-          key={`losing-${bet.areaId}-${index}`}
-          amount={bet.amount}
-          color={bet.color}
-          position={bet.position}
-          isWinning={false}
-          onAnimationComplete={() => {
-            setAnimatingBets(prev => {
-              const next = new Set(prev);
-              next.delete(bet.areaId);
-              return next;
-            });
-            setLosingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-          }}
-        />
-      ))}
-
-      {/* Moving bet animations */}
-      {movingBets.map((bet, index) => (
-        <AnimatedChipStack
-          key={`moving-${bet.areaId}-${index}`}
-          amount={bet.amount}
-          color={bet.color}
-          position={bet.fromPosition}
-          toPosition={bet.toPosition}
-          isMoving={true}
-          onAnimationComplete={() => {
-            setMovingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-            setMovingBetIds(prev => {
-              const next = new Set(prev);
-              next.delete(bet.areaId);
-              return next;
-            });
-          }}
-        />
-      ))}
-
-      {/* Waiting bet animations */}
-      {waitingBets.map((bet, index) => (
-        <AnimatedChipStack
-          key={`waiting-${bet.areaId}-${index}`}
-          amount={bet.amount}
-          color={bet.color}
-          position={bet.position}
-          isWaiting={true}
-          onWaitComplete={() => {
-            // Wait for winning animation to complete before starting movement
-            setTimeout(() => {
-              // Start the movement animation
-              setMovingBets(prev => [...prev, {
-                ...bet,
-                fromPosition: bet.position,
-                toPosition: bet.targetPosition
-              }]);
-              setWaitingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-              
-              // Add the new bet after movement completes
-              setTimeout(() => {
-                handleBetPlacement(
-                  {
-                    fromId: bet.areaId,
-                    toId: bet.areaId.replace('come', `come-${diceTotal}`),
-                    amount: bet.amount,
-                    color: bet.color,
-                    count: bet.count
-                  },
-                  { left: bet.targetPosition.x, top: bet.targetPosition.y, width: 0, height: 0 } as DOMRect
-                );
-              }, 500);
-            }, 1500);  // Wait for winning animation to complete
-          }}
-        />
-      ))}
     </div>
   );
 };

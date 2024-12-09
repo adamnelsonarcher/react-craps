@@ -942,10 +942,14 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
         src={boardLayout}
         alt="Craps Table Layout"
         className="w-full h-full object-contain outline outline-4 outline-red-500"
-        onLoad={(e) => setImageSize({
-          width: e.currentTarget.naturalWidth,
-          height: e.currentTarget.naturalHeight
-        })}
+        onLoad={(e) => {
+          const ratio = e.currentTarget.naturalWidth / e.currentTarget.naturalHeight;
+          console.log('Image ratio:', ratio);  // Let's see what the actual ratio is
+          setImageSize({
+            width: e.currentTarget.naturalWidth,
+            height: e.currentTarget.naturalHeight
+          });
+        }}
       />
       
       {/* Betting Areas Layer - Blue outline */}
