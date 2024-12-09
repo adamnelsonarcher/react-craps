@@ -448,7 +448,7 @@ const App: React.FC = () => {
           {/* Left side - Game board and controls in column */}
           <div className="flex-[3.8] flex flex-col gap-2 h-full min-h-0">  {/* Added min-h-0 */}
             {/* Game board */}
-            <div className="h-[120%] flex items-center justify-center bg-felt-green rounded-xl p-3 shadow-table min-h-0 relative">  {/* Added relative */}
+            <div className="h-[110%] flex items-center justify-center bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative">  {/* Added pt-8 for extra top padding */}
               <div className="w-full h-full relative">
                 <div className="absolute inset-0">
                   <div className="w-full h-full flex items-center justify-center">
