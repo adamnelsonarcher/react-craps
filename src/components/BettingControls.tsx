@@ -97,17 +97,17 @@ const BettingControls: React.FC<BettingControlsProps> = ({
 
         <div className="h-full w-px bg-gray-600/50" />
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 h-full py-2">
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                        text-base py-1 px-3 w-24"
+                        text-base px-4 w-32 h-full"
             onClick={onUndo}
           >
             Undo Bet
           </button>
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                        text-base py-1 px-3 w-24"
+                        text-base px-4 w-32 h-full"
             onClick={onClear}
           >
             Clear All
@@ -115,7 +115,7 @@ const BettingControls: React.FC<BettingControlsProps> = ({
           <button
             onClick={onToggleDelete}
             className={`btn ${deleteMode ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-500 hover:bg-gray-600'} 
-                         text-white text-base py-1 px-3 w-24`}
+                         text-white text-base px-4 w-32 h-full`}
           >
             {deleteMode ? 'Cancel' : 'Delete'}
           </button>

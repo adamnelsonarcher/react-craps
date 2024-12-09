@@ -448,7 +448,7 @@ const App: React.FC = () => {
           {/* Left side - Game board and controls in column */}
           <div className="flex-[3.8] flex flex-col gap-2 h-full min-h-0">  {/* Added min-h-0 */}
             {/* Game board */}
-            <div className="h-[85%] flex items-center justify-center bg-felt-green rounded-xl p-3 shadow-table min-h-0">  {/* Changed from 70% to 75% */}
+            <div className="h-[120%] flex items-center justify-center bg-felt-green rounded-xl p-3 shadow-table min-h-0 relative">  {/* Added relative */}
               <div className="w-full h-full relative">
                 <div className="absolute inset-0">
                   <div className="w-full h-full flex items-center justify-center">
@@ -506,16 +506,22 @@ const App: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Keep Winning Bets checkbox - positioned absolutely */}
+              <label className="absolute bottom-[3%] right-[83.8%] flex items-center gap-2 text-white cursor-pointer text-base bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm">
+                <input
+                  type="checkbox"
+                  checked={keepWinningBets}
+                  onChange={(e) => setKeepWinningBets(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                Keep Winning Bets Up
+              </label>
             </div>
 
             {/* Betting Controls */}
-            <div className={`h-[25%] flex flex-col gap-0 ${helpMode ? 'pointer-events-none' : ''} min-h-0`}>  {/* Changed from 30% to 25% */}
-              {/* Title only */}
-              <h1 className="text-xl font-semibold text-white whitespace-nowrap">RollSim.com</h1>
-
-              {/* Main controls row - single line */}
-              <div className="flex gap-4 items-center flex-1 bg-gray-800/50 rounded-lg p-2">
-                {/* Left section - Betting Controls with Bank/Wager info */}
+            <div className={`h-[15%] ${helpMode ? 'pointer-events-none' : ''} min-h-0`}>
+              <div className="flex gap-4 items-stretch h-full bg-gray-800/50 rounded-lg px-3">  {/* Changed items-center to items-stretch, increased px-2 to px-3 */}
                 <BettingControls 
                   onChipSelect={setSelectedChipValue}
                   selectedChipValue={selectedChipValue}
@@ -525,38 +531,39 @@ const App: React.FC = () => {
                   deleteMode={deleteMode}
                   bank={bank}
                   bankDisplay={
-                    <div className="flex flex-col justify-center">
-                      <span className="text-lg text-green-400 font-bold whitespace-nowrap">
+                    <div className="flex flex-col justify-center w-[200px]">
+                      <span className="text-2xl text-green-400 font-bold whitespace-nowrap">
                         Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
                       </span>
-                      <span className="text-lg text-yellow-400 font-bold whitespace-nowrap">
+                      <span className="text-2xl text-yellow-400 font-bold whitespace-nowrap">
                         Wager: ${calculateTotalWager(bets).toLocaleString()}
                       </span>
                     </div>
                   }
                 />
 
-                {/* Vertical divider */}
-                <div className="h-8 w-px bg-gray-600/50" />
+                <div className="h-full w-px bg-gray-600/50" />
 
-                {/* Right section - Dice and Settings */}
-                <div className="flex flex-col gap-2 flex-1">
-                  <DiceArea 
-                    onRoll={handleRoll} 
-                    isRolling={isRolling} 
-                    quickRoll={quickRoll}
-                    onQuickRollChange={setQuickRoll}
-                  />
-
-                  <label className="flex items-center gap-2 text-white cursor-pointer text-sm">
-                    <input
-                      type="checkbox"
-                      checked={keepWinningBets}
-                      onChange={(e) => setKeepWinningBets(e.target.checked)}
-                      className="w-3 h-3 rounded"
+                {/* Right section - Dice and Quick Roll */}
+                <div className="flex-1 flex flex-col gap-2 py-2">
+                  <div className="flex-1 flex flex-col gap-2">
+                    <DiceArea 
+                      onRoll={handleRoll} 
+                      isRolling={isRolling} 
+                      quickRoll={quickRoll}
+                      onQuickRollChange={setQuickRoll}
+                      className="w-40 h-full"
                     />
-                    Keep Winning Bets Up
-                  </label>
+                    <label className="flex items-center gap-2 text-white cursor-pointer text-sm">
+                      <input
+                        type="checkbox"
+                        checked={quickRoll}
+                        onChange={(e) => setQuickRoll(e.target.checked)}
+                        className="w-4 h-4 rounded"
+                      />
+                      Quick Roll
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
