@@ -448,14 +448,14 @@ const App: React.FC = () => {
           {/* Left side - Now just the game board */}
           <div className="flex-[3.8] relative">
             {/* Game board */}
-            <div className="h-full bg-felt-green rounded-xl p-3 pt-14 shadow-table relative">
+            <div className="h-full bg-felt-green rounded-xl p-3 pt-14 pb-12 shadow-table relative">
               <div className="w-full h-full flex items-center justify-center">
                 <div className="relative" style={{ 
                   width: 'min(100%, calc(var(--container-height) * 2))',
                   height: 'min(100%, calc(var(--container-width) / 2))',
-                  maxHeight: 'calc(100vh - 200px)', // Account for betting controls and padding
+                  maxHeight: 'calc(100vh - 240px)', // Increased to account for checkbox and betting bar
                   aspectRatio: '2/1',
-                  transform: 'scale(min(1, calc((100vh - 200px) / 600)))', // Scale based on viewport height
+                  transform: 'scale(min(1, calc((100vh - 240px) / 600)))',
                   transformOrigin: 'center center'
                 }}>
                   <CrapsTable 
@@ -528,10 +528,25 @@ const App: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Keep Winning Bets checkbox - positioned at bottom of game board */}
+              <label className="absolute bottom-2 left-1/2 -translate-x-1/2 
+                                flex items-center gap-2 text-white cursor-pointer text-base 
+                                bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none">
+                <div className="flex items-center gap-2 pointer-events-none">
+                  <input
+                    type="checkbox"
+                    checked={keepWinningBets}
+                    onChange={(e) => setKeepWinningBets(e.target.checked)}
+                    className="w-4 h-4 rounded pointer-events-auto"
+                  />
+                  <span>Keep Winning Bets Up</span>
+                </div>
+              </label>
             </div>
 
-            {/* Betting Controls - Position at bottom */}
-            <div className={`absolute bottom-0 left-0 right-0 mb-2
+            {/* Betting Controls - Position at bottom with increased margin */}
+            <div className={`absolute bottom-0 left-0 right-0 mb-2 mt-4
                             ${helpMode ? 'pointer-events-none' : ''}`}>
               <div className="flex gap-4 items-stretch h-24 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 mx-2">
                 <BettingControls 
