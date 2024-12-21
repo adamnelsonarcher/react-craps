@@ -529,8 +529,8 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Keep Winning Bets checkbox - positioned at bottom of game board */}
-              <label className="absolute bottom-2 left-1/2 -translate-x-1/2 
+              {/* Keep Winning Bets checkbox - positioned near help button */}
+              <label className="absolute bottom-[12%] left-[2%] 
                                 flex items-center gap-2 text-white cursor-pointer text-base 
                                 bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none">
                 <div className="flex items-center gap-2 pointer-events-none">
@@ -545,10 +545,15 @@ const App: React.FC = () => {
               </label>
             </div>
 
-            {/* Betting Controls - Position at bottom with increased margin */}
-            <div className={`absolute bottom-0 left-0 right-0 mb-2 mt-4
+            {/* Betting Controls - Full width positioning with scaling */}
+            <div className={`absolute bottom-0 left-0 right-0 mb-2 mt-4 z-50 
                             ${helpMode ? 'pointer-events-none' : ''}`}>
-              <div className="flex gap-4 items-stretch h-24 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 mx-2">
+              <div className="flex gap-2 items-stretch bg-gray-800/90 backdrop-blur-sm rounded-lg px-2 mx-2"
+                   style={{
+                     height: 'clamp(48px, 12vh, 80px)', // Smaller height
+                     transform: 'scale(clamp(0.8, 1vw / 16, 1))', // Scale entire container
+                     transformOrigin: 'center bottom'
+                   }}>
                 <BettingControls 
                   onChipSelect={setSelectedChipValue}
                   selectedChipValue={selectedChipValue}
@@ -558,40 +563,16 @@ const App: React.FC = () => {
                   deleteMode={deleteMode}
                   bank={bank}
                   bankDisplay={
-                    <div className="flex flex-col justify-center w-[200px]">
-                      <span className="text-2xl text-green-400 font-bold whitespace-nowrap">
+                    <div className="flex flex-col justify-center w-[150px]"> {/* Reduced width */}
+                      <span className="text-xl text-green-400 font-bold whitespace-nowrap"> {/* Smaller text */}
                         Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
                       </span>
-                      <span className="text-2xl text-yellow-400 font-bold whitespace-nowrap">
+                      <span className="text-xl text-yellow-400 font-bold whitespace-nowrap">
                         Wager: ${calculateTotalWager(bets).toLocaleString()}
                       </span>
                     </div>
                   }
                 />
-
-                <div className="h-full w-px bg-gray-600/50" />
-
-                {/* Right section - Dice and Quick Roll */}
-                <div className="flex-1 flex flex-col gap-2 py-2">
-                  <div className="flex-1 flex flex-col gap-2">
-                    <DiceArea 
-                      onRoll={handleRoll} 
-                      isRolling={isRolling} 
-                      quickRoll={quickRoll}
-                      onQuickRollChange={setQuickRoll}
-                      className="w-40 h-full"
-                    />
-                    <label className="flex items-center gap-2 text-white cursor-pointer text-sm">
-                      <input
-                        type="checkbox"
-                        checked={quickRoll}
-                        onChange={(e) => setQuickRoll(e.target.checked)}
-                        className="w-4 h-4 rounded"
-                      />
-                      Quick Roll
-                    </label>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

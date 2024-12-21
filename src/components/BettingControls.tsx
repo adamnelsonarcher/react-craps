@@ -18,7 +18,7 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor, isSelected, onClic
       className={`relative group ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} 
       onClick={onClick}
     >
-      <div className={`chip w-20 h-20 ${color} 
+      <div className={`chip w-16 h-16 ${color} 
                     flex items-center justify-center
                     border-4 ${isSelected ? 'border-gold' : ringColor}
                     shadow-lg ${!disabled && 'hover:scale-110 active:scale-95'}
@@ -30,7 +30,7 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor, isSelected, onClic
                     rotate-45"></div>
         
         <div className="flex flex-col items-center">
-          <span className={`text-2xl font-bold drop-shadow-lg
+          <span className={`text-xl font-bold drop-shadow-lg
                         ${color === 'bg-gray-200' ? 'text-black' : 'text-white'}`}>
             ${value}
           </span>
@@ -100,7 +100,7 @@ const BettingControls: React.FC<BettingControlsProps> = ({
         <div className="flex gap-2 h-full py-2">
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                        text-base px-4 w-32 h-full"
+                        text-sm px-3 w-24 h-full"
             onClick={onUndo}
           >
             Undo Bet
