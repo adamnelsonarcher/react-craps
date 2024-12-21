@@ -529,8 +529,8 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Keep Winning Bets checkbox - positioned near help button */}
-              <label className="absolute bottom-[12%] left-[2%] 
+              {/* Keep Winning Bets checkbox - positioned higher */}
+              <label className="absolute bottom-[20%] left-[2%] 
                                 flex items-center gap-2 text-white cursor-pointer text-base 
                                 bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none">
                 <div className="flex items-center gap-2 pointer-events-none">
@@ -545,13 +545,14 @@ const App: React.FC = () => {
               </label>
             </div>
 
-            {/* Betting Controls - Full width positioning with scaling */}
-            <div className={`absolute bottom-0 left-0 right-0 mb-2 mt-4 z-50 
+            {/* Betting Controls - Full screen width positioning with max width */}
+            <div className={`fixed bottom-0 left-0 right-0 mb-2 mt-4 z-50 px-2
                             ${helpMode ? 'pointer-events-none' : ''}`}>
-              <div className="flex gap-2 items-stretch bg-gray-800/90 backdrop-blur-sm rounded-lg px-2 mx-2"
+              <div className="flex gap-2 items-stretch bg-gray-800/90 backdrop-blur-sm rounded-lg px-2 
+                                mx-auto min-w-[600px] max-w-[1500px] w-[98vw]"
                    style={{
-                     height: 'clamp(48px, 12vh, 80px)', // Smaller height
-                     transform: 'scale(clamp(0.8, 1vw / 16, 1))', // Scale entire container
+                     height: 'clamp(60px, 15vh, 100px)',
+                     transform: 'scale(clamp(0.8, 1vw / 16, 1))',
                      transformOrigin: 'center bottom'
                    }}>
                 <BettingControls 
@@ -562,9 +563,13 @@ const App: React.FC = () => {
                   onToggleDelete={() => setDeleteMode(!deleteMode)}
                   deleteMode={deleteMode}
                   bank={bank}
+                  onRoll={handleRoll}
+                  isRolling={isRolling}
+                  quickRoll={quickRoll}
+                  onQuickRollChange={setQuickRoll}
                   bankDisplay={
-                    <div className="flex flex-col justify-center w-[150px]"> {/* Reduced width */}
-                      <span className="text-xl text-green-400 font-bold whitespace-nowrap"> {/* Smaller text */}
+                    <div className="flex flex-col justify-center w-[150px]">
+                      <span className="text-xl text-green-400 font-bold whitespace-nowrap">
                         Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
                       </span>
                       <span className="text-xl text-yellow-400 font-bold whitespace-nowrap">

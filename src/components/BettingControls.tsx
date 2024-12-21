@@ -37,9 +37,9 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor, isSelected, onClic
         </div>
       </div>
       
-      <div className={`absolute -bottom-1 left-1 w-20 h-20 rounded-full ${color} 
+      <div className={`absolute -bottom-1 left-1 w-16 h-16 rounded-full ${color} 
                     opacity-40 -z-10 blur-[1px]`}></div>
-      <div className={`absolute -bottom-2 left-2 w-20 h-20 rounded-full ${color} 
+      <div className={`absolute -bottom-2 left-2 w-16 h-16 rounded-full ${color} 
                     opacity-20 -z-20 blur-[2px]`}></div>
     </div>
   );
@@ -54,6 +54,10 @@ interface BettingControlsProps {
   deleteMode: boolean;
   bank: number;
   bankDisplay: React.ReactNode;
+  onRoll: () => void;
+  isRolling: boolean;
+  quickRoll: boolean;
+  onQuickRollChange: (value: boolean) => void;
 }
 
 const BettingControls: React.FC<BettingControlsProps> = ({ 
@@ -65,6 +69,10 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   deleteMode,
   bank,
   bankDisplay,
+  onRoll,
+  isRolling,
+  quickRoll,
+  onQuickRollChange,
 }) => {
   const chipConfigs: ChipConfig[] = [
     { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-300' },
@@ -76,11 +84,11 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   ];
 
   return (
-    <div className="bg-gray-800/50 rounded-lg p-2 flex flex-col gap-2 backdrop-blur-sm min-h-0">
-      <div className="flex gap-4 items-start">
+    <div className="bg-gray-800/50 rounded-lg p-2 flex flex-col gap-2 backdrop-blur-sm min-h-0 w-full">
+      <div className="flex gap-2 items-center justify-between w-full">
         {bankDisplay}
 
-        <div className="flex gap-4">
+        <div className="flex gap-2">
           {chipConfigs.map((config) => {
             const isAffordable = bank >= config.value;
             return (
@@ -97,10 +105,10 @@ const BettingControls: React.FC<BettingControlsProps> = ({
 
         <div className="h-full w-px bg-gray-600/50" />
 
-        <div className="flex gap-2 h-full py-2">
+        <div className="flex gap-2 h-full">
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                        text-sm px-3 w-24 h-full"
+                       text-base px-6 h-full min-w-[120px] rounded"
             onClick={onUndo}
           >
             Undo Bet
@@ -108,18 +116,40 @@ const BettingControls: React.FC<BettingControlsProps> = ({
           <button
             onClick={onToggleDelete}
             className={`btn ${deleteMode ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-500 hover:bg-gray-600'} 
-                         text-white text-base px-4 w-32 h-full`}
+                       text-base px-6 h-full min-w-[120px] rounded`}
           >
             {deleteMode ? 'Cancel' : 'Delete'}
           </button>
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                        text-base px-4 w-32 h-full"
+                       text-base px-6 h-full min-w-[120px] rounded"
             onClick={onClear}
           >
             Clear All
           </button>
+        </div>
 
+        <div className="h-full w-px bg-gray-600/50" />
+
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => !isRolling && onRoll()}
+            disabled={isRolling}
+            className={`btn bg-red-600 hover:bg-red-700 text-white font-bold
+                       text-base px-6 h-full min-w-[120px] rounded
+                       ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            Roll Dice
+          </button>
+          <label className="flex items-center gap-2 text-white cursor-pointer text-base whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={quickRoll}
+              onChange={(e) => onQuickRollChange(e.target.checked)}
+              className="w-4 h-4 rounded"
+            />
+            Quick Roll
+          </label>
         </div>
       </div>
     </div>
