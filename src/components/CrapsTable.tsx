@@ -26,7 +26,7 @@ interface BettingArea {
   name: string;
   style: React.CSSProperties;
 }
-
+ 
 interface NumberArea {
   id: string;
   name: string;
@@ -745,33 +745,28 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
     ));
   };
 
-  const handleAreaClick = (areaId: string, rect: DOMRect) => {
+  const handleAreaClick = (areaId: string) => {
     // Add early return if rolling
     if (isRolling) return;
-    
-    // Map chip areas to their parent betting areas
-    const mappedAreaId = areaId === 'pass-line-chips' ? 'pass-line' :
-                        areaId === 'dont-pass-chips' ? 'dont-pass' :
-                        areaId;
     
     if (!selectedChipValue) return;
     if (selectedChipValue > bank) return;
     
-    // Prevent betting on chip areas directly (except for pass-line-chips and dont-pass-chips)
-    if (areaId.endsWith('-chips') && !['pass-line-chips', 'dont-pass-chips'].includes(areaId)) return;
+    // Prevent betting on chip areas directly
+    if (areaId.endsWith('-chips')) return;
     
     // Prevent betting on come/don't come point numbers directly
     if (areaId.startsWith('come-') || areaId.startsWith('dont-come-')) return;
     
     // Prevent pass line and don't pass bets after point is set
-    if ((mappedAreaId === 'pass-line' || mappedAreaId === 'dont-pass') && point !== null) return;
+    if ((areaId === 'pass-line' || areaId === 'dont-pass') && point !== null) return;
     
     // Prevent come and don't come bets before point is set
-    if ((mappedAreaId === 'come' || mappedAreaId === 'dont-come') && point === null) return;
+    if ((areaId === 'come' || areaId === 'dont-come') && point === null) return;
     
-    const chipAreaId = mappedAreaId === 'pass-line' ? 'pass-line-chips' :
-                      mappedAreaId === 'dont-pass' ? 'dont-pass-chips' :
-                      mappedAreaId;
+    const chipAreaId = areaId === 'pass-line' ? 'pass-line-chips' :
+                      areaId === 'dont-pass' ? 'dont-pass-chips' :
+                      areaId;
     
     setBetHistory(prev => [...prev, bets]);
     const newBank = bank - selectedChipValue;
@@ -973,7 +968,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
       {/* Help Mode Button */}
       <button 
-        className={`absolute bottom-20 left-4 z-50 px-4 h-8 rounded-full 
+        className={`absolute bottom-4 left-4 z-50 px-4 h-8 rounded-full 
                     flex items-center justify-center gap-2
                     ${helpMode ? 'bg-blue-500' : 'bg-gray-600'} 
                     text-white font-bold text-lg
@@ -1045,8 +1040,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                 if (helpMode) {
                   handleHelpClick(area.id);
                 } else {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  handleAreaClick(area.id, rect);
+                  handleAreaClick(area.id);
                 }
               }}
             >
@@ -1077,9 +1071,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                       area.id === 'dont-pass-chips'
                     )}
                     deletable={deleteMode && !isLockedBet(area.id, point)}
-                    deleteMode={deleteMode}
-                    handleChipClick={handleChipClick}
-                    handleAreaClick={handleAreaClick}
                   />
                 </div>
               )}
