@@ -954,11 +954,13 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       <img 
         src={boardLayout}
         alt="Craps Table Layout"
-        className="w-full h-full object-contain"
-        onLoad={(e) => setImageSize({
-          width: e.currentTarget.naturalWidth,
-          height: e.currentTarget.naturalHeight
-        })}
+        className="w-full h-full min-w-0 min-h-0 object-contain max-w-full max-h-full"
+        onLoad={(e) => {
+          setImageSize({
+            width: e.currentTarget.naturalWidth,
+            height: e.currentTarget.naturalHeight
+          });
+        }}
       />
       
       {/* Dev tools button - only show if enabled */}
@@ -989,10 +991,9 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
       {/* Help Text Popup */}
       {helpText && helpMode && (
-        <div className="absolute bottom-16 left-28 z-50 
+        <div className="absolute bottom-20 left-28 z-50 
                         bg-black/90 text-white p-4 rounded-lg
                         shadow-lg backdrop-blur-sm
-                        max-w-[300px]
                         transform translate-y-full
                         max-h-[calc(100vh-16rem)] 
                         overflow-y-auto">
