@@ -172,11 +172,9 @@ const App: React.FC = () => {
     // Process winning bets first
     const winningAreas = areas.filter(area => area.type === 'win');
     if (winningAreas.length > 0) {
-      console.log('Processing winning areas:', winningAreas);
       const newWinningBets = bets.filter(bet => 
         winningAreas.some(area => area.id === bet.areaId)
       );
-      console.log('New winning bets:', newWinningBets);
       
       // After mapping and before setting state
       const mappedWinningBets = newWinningBets.map(bet => {
@@ -219,14 +217,6 @@ const App: React.FC = () => {
               setBank(prev => prev + bet.amount + winAmount);
             }
 
-            console.log('Mapped winning bet:', {
-              areaId: bet.areaId,
-              position: chipRect ? {
-                x: chipRect.left + (chipRect.width / 2),
-                y: chipRect.top + (chipRect.height / 2)
-              } : null
-            });
-
             return {
               ...bet,
               isWinning: true,
@@ -247,7 +237,6 @@ const App: React.FC = () => {
         return null;
       }).filter((bet): bet is ResolvingBet => bet !== null);
       
-      console.log('Setting winning bets:', mappedWinningBets);
       setWinningBets(mappedWinningBets);
 
       // Set the profit for display
@@ -645,11 +634,6 @@ const App: React.FC = () => {
 
         {/* Winning bet animations */}
         {winningBets.map((bet, index) => {
-          console.log('Rendering winning bet animation:', {
-            bet,
-            index,
-            position: bet.position
-          });
           return (
             <AnimatedChipStack
               key={`winning-${bet.areaId}-${index}`}
@@ -660,7 +644,6 @@ const App: React.FC = () => {
               totalAmount={bet.totalAmount}
               showTotalAtBet={bet.showTotalAtBet}
               onAnimationComplete={() => {
-                console.log('Animation complete for bet:', bet.areaId);
                 setAnimatingBets(prev => {
                   const next = new Set(prev);
                   next.delete(bet.areaId);
@@ -674,11 +657,6 @@ const App: React.FC = () => {
 
         {/* Losing bet animations */}
         {losingBets.map((bet, index) => {
-          console.log('Rendering losing bet animation:', {
-            bet,
-            index,
-            position: bet.position
-          });
           return (
             <AnimatedChipStack
               key={`losing-${bet.areaId}-${index}`}
