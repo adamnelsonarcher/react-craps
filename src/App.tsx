@@ -151,18 +151,9 @@ const App: React.FC = () => {
     return bets.reduce((total, bet) => total + bet.amount, 0);
   };
 
-  const handleGameStateChange = (isComingOut: boolean, point: number | null) => {
-    setIsComingOut(isComingOut);
-    setPoint(point);
-  };
-
-  const handleRollType = (type: 'point-made' | 'craps-out' | 'normal') => {
-    const newRoll = {
-      ...dice,
-      total: dice.die1 + dice.die2,
-      type
-    };
-    setRollHistory(prev => [newRoll, ...prev]);
+  const handleGameStateChange = (newIsComingOut: boolean, newPoint: number | null) => {
+    setIsComingOut(newIsComingOut);
+    setPoint(newPoint);
   };
 
   const handleWinningAreas = (areas: WinningArea[]) => {
@@ -470,19 +461,18 @@ const App: React.FC = () => {
             <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden relative z-10">
               <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-280px)]" 
                    style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}>
-                <GameState 
-                  isRolling={isRolling}
-                  diceTotal={dice.die1 + dice.die2}
-                  die1={dice.die1}
-                  die2={dice.die2}
-                  bets={bets}
-                  onStateChange={handleGameStateChange}
-                  onRollType={handleRollType}
-                  onWinningAreas={setWinningAreas}
-                  onRollOutcome={handleRollOutcome}
-                  onMoveBet={handleBetMovement}
-                  animatingBets={animatingBets}
-                />
+                  <GameState 
+                    isRolling={isRolling}
+                    diceTotal={dice.die1 + dice.die2}
+                    die1={dice.die1}
+                    die2={dice.die2}
+                    bets={bets}
+                    onStateChange={handleGameStateChange}
+                    onRollOutcome={handleRollOutcome}
+                    onWinningAreas={handleWinningAreas}
+                    onMoveBet={handleBetMovement}
+                    animatingBets={animatingBets}
+                  />
                 <CrapsTable 
                   ref={tableRef}
                   selectedChipValue={selectedChipValue}

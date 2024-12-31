@@ -105,6 +105,8 @@ const GameState: React.FC<GameStateProps> = ({
     const winningAreas: WinningArea[] = [];
     const losingAreas: WinningArea[] = [];
 
+    console.log('Determining winning/losing areas:', { total, isComingOut, point });
+
     // Pass line bets - handle come out roll first
     if (isComingOut) {
       if (total === 7 || total === 11) {
@@ -318,6 +320,7 @@ const GameState: React.FC<GameStateProps> = ({
       losingAreas.push({ id: `dont-come-${total}`, type: 'lose' });
     }
 
+    console.log('Final areas:', { winningAreas, losingAreas });
     return [...winningAreas, ...losingAreas];
   };
 
