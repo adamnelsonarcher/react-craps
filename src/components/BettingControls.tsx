@@ -107,13 +107,18 @@ const BettingControls: React.FC<BettingControlsProps> = ({
           >
             Undo Bet
           </button>
-          <button
-            onClick={onToggleDelete}
-            className={`btn ${deleteMode ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-500 hover:bg-gray-600'} 
-                     text-white text-[clamp(0.7rem,1vw,1rem)] px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded`}
-          >
-            {deleteMode ? 'Cancel' : 'Delete'}
-          </button>
+          <div data-delete-controls className="flex gap-[clamp(0.25rem,0.5vw,0.5rem)]">
+            <button
+              onClick={() => onToggleDelete()}
+              className={`btn text-white text-[clamp(0.7rem,1vw,1rem)] 
+                          px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded
+                          ${deleteMode 
+                            ? 'bg-red-600 hover:bg-red-700' 
+                            : 'bg-gray-500 hover:bg-gray-600'}`}
+            >
+              {deleteMode ? 'Cancel' : 'Delete'}
+            </button>
+          </div>
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
                     text-[clamp(0.7rem,1vw,1rem)] px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded"

@@ -62,8 +62,9 @@ const App: React.FC = () => {
 
   const handleGlobalClick = (e: React.MouseEvent) => {
     if (deleteMode) {
-      const clickedOnChip = (e.target as HTMLElement).closest('.chip-container');
-      if (!clickedOnChip) {
+      const clickedOnChip = (e.target as HTMLElement).closest('[data-bet-id]');
+      const clickedOnDeleteControls = (e.target as HTMLElement).closest('[data-delete-controls]');
+      if (!clickedOnChip && !clickedOnDeleteControls) {
         setDeleteMode(false);
       }
     }
@@ -458,10 +459,12 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden">
-      <div className="h-full w-full flex gap-2 p-2">
+    <div className="h-screen w-screen bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden" 
+         onClick={handleGlobalClick}>
+      <div className={`h-full w-full flex gap-2 p-2 ${deleteMode ? 'pointer-events-none' : ''}`}>
         <div className="flex flex-col gap-2 min-w-0">
-          <div className="flex-1 bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative">
+          <div className={`flex-1 bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative 
+                          ${deleteMode ? 'pointer-events-auto' : ''}`}>
             <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden relative z-10">
               <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-280px)]" 
                    style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}>
