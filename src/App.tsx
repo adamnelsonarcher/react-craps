@@ -461,7 +461,8 @@ const App: React.FC = () => {
           {/* Game board area - fills available space */}
           <div className="flex-1 bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative">
             <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden">
-              <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full">
+              <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-200px)]" 
+                   style={{ maxWidth: 'calc((100vh - 200px) * 2)' }}>
                 <CrapsTable 
                   ref={tableRef}
                   selectedChipValue={selectedChipValue}
