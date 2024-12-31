@@ -151,9 +151,18 @@ const App: React.FC = () => {
     return bets.reduce((total, bet) => total + bet.amount, 0);
   };
 
-  const handleGameStateChange = (newIsComingOut: boolean, newPoint: number | null) => {
-    setIsComingOut(newIsComingOut);
-    setPoint(newPoint);
+  const handleGameStateChange = (isComingOut: boolean, point: number | null) => {
+    setIsComingOut(isComingOut);
+    setPoint(point);
+  };
+
+  const handleRollType = (type: 'point-made' | 'craps-out' | 'normal') => {
+    const newRoll = {
+      ...dice,
+      total: dice.die1 + dice.die2,
+      type
+    };
+    setRollHistory(prev => [newRoll, ...prev]);
   };
 
   const handleWinningAreas = (areas: WinningArea[]) => {
@@ -456,13 +465,24 @@ const App: React.FC = () => {
   return (
     <div className="h-screen w-screen bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden">
       <div className="h-full w-full flex gap-2 p-2">
-        {/* Main content area - remove flex-1 to allow shrinking */}
-        <div className="flex flex-col gap-2 min-w-0"> {/* Add min-w-0 and remove flex-1 */}
-          {/* Game board area - fills available space */}
+        <div className="flex flex-col gap-2 min-w-0">
           <div className="flex-1 bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative">
             <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden">
-              <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-200px)]" 
-                   style={{ maxWidth: 'calc((100vh - 200px) * 2)' }}>
+              <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-280px)]" 
+                   style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}>
+                <GameState 
+                  isRolling={isRolling}
+                  diceTotal={dice.die1 + dice.die2}
+                  die1={dice.die1}
+                  die2={dice.die2}
+                  bets={bets}
+                  onStateChange={handleGameStateChange}
+                  onRollType={handleRollType}
+                  onWinningAreas={setWinningAreas}
+                  onRollOutcome={handleRollOutcome}
+                  onMoveBet={handleBetMovement}
+                  animatingBets={animatingBets}
+                />
                 <CrapsTable 
                   ref={tableRef}
                   selectedChipValue={selectedChipValue}
@@ -509,18 +529,6 @@ const App: React.FC = () => {
                     size="large"
                   />
                 </div>
-                <GameState 
-                  isRolling={isRolling}
-                  diceTotal={dice.die1 + dice.die2}
-                  die1={dice.die1}
-                  die2={dice.die2}
-                  bets={bets}
-                  onStateChange={handleGameStateChange}
-                  onRollOutcome={handleRollOutcome}
-                  onWinningAreas={handleWinningAreas}
-                  onMoveBet={handleBetMovement}
-                  animatingBets={animatingBets}
-                />
                 <ProfitDisplay 
                   amount={lastProfit}
                   onComplete={() => setLastProfit(0)}

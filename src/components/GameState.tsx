@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { RollOutcome, WinningArea, BetMovement } from '../types/game';
 
 interface Bet {
@@ -29,24 +30,48 @@ interface PointMarkerProps {
 }
 
 const PointMarker: React.FC<PointMarkerProps> = ({ point, position, isOn }) => {
+  const [markerPosition, setMarkerPosition] = useState({ x: 0, y: 0 });
   const offPosition = { x: 6, y: -4 };
-  const currentPosition = isOn ? position : offPosition;
+  const currentPercentPosition = isOn ? position : offPosition;
 
-  return (
+  const updatePosition = useCallback(() => {
+    const gameBoard = document.querySelector('.aspect-\\[2\\/1\\]');
+    if (gameBoard) {
+      const rect = gameBoard.getBoundingClientRect();
+      const x = rect.left + (rect.width * currentPercentPosition.x / 100);
+      const y = rect.top + (rect.height * (currentPercentPosition.y - 2) / 100); // Add offset to bring it down
+      setMarkerPosition({ x, y });
+    }
+  }, [currentPercentPosition.x, currentPercentPosition.y]);
+
+  useEffect(() => {
+    updatePosition();
+    
+    // Add resize listener
+    window.addEventListener('resize', updatePosition);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [updatePosition]);
+
+  return ReactDOM.createPortal(
     <div 
-      className={`absolute w-[clamp(1.75rem,3.5vw,3.5rem)] h-[clamp(1.75rem,3.5vw,3.5rem)]
+      className={`fixed w-[clamp(1.75rem,3vw,3rem)] h-[clamp(1.75rem,3vw,3rem)]
                  rounded-full flex items-center justify-center
                  border-[0.2rem] transform -translate-x-1/2 -translate-y-1/2
                  font-bold transition-all duration-1000 ease-in-out
                  ${isOn ? 'bg-white border-black text-black' : 'bg-black border-white text-white'}`}
       style={{ 
-        left: `${currentPosition.x}%`,
-        top: `${currentPosition.y}%`,
+        left: `${markerPosition.x}px`,
+        top: `${markerPosition.y}px`,
         fontSize: 'clamp(0.8rem, 1.6vw, 1.2rem)',
       }}
     >
       {isOn ? 'ON' : 'OFF'}
-    </div>
+    </div>,
+    document.body
   );
 };
 
