@@ -508,26 +508,30 @@ const App: React.FC = () => {
                 <button
                   onClick={() => !isRolling && handleRoll()}
                   disabled={isRolling}
-                  className={`absolute right-[5.74%] top-[24%] w-[10.09%] h-[5.78%]  
+                  className={`absolute right-[7.74%] top-[24%] w-[10.09%] h-[5.78%]  
                              bg-[#1a472a] hover:bg-[#143621] text-white font-bold rounded
                              ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}
-                             shadow-lg text-sm z-20`}
+                             shadow-lg z-20 text-[clamp(0.6rem,1.2vw,1rem)]`}
                 >
                   Roll Dice
                 </button>
 
-                {/* Dice in top right */}
-                <div className="absolute top-[10%] right-[5%] flex gap-4 z-10 scale-125">
-                  <Dice 
-                    value={isRolling ? animationDice.die1 : dice.die1} 
-                    isRolling={isRolling}
-                    size="large"
-                  />
-                  <Dice 
-                    value={isRolling ? animationDice.die2 : dice.die2} 
-                    isRolling={isRolling}
-                    size="large"
-                  />
+                {/* Dice in top right - adjusted position and gap */}
+                <div className="absolute top-[9%] right-[12.74%] flex gap-[2rem] z-10 translate-x-[50%]">
+                  <div className="w-[clamp(2rem,4vw,4rem)]">
+                    <Dice 
+                      value={isRolling ? animationDice.die1 : dice.die1} 
+                      isRolling={isRolling}
+                      size="large"
+                    />
+                  </div>
+                  <div className="w-[clamp(2rem,4vw,4rem)]">
+                    <Dice 
+                      value={isRolling ? animationDice.die2 : dice.die2} 
+                      isRolling={isRolling}
+                      size="large"
+                    />
+                  </div>
                 </div>
                 <ProfitDisplay 
                   amount={lastProfit}
