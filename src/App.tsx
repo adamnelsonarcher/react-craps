@@ -456,8 +456,8 @@ const App: React.FC = () => {
   return (
     <div className="h-screen w-screen bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden">
       <div className="h-full w-full flex gap-2 p-2">
-        {/* Main content area with betting controls */}
-        <div className="flex-1 flex flex-col gap-2">
+        {/* Main content area - remove flex-1 to allow shrinking */}
+        <div className="flex flex-col gap-2 min-w-0"> {/* Add min-w-0 and remove flex-1 */}
           {/* Game board area - fills available space */}
           <div className="flex-1 bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative">
             <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden">
