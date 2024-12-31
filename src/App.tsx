@@ -467,9 +467,9 @@ const App: React.FC = () => {
       <div className="h-full w-full flex gap-2 p-2">
         <div className="flex flex-col gap-2 min-w-0">
           <div className="flex-1 bg-felt-green rounded-xl p-3 pt-14 shadow-table min-h-0 relative">
-            <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden">
-              <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-240px)]" 
-                   style={{ maxWidth: 'calc((100vh - 240px) * 2)' }}>
+            <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden relative z-10">
+              <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-280px)]" 
+                   style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}>
                 <GameState 
                   isRolling={isRolling}
                   diceTotal={dice.die1 + dice.die2}
@@ -592,7 +592,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Keep existing roll history */}
-        <div className="w-[110px] bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
+        <div className="w-[90px] bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
           <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
           <div className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
             {rollHistory.length === 0 ? (

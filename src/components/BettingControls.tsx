@@ -18,28 +18,28 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor, isSelected, onClic
       className={`relative group ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} 
       onClick={onClick}
     >
-      <div className={`chip w-20 h-20 ${color} 
+      <div className={`chip w-[clamp(2.5rem,4vw,5rem)] h-[clamp(2.5rem,4vw,5rem)] ${color} 
                     flex items-center justify-center
-                    border-4 ${isSelected ? 'border-gold' : ringColor}
+                    border-[0.15rem] ${isSelected ? 'border-gold' : ringColor}
                     shadow-lg ${!disabled && 'hover:scale-110 active:scale-95'}
                     transition-all duration-150
-                    relative z-10
-                    ${isSelected ? 'ring-4 ring-gold ring-opacity-50' : ''}`}>
+                    relative z-10 rounded-full
+                    ${isSelected ? 'ring-2 ring-gold ring-opacity-50' : ''}`}>
         <div className="absolute inset-0 rounded-full
                     border-dashed border-2 border-white/20
                     rotate-45"></div>
         
         <div className="flex flex-col items-center">
-          <span className={`text-2xl font-bold drop-shadow-lg
+          <span className={`text-[clamp(0.8rem,1.5vw,1.2rem)] font-bold drop-shadow-lg
                         ${color === 'bg-gray-200' ? 'text-black' : 'text-white'}`}>
             ${value}
           </span>
         </div>
       </div>
       
-      <div className={`absolute -bottom-1 left-1 w-20 h-20 rounded-full ${color} 
+      <div className={`absolute -bottom-1 left-1 w-full h-full rounded-full ${color} 
                     opacity-40 -z-10 blur-[1px]`}></div>
-      <div className={`absolute -bottom-2 left-2 w-20 h-20 rounded-full ${color} 
+      <div className={`absolute -bottom-2 left-2 w-full h-full rounded-full ${color} 
                     opacity-20 -z-20 blur-[2px]`}></div>
     </div>
   );
@@ -77,10 +77,12 @@ const BettingControls: React.FC<BettingControlsProps> = ({
 
   return (
     <div className="bg-gray-800/50 rounded-lg p-2 flex flex-col gap-2 backdrop-blur-sm min-h-0">
-      <div className="flex gap-4 items-start">
-        {bankDisplay}
+      <div className="flex gap-[clamp(0.5rem,1vw,1rem)] items-start">
+        <div className="min-w-[clamp(150px,15vw,200px)]">
+          {bankDisplay}
+        </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-[clamp(0.25rem,0.75vw,1rem)]">
           {chipConfigs.map((config) => {
             const isAffordable = bank >= config.value;
             return (
@@ -97,10 +99,10 @@ const BettingControls: React.FC<BettingControlsProps> = ({
 
         <div className="h-full w-px bg-gray-600/50" />
 
-        <div className="flex gap-2 h-full py-2">
+        <div className="flex gap-[clamp(0.25rem,0.5vw,0.5rem)] h-full py-2">
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                        text-base px-4 w-32 h-full"
+                    text-[clamp(0.7rem,1vw,1rem)] px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded"
             onClick={onUndo}
           >
             Undo Bet
@@ -108,18 +110,17 @@ const BettingControls: React.FC<BettingControlsProps> = ({
           <button
             onClick={onToggleDelete}
             className={`btn ${deleteMode ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-500 hover:bg-gray-600'} 
-                         text-white text-base px-4 w-32 h-full`}
+                     text-white text-[clamp(0.7rem,1vw,1rem)] px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded`}
           >
             {deleteMode ? 'Cancel' : 'Delete'}
           </button>
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                        text-base px-4 w-32 h-full"
+                    text-[clamp(0.7rem,1vw,1rem)] px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded"
             onClick={onClear}
           >
             Clear All
           </button>
-
         </div>
       </div>
     </div>
