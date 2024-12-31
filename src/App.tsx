@@ -537,6 +537,21 @@ const App: React.FC = () => {
                   amount={lastProfit}
                   onComplete={() => setLastProfit(0)}
                 />
+
+                {/* Keep Winning Bets checkbox - positioned higher */}
+                <label className="absolute bottom-12%] left-[2%] 
+                                  flex items-center gap-2 text-white cursor-pointer text-base 
+                                  bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none">
+                  <div className="flex items-center gap-2 pointer-events-none">
+                    <input
+                      type="checkbox"
+                      checked={keepWinningBets}
+                      onChange={(e) => setKeepWinningBets(e.target.checked)}
+                      className="w-4 h-4 rounded pointer-events-auto"
+                    />
+                    <span>Keep Winning Bets Up</span>
+                  </div>
+                </label>
               </div>
             </div>
           </div>
@@ -617,6 +632,114 @@ const App: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+    
+
+      {/* Betting Controls - Full screen width positioning with max width */}
+      <div className={`fixed bottom-0 left-0 right-0 mb-2 mt-4 z-50 px-2
+                      ${helpMode ? 'pointer-events-none' : ''}`}>
+
+        {/* Help mode overlay */}
+        {helpMode && (
+          <div className="fixed inset-0 cursor-help pointer-events-none" />
+        )}
+
+        {/* Winning bet animations */}
+        {winningBets.map((bet, index) => (
+          <AnimatedChipStack
+            key={`winning-${bet.areaId}-${index}`}
+            amount={bet.winAmount || bet.amount}
+            color={bet.color}
+            position={bet.position}
+            isWinning={true}
+            totalAmount={bet.totalAmount}
+            showTotalAtBet={bet.showTotalAtBet}
+            onAnimationComplete={() => {
+              setAnimatingBets(prev => {
+                const next = new Set(prev);
+                next.delete(bet.areaId);
+                return next;
+              });
+              setWinningBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+            }}
+          />
+        ))}
+
+        {/* Losing bet animations */}
+        {losingBets.map((bet, index) => (
+          <AnimatedChipStack
+            key={`losing-${bet.areaId}-${index}`}
+            amount={bet.amount}
+            color={bet.color}
+            position={bet.position}
+            isWinning={false}
+            onAnimationComplete={() => {
+              setAnimatingBets(prev => {
+                const next = new Set(prev);
+                next.delete(bet.areaId);
+                return next;
+              });
+              setLosingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+            }}
+          />
+        ))}
+
+        {/* Moving bet animations */}
+        {movingBets.map((bet, index) => (
+          <AnimatedChipStack
+            key={`moving-${bet.areaId}-${index}`}
+            amount={bet.amount}
+            color={bet.color}
+            position={bet.fromPosition}
+            toPosition={bet.toPosition}
+            isMoving={true}
+            onAnimationComplete={() => {
+              setMovingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+              setMovingBetIds(prev => {
+                const next = new Set(prev);
+                next.delete(bet.areaId);
+                return next;
+              });
+            }}
+          />
+        ))}
+
+        {/* Waiting bet animations */}
+        {waitingBets.map((bet, index) => (
+          <AnimatedChipStack
+            key={`waiting-${bet.areaId}-${index}`}
+            amount={bet.amount}
+            color={bet.color}
+            position={bet.position}
+            isWaiting={true}
+            onWaitComplete={() => {
+              // Wait for winning animation to complete before starting movement
+              setTimeout(() => {
+                // Start the movement animation
+                setMovingBets(prev => [...prev, {
+                  ...bet,
+                  fromPosition: bet.position,
+                  toPosition: bet.targetPosition
+                }]);
+                setWaitingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+                
+                // Add the new bet after movement completes
+                setTimeout(() => {
+                  handleBetPlacement(
+                    {
+                      fromId: bet.areaId,
+                      toId: bet.areaId.replace('come', `come-${diceTotal}`),
+                      amount: bet.amount,
+                      color: bet.color,
+                      count: bet.count
+                    },
+                    { left: bet.targetPosition.x, top: bet.targetPosition.y, width: 0, height: 0 } as DOMRect
+                  );
+                }, 500);
+              }, 1500);  // Wait for winning animation to complete
+            }}
+          />
+        ))}
       </div>
     </div>
   );

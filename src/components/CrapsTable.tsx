@@ -941,17 +941,57 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       <img 
         src={boardLayout}
         alt="Craps Table Layout"
-        className="w-full h-full min-w-0 min-h-0 object-contain"
-        onLoad={(e) => {
-          const ratio = e.currentTarget.naturalWidth / e.currentTarget.naturalHeight;
-          console.log('Image ratio:', ratio);  // Let's see what the actual ratio is
-          setImageSize({
-            width: e.currentTarget.naturalWidth,
-            height: e.currentTarget.naturalHeight
-          });
-        }}
+        className="w-full h-full object-contain"
+        onLoad={(e) => setImageSize({
+          width: e.currentTarget.naturalWidth,
+          height: e.currentTarget.naturalHeight
+        })}
       />
       
+      {/* Dev tools button - only show if enabled */}
+      {showDevToolsButton && (
+        <button 
+          className="absolute bottom-2 left-2 z-50 bg-blue-500 text-white px-2 py-1 rounded"
+          onClick={() => setShowDevTools(!showDevTools)}
+        >
+          {showDevTools ? 'Hide' : 'Show'} Dev Tools
+        </button>
+      )}
+
+      {/* Help Mode Button */}
+      <button 
+        className={`absolute bottom-4 left-4 z-50 px-4 h-8 rounded-full 
+                    flex items-center justify-center gap-2
+                    ${helpMode ? 'bg-blue-500' : 'bg-gray-600'} 
+                    text-white font-bold text-lg
+                    hover:bg-opacity-90 transition-colors
+                    ring-2 ring-white/50 shadow-lg`}
+        onClick={() => {
+          setHelpMode(!helpMode);
+          setHelpText(null);
+        }}
+      >
+        ? {helpMode && <span className="text-sm font-normal">Help</span>}
+      </button>
+
+      {/* Help Text Popup */}
+      {helpText && helpMode && (
+        <div className="absolute bottom-16 left-28 z-50 
+                        bg-black/90 text-white p-4 rounded-lg
+                        shadow-lg backdrop-blur-sm
+                        max-w-[300px]
+                        transform translate-y-full
+                        max-h-[calc(100vh-16rem)] 
+                        overflow-y-auto">
+          {helpText.split('\n').map((line, i) => (
+            <React.Fragment key={i}>
+              {line}
+              <br />
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+
       {/* Betting Areas Layer */}
       <div className="absolute inset-0 min-w-0 min-h-0">
         {/* Hover Indicator */}
