@@ -39,18 +39,14 @@ const PointMarker: React.FC<PointMarkerProps> = ({ point, position, isOn }) => {
     if (gameBoard) {
       const rect = gameBoard.getBoundingClientRect();
       const x = rect.left + (rect.width * currentPercentPosition.x / 100);
-      const y = rect.top + (rect.height * (currentPercentPosition.y - 2) / 100); // Add offset to bring it down
+      const y = rect.top + (rect.height * (currentPercentPosition.y) / 100); // Add offset to bring it down
       setMarkerPosition({ x, y });
     }
   }, [currentPercentPosition.x, currentPercentPosition.y]);
 
   useEffect(() => {
     updatePosition();
-    
-    // Add resize listener
     window.addEventListener('resize', updatePosition);
-    
-    // Cleanup
     return () => {
       window.removeEventListener('resize', updatePosition);
     };
@@ -66,7 +62,7 @@ const PointMarker: React.FC<PointMarkerProps> = ({ point, position, isOn }) => {
       style={{ 
         left: `${markerPosition.x}px`,
         top: `${markerPosition.y}px`,
-        fontSize: 'clamp(0.8rem, 1.6vw, 1.2rem)',
+        fontSize: 'clamp(0.6rem, 1.2vw, 1rem)',
       }}
     >
       {isOn ? 'ON' : 'OFF'}
