@@ -592,7 +592,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Keep existing roll history */}
-        <div className="w-18 bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
+        <div className="w-[110px] bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
           <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
           <div className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
             {rollHistory.length === 0 ? (
