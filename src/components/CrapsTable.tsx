@@ -941,7 +941,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
       <img 
         src={boardLayout}
         alt="Craps Table Layout"
-        className="w-full h-full min-w-0 min-h-0 object-contain outline outline-4 outline-red-500"
+        className="w-full h-full min-w-0 min-h-0 object-contain"
         onLoad={(e) => {
           const ratio = e.currentTarget.naturalWidth / e.currentTarget.naturalHeight;
           console.log('Image ratio:', ratio);  // Let's see what the actual ratio is
@@ -952,8 +952,8 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
         }}
       />
       
-      {/* Betting Areas Layer - Blue outline */}
-      <div className="absolute inset-0 min-w-0 min-h-0 outline outline-4 outline-blue-500">
+      {/* Betting Areas Layer */}
+      <div className="absolute inset-0 min-w-0 min-h-0">
         {/* Hover Indicator */}
         <div className="absolute -bottom-0 left-[40%] transform -translate-x-1/2 flex justify-center z-[900]">
           {hoveredArea && (
