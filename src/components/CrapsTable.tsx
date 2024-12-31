@@ -936,8 +936,21 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   };
 
   return (
-    <div className={`relative w-full h-full min-w-0 min-h-0 ${helpMode ? 'cursor-help' : ''} ${deleteMode ? 'cursor-pointer' : ''}`}>
-      {/* Board Image Layer - Red outline */}
+    <div className={`relative w-full h-full ${helpMode ? 'cursor-help' : ''} ${deleteMode ? 'cursor-pointer' : ''}`}>
+      {/* Hover Indicator - moved to bottom and adjusted left */}
+      <div className="absolute -bottom-0 left-[40%] transform -translate-x-1/2 flex justify-center z-[900]">
+        {hoveredArea && (
+          <div className="bg-black/70 text-white px-4 py-2 rounded-full
+                        font-bold text-lg transition-opacity duration-150">
+            {bettingAreas.find(area => 
+              area.id === hoveredArea && 
+              !area.id.includes('number') && 
+              !area.id.includes('full')
+            )?.name}
+          </div>
+        )}
+      </div>
+
       <img 
         src={boardLayout}
         alt="Craps Table Layout"

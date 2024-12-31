@@ -33,6 +33,30 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   totalAmount,
   showTotalAtBet
 }) => {
+  console.log('AnimatedChipStack position details:', {
+    position,
+    toPosition,
+    windowSize: {
+      width: window.innerWidth,
+      height: window.innerHeight
+    },
+    variants: {
+      initial: {
+        x: isWinning ? window.innerWidth - 200 : position.x-30,
+        y: isWinning ? 100 : position.y-30,
+      }
+    }
+  });
+
+  console.log('AnimatedChipStack render:', {
+    amount,
+    color,
+    position,
+    isWinning,
+    isMoving,
+    isWaiting
+  });
+
   const chipSize = '2.6rem';
   const controls = useAnimation();
   const x = useMotionValue(0);
@@ -41,7 +65,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   const [animationStage, setAnimationStage] = React.useState<'start' | 'atBet' | 'toBank'>('start');
   
   React.useEffect(() => {
-    // console.log('Animation stage changed to:', animationStage);
+    console.log('Animation stage changed:', animationStage);
   }, [animationStage]);
 
   // Track animation progress
@@ -104,7 +128,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
         100,                      // Start from dice
         position.y-30,            // Move to bet
         position.y-30,            // Stay at bet briefly
-        window.innerHeight  // Move to bottom of screen
+        window.innerHeight - 100  // Move to bottom of screen
       ],
       opacity: [1, 1, 1, 1, 0],
       scale: [1, 1.1, 1.1, 0.8],
@@ -153,9 +177,13 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
           width: chipSize, 
           height: chipSize,
           transform: 'translate(-50%, -50%)',
-          zIndex: 900,
+          zIndex: 9999,
           x,
-          scale
+          scale,
+          position: 'fixed',
+          pointerEvents: 'none',
+          left: 0,
+          top: 0,
         }}
         onAnimationComplete={onAnimationComplete}
       >

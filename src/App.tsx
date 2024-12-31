@@ -172,9 +172,14 @@ const App: React.FC = () => {
     // Process winning bets first
     const winningAreas = areas.filter(area => area.type === 'win');
     if (winningAreas.length > 0) {
+      console.log('Processing winning areas:', winningAreas);
       const newWinningBets = bets.filter(bet => 
         winningAreas.some(area => area.id === bet.areaId)
-      ).map(bet => {
+      );
+      console.log('New winning bets:', newWinningBets);
+      
+      // After mapping and before setting state
+      const mappedWinningBets = newWinningBets.map(bet => {
         const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
         const chipElement = betElement?.querySelector('.absolute');
         const tableElement = document.querySelector('.bg-felt-green');
@@ -214,6 +219,14 @@ const App: React.FC = () => {
               setBank(prev => prev + bet.amount + winAmount);
             }
 
+            console.log('Mapped winning bet:', {
+              areaId: bet.areaId,
+              position: chipRect ? {
+                x: chipRect.left + (chipRect.width / 2),
+                y: chipRect.top + (chipRect.height / 2)
+              } : null
+            });
+
             return {
               ...bet,
               isWinning: true,
@@ -233,16 +246,18 @@ const App: React.FC = () => {
         }
         return null;
       }).filter((bet): bet is ResolvingBet => bet !== null);
+      
+      console.log('Setting winning bets:', mappedWinningBets);
+      setWinningBets(mappedWinningBets);
 
       // Set the profit for display
       setLastProfit(totalProfit);
 
       // Add ALL winning bets to animation first
-      setWinningBets(newWinningBets);
-      setAnimatingBets(new Set(newWinningBets.map(bet => bet.areaId)));
+      setAnimatingBets(new Set(mappedWinningBets.map(bet => bet.areaId)));
 
       // Then filter which ones should be removed from the table
-      const betsToRemove = newWinningBets.filter(bet => 
+      const betsToRemove = mappedWinningBets.filter(bet => 
         bet.areaId.startsWith('come-') || 
         bet.areaId.startsWith('dont-come-') || 
         !keepWinningBets
@@ -624,55 +639,64 @@ const App: React.FC = () => {
         </div>
       </div>
     
-
-      {/* Betting Controls - Full screen width positioning with max width */}
-      <div className={`fixed bottom-0 left-0 right-0 mb-2 mt-4 z-50 px-2
-                      ${helpMode ? 'pointer-events-none' : ''}`}>
-
-        {/* Help mode overlay */}
         {helpMode && (
           <div className="fixed inset-0 cursor-help pointer-events-none" />
         )}
 
         {/* Winning bet animations */}
-        {winningBets.map((bet, index) => (
-          <AnimatedChipStack
-            key={`winning-${bet.areaId}-${index}`}
-            amount={bet.winAmount || bet.amount}
-            color={bet.color}
-            position={bet.position}
-            isWinning={true}
-            totalAmount={bet.totalAmount}
-            showTotalAtBet={bet.showTotalAtBet}
-            onAnimationComplete={() => {
-              setAnimatingBets(prev => {
-                const next = new Set(prev);
-                next.delete(bet.areaId);
-                return next;
-              });
-              setWinningBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-            }}
-          />
-        ))}
+        {winningBets.map((bet, index) => {
+          console.log('Rendering winning bet animation:', {
+            bet,
+            index,
+            position: bet.position
+          });
+          return (
+            <AnimatedChipStack
+              key={`winning-${bet.areaId}-${index}`}
+              amount={bet.winAmount || bet.amount}
+              color={bet.color}
+              position={bet.position}
+              isWinning={true}
+              totalAmount={bet.totalAmount}
+              showTotalAtBet={bet.showTotalAtBet}
+              onAnimationComplete={() => {
+                console.log('Animation complete for bet:', bet.areaId);
+                setAnimatingBets(prev => {
+                  const next = new Set(prev);
+                  next.delete(bet.areaId);
+                  return next;
+                });
+                setWinningBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+              }}
+            />
+          );
+        })}
 
         {/* Losing bet animations */}
-        {losingBets.map((bet, index) => (
-          <AnimatedChipStack
-            key={`losing-${bet.areaId}-${index}`}
-            amount={bet.amount}
-            color={bet.color}
-            position={bet.position}
-            isWinning={false}
-            onAnimationComplete={() => {
-              setAnimatingBets(prev => {
-                const next = new Set(prev);
-                next.delete(bet.areaId);
-                return next;
-              });
-              setLosingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-            }}
-          />
-        ))}
+        {losingBets.map((bet, index) => {
+          console.log('Rendering losing bet animation:', {
+            bet,
+            index,
+            position: bet.position
+          });
+          return (
+            <AnimatedChipStack
+              key={`losing-${bet.areaId}-${index}`}
+              amount={bet.amount}
+              color={bet.color}
+              position={bet.position}
+              isWinning={false}
+              onAnimationComplete={() => {
+                setAnimatingBets(prev => {
+                  const next = new Set(prev);
+                  next.delete(bet.areaId);
+                  return next;
+                });
+                setLosingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
+              }}
+            />
+          );
+        })}
 
         {/* Moving bet animations */}
         {movingBets.map((bet, index) => (
@@ -731,7 +755,6 @@ const App: React.FC = () => {
           />
         ))}
       </div>
-    </div>
   );
 };
 
