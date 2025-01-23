@@ -535,7 +535,7 @@ const App: React.FC = () => {
                 />
 
                 {/* Keep Winning Bets checkbox - positioned higher */}
-                <label className="absolute bottom-[2%] left-[14%] 
+                <label className="absolute bottom-[1%] left-[10%] 
                                   flex items-center gap-2 text-white cursor-pointer text-base 
                                   bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none">
                   <div className="flex items-center gap-2 pointer-events-none">

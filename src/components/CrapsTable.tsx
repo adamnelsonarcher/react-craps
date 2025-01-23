@@ -975,7 +975,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
       {/* Help Mode Button */}
       <button 
-        className={`absolute bottom-4 left-4 z-50 px-4 h-8 rounded-full 
+        className={`absolute bottom-2 left-2 z-50 px-4 h-8 rounded-full 
                     flex items-center justify-center gap-2
                     ${helpMode ? 'bg-blue-500' : 'bg-gray-600'} 
                     text-white font-bold text-lg
@@ -991,7 +991,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
 
       {/* Help Text Popup */}
       {helpText && helpMode && (
-        <div className="absolute bottom-20 left-28 z-50 
+        <div className="absolute bottom-20 left-28 z-[200] 
                         bg-black/90 text-white p-4 rounded-lg
                         shadow-lg backdrop-blur-sm
                         transform translate-y-full
