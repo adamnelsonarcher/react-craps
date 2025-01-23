@@ -18,7 +18,6 @@ const CHIP_VALUES = [
   { value: 100, color: 'bg-gray-900' },  // Black
   { value: 50, color: 'bg-blue-600' },   // Blue
   { value: 25, color: 'bg-green-600' },  // Green
-  { value: 10, color: 'bg-orange-500' }, // Orange
   { value: 5, color: 'bg-red-600' },     // Red
   { value: 1, color: 'bg-gray-200' }     // Light Gray (was white)
 ];

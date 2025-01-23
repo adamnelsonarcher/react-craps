@@ -69,7 +69,6 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   const chipConfigs: ChipConfig[] = [
     { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-300' },
     { value: 5, color: 'bg-red-600', ringColor: 'border-red-300' },
-    { value: 10, color: 'bg-orange-500', ringColor: 'border-orange-300' },
     { value: 25, color: 'bg-green-600', ringColor: 'border-green-300' },
     { value: 50, color: 'bg-blue-600', ringColor: 'border-blue-300' },
     { value: 100, color: 'bg-gray-900', ringColor: 'border-gray-400' },
