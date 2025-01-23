@@ -10,6 +10,7 @@ import { RollOutcome, WinningArea, BetMovement, ResolvingBet } from './types/gam
 import { PAYOUT_TABLE } from './utils/payouts';
 import ProfitDisplay from './components/ProfitDisplay';
 import AnimatedBalance from './components/AnimatedBalance';
+import { useScreenSize } from './hooks/useScreenSize';
 
 interface DiceRoll {
   die1: number;
@@ -26,6 +27,7 @@ interface Bet {
 }
 
 const App: React.FC = () => {
+  const isTooSmall = useScreenSize();
   const [dice, setDice] = useState<{ die1: number; die2: number }>({ die1: 1, die2: 1 });
   const [isRolling, setIsRolling] = useState(false);
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
@@ -458,7 +460,16 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', updateContainerSize);
   }, []);
 
-  return (
+  const content = isTooSmall ? (
+    <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white p-8">
+      <div className="text-center max-w-md">
+        <h1 className="text-2xl font-bold mb-4">Screen Too Small</h1>
+        <p className="text-gray-300">
+          This app was built for larger screens. It would be hard to play craps on a small screen anyways.
+        </p>
+      </div>
+    </div>
+  ) : (
     <div className="h-screen w-screen bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden relative">
       <div className="h-full w-full flex flex-col gap-2 p-2">
         <div className="flex-1 relative min-w-0 pr-24">
@@ -737,6 +748,8 @@ const App: React.FC = () => {
       ))}
     </div>
   );
+
+  return content;
 };
 
 export default App; 
