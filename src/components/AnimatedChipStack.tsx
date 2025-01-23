@@ -86,6 +86,11 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
     return Math.round(value).toLocaleString();  // Round to whole number for losing/moving chips
   };
 
+  // Add console logs to debug styling
+  //console.log('Chip color:', color);
+  //console.log('Is white chip?', color === 'bg-gray-200');
+  //console.log('Border class:', color === 'bg-gray-200' ? 'border-gray-600' : 'border-white');
+
   const variants = {
     initial: {
       x: isWinning ? window.innerWidth - 200 : position.x-30,
@@ -123,8 +128,8 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
       transition: { duration: 0.5, ease: "easeInOut" }
     },
     losing: {
-      x: position.x + 200,
-      y: position.y - 200,
+      x: position.x + 100,
+      y: position.y - 150,
       opacity: 0,
       scale: 0.8,
       rotate: -45,
@@ -164,7 +169,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
         onAnimationComplete={onAnimationComplete}
       >
         <div className={`absolute ${color} rounded-full 
-                      border-2 ${color === 'bg-gray-200' ? 'border-gray-600' : 'border-white'} shadow-lg
+                      border-2 ${color === 'bg-white' ? 'border-gray-600' : 'border-white'} shadow-lg
                       transition-all duration-150
                       ring-1 ${color === 'bg-gray-200' ? 'ring-gray-600/20' : 'ring-white/20'}`}
           style={{
