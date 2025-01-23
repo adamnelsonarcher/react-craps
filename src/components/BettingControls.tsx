@@ -67,7 +67,7 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   bankDisplay,
 }) => {
   const chipConfigs: ChipConfig[] = [
-    { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-300' },
+    { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-500' },
     { value: 5, color: 'bg-red-600', ringColor: 'border-red-300' },
     { value: 25, color: 'bg-green-600', ringColor: 'border-green-300' },
     { value: 50, color: 'bg-blue-600', ringColor: 'border-blue-300' },
