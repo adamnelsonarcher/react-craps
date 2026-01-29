@@ -10,6 +10,7 @@ import { PAYOUT_TABLE } from './utils/payouts';
 import ProfitDisplay from './components/ProfitDisplay';
 import AnimatedBalance from './components/AnimatedBalance';
 import { useScreenSize } from './hooks/useScreenSize';
+import SettingsModal from './components/SettingsModal';
 
 interface DiceRoll {
   die1: number;
@@ -60,6 +61,7 @@ const App: React.FC = () => {
     position: { x: number; y: number };
     targetPosition: { x: number; y: number };
   })[]>([]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleRoll = (forcedRoll?: { die1: number; die2: number }) => {
     if (isRolling) return;
@@ -561,6 +563,7 @@ const App: React.FC = () => {
               onUndo={() => tableRef.current?.handleUndo()}
               onClear={() => tableRef.current?.handleClear()}
               onToggleDelete={() => setDeleteMode(!deleteMode)}
+              onOpenSettings={() => setIsSettingsOpen(true)}
               deleteMode={deleteMode}
               bank={bank}
               bankDisplay={
@@ -734,6 +737,16 @@ const App: React.FC = () => {
           }}
         />
       ))}
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        bank={bank}
+        onSetBank={setBank}
+        gameName="RollSim"
+        version="2.2"
+        credits="Made by Adam Nelson-Archer"
+      />
     </div>
   );
 

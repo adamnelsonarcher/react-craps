@@ -51,6 +51,7 @@ interface BettingControlsProps {
   onUndo: () => void;
   onClear: () => void;
   onToggleDelete: () => void;
+  onOpenSettings: () => void;
   deleteMode: boolean;
   bank: number;
   bankDisplay: React.ReactNode;
@@ -62,6 +63,7 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   onUndo,
   onClear,
   onToggleDelete,
+  onOpenSettings,
   deleteMode,
   bank,
   bankDisplay,
@@ -77,8 +79,19 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   return (
     <div className="bg-gray-800/50 rounded-lg p-2 flex flex-col gap-2 backdrop-blur-sm min-h-0">
       <div className="flex gap-[clamp(0.5rem,1vw,1rem)] items-start">
-        <div className="min-w-[clamp(150px,15vw,200px)]">
+        <div className="min-w-[clamp(150px,15vw,200px)] flex flex-col gap-1">
           {bankDisplay}
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Open settings"
+            title="Settings"
+            className="self-start inline-flex items-center justify-center
+                       w-7 h-7 rounded bg-gray-700/70 hover:bg-gray-600
+                       text-white/90 text-sm leading-none"
+          >
+            ⚙
+          </button>
         </div>
 
         <div className="flex gap-[clamp(0.25rem,0.75vw,1rem)]">
@@ -98,10 +111,10 @@ const BettingControls: React.FC<BettingControlsProps> = ({
 
         <div className="h-full w-px bg-gray-600/50" />
 
-        <div className="flex gap-[clamp(0.25rem,0.5vw,0.5rem)] h-full py-2">
+        <div className="flex flex-wrap gap-[clamp(0.25rem,0.5vw,0.5rem)] h-full py-2">
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                    text-[clamp(0.7rem,1vw,1rem)] px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded"
+                    text-[clamp(0.7rem,1vw,1rem)] px-3 h-full rounded whitespace-nowrap"
             onClick={onUndo}
           >
             Undo Bet
@@ -110,7 +123,7 @@ const BettingControls: React.FC<BettingControlsProps> = ({
             <button
               onClick={() => onToggleDelete()}
               className={`btn text-white text-[clamp(0.7rem,1vw,1rem)] 
-                          px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded
+                          px-3 h-full rounded whitespace-nowrap
                           ${deleteMode 
                             ? 'bg-red-600 hover:bg-red-700' 
                             : 'bg-gray-500 hover:bg-gray-600'}`}
@@ -120,7 +133,7 @@ const BettingControls: React.FC<BettingControlsProps> = ({
           </div>
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                    text-[clamp(0.7rem,1vw,1rem)] px-2 w-[clamp(4rem,8vw,8rem)] h-full rounded"
+                    text-[clamp(0.7rem,1vw,1rem)] px-3 h-full rounded whitespace-nowrap"
             onClick={onClear}
           >
             Clear All
