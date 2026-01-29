@@ -743,9 +743,6 @@ const App: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
         bank={bank}
         onSetBank={setBank}
-        gameName="RollSim"
-        version="2.2"
-        credits="Made by Adam Nelson-Archer"
       />
     </div>
   );

@@ -5,10 +5,10 @@ export interface SettingsModalProps {
   onClose: () => void;
   bank: number;
   onSetBank: (newBank: number) => void;
-  gameName?: string;
-  version?: string;
-  credits?: string;
 }
+
+const GAME_NAME = 'RollSim';
+const VERSION = '2.2';
 
 const clampNonNegativeInt = (value: number) => {
   if (!Number.isFinite(value)) return 0;
@@ -19,10 +19,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   bank,
-  onSetBank,
-  gameName = 'RollSim',
-  version = '2.2',
-  credits = 'Made by Adam Nelson-Archer'
+  onSetBank
 }) => {
   const [draftBank, setDraftBank] = React.useState<string>(String(bank));
   const [error, setError] = React.useState<string | null>(null);
@@ -139,7 +136,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="px-5 pb-4 text-[11px] text-gray-400">
-          <div>{gameName} v{version}</div>
+          <div>{GAME_NAME} v{VERSION}</div>
           <div>
             Made by{' '}
             <a
