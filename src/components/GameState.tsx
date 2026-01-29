@@ -88,6 +88,9 @@ const GameState: React.FC<GameStateProps> = ({
 }) => {
   const [point, setPoint] = React.useState<number | null>(null);
   const [isComingOut, setIsComingOut] = React.useState(true);
+  // Prevent resolving the same roll more than once.
+  // `rollId` comes from `App.tsx` and increments once per completed roll.
+  const lastProcessedRollIdRef = React.useRef<number>(0);
 
   // Point marker positions for each number (moved up to avoid overlap)
   const markerPositions: Record<number, { x: number; y: number }> = {
@@ -275,6 +278,8 @@ const GameState: React.FC<GameStateProps> = ({
     // fragile timing/hasRolled flags that can desync under StrictMode.
     if (isRolling) return;
     if (rollId <= 0) return;
+    if (lastProcessedRollIdRef.current === rollId) return;
+    lastProcessedRollIdRef.current = rollId;
 
     const outcome = determineRollOutcome(diceTotal, isComingOut, point);
 
