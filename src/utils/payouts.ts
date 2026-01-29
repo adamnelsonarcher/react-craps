@@ -1,7 +1,8 @@
 export const PAYOUT_TABLE = {
   // One-roll bets
-  'any-7': 5,        // 5 to 1
-  'any-craps': 8,    // 8 to 1
+  // Note: these follow common casino payouts (and match the in-app help text)
+  'any-7': 4,        // 4 to 1
+  'any-craps': 7,    // 7 to 1
   'roll-2': 30,      // 30 to 1
   'roll-3': 15,      // 15 to 1
   'roll-12': 30,     // 30 to 1
@@ -9,10 +10,10 @@ export const PAYOUT_TABLE = {
   'roll-11-2': 15,   // 15 to 1
   
   // Hard ways
-  'hard-4': 8,       // 8 to 1
-  'hard-6': 10,      // 10 to 1
-  'hard-8': 10,      // 10 to 1
-  'hard-10': 8,      // 8 to 1
+  'hard-4': 7,       // 7 to 1
+  'hard-6': 9,       // 9 to 1
+  'hard-8': 9,       // 9 to 1
+  'hard-10': 7,      // 7 to 1
   
   // Field bets (special case - handled separately)
   'field': {

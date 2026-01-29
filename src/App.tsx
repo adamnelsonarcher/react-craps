@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import CrapsTable, { CrapsTableRef } from './components/CrapsTable';
 import DiceArea from './components/DiceArea';
 import BettingControls from './components/BettingControls';
-import DiceHistory from './components/DiceHistory';
 import Dice from './components/Dice';
 import GameState from './components/GameState';
 import AnimatedChipStack from './components/AnimatedChipStack';
@@ -30,6 +29,8 @@ const App: React.FC = () => {
   const isTooSmall = useScreenSize();
   const [dice, setDice] = useState<{ die1: number; die2: number }>({ die1: 1, die2: 1 });
   const [isRolling, setIsRolling] = useState(false);
+  // Increments when a user roll completes; used to trigger resolution exactly once per roll.
+  const [rollId, setRollId] = useState(0);
   const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
   const [selectedChipValue, setSelectedChipValue] = useState<number | null>(null);
   const tableRef = useRef<CrapsTableRef>(null);
@@ -39,14 +40,12 @@ const App: React.FC = () => {
   const [bank, setBank] = useState(1000);
   const [helpMode, setHelpMode] = useState(false);
   const [bets, setBets] = useState<Bet[]>([]);
-  const [isComingOut, setIsComingOut] = useState(true);
   const [point, setPoint] = useState<number | null>(null);
   const [winningBets, setWinningBets] = useState<ResolvingBet[]>([]);
   const [losingBets, setLosingBets] = useState<ResolvingBet[]>([]);
   const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
   const [winningAreas, setWinningAreas] = useState<WinningArea[]>([]);
   const winningAreasTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [hasRolled, setHasRolled] = useState(false);
   const [movingBets, setMovingBets] = useState<(Bet & { 
     fromPosition: { x: number; y: number };
     toPosition: { x: number; y: number };
@@ -61,16 +60,6 @@ const App: React.FC = () => {
     position: { x: number; y: number };
     targetPosition: { x: number; y: number };
   })[]>([]);
-
-  const handleGlobalClick = (e: React.MouseEvent) => {
-    if (deleteMode) {
-      const clickedOnChip = (e.target as HTMLElement).closest('[data-bet-id]');
-      const clickedOnDeleteControls = (e.target as HTMLElement).closest('[data-delete-controls]');
-      if (!clickedOnChip && !clickedOnDeleteControls) {
-        setDeleteMode(false);
-      }
-    }
-  };
 
   const handleRoll = (forcedRoll?: { die1: number; die2: number }) => {
     if (isRolling) return;
@@ -99,7 +88,7 @@ const App: React.FC = () => {
     if (quickRoll) {
       console.log('Quick roll result:', roll);
       setDice({ die1: roll.die1, die2: roll.die2 });
-      setHasRolled(true);
+      setRollId(prev => prev + 1);
     } else {
       setIsRolling(true);
       
@@ -119,15 +108,13 @@ const App: React.FC = () => {
         clearInterval(interval);
         setAnimationInterval(null);
         setDice({ die1: roll.die1, die2: roll.die2 });
-        setHasRolled(true);
+        setRollId(prev => prev + 1);
         setIsRolling(false);
       }, 1000);
     }
   };
 
   const handleRollOutcome = (outcome: RollOutcome & { total: number }) => {
-    if (!hasRolled) return;
-    
     setRollHistory(prev => [{
       die1: dice.die1,
       die2: dice.die2,
@@ -155,7 +142,6 @@ const App: React.FC = () => {
   };
 
   const handleGameStateChange = (newIsComingOut: boolean, newPoint: number | null) => {
-    setIsComingOut(newIsComingOut);
     setPoint(newPoint);
   };
 
@@ -263,8 +249,10 @@ const App: React.FC = () => {
             const betsToRemoveMap = new Map<string, ResolvingBet>();
             betsToRemove.forEach(bet => {
               // For come/don't-come bets that are moving, don't add them to removal map
-              if ((bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-')) && 
-                  movingBetIds.has('come') || movingBetIds.has('dont-come')) {
+              if (
+                (bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-')) &&
+                (movingBetIds.has('come') || movingBetIds.has('dont-come'))
+              ) {
                 return;
               }
               betsToRemoveMap.set(bet.areaId, bet);
@@ -298,7 +286,6 @@ const App: React.FC = () => {
         
         if (chipElement && tableElement) {
           const chipRect = chipElement.getBoundingClientRect();
-          const tableRect = tableElement.getBoundingClientRect();
           
           return {
             ...bet,
@@ -480,6 +467,7 @@ const App: React.FC = () => {
                    style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}>
                 <GameState 
                   isRolling={isRolling}
+                  rollId={rollId}
                   diceTotal={dice.die1 + dice.die2}
                   die1={dice.die1}
                   die2={dice.die2}

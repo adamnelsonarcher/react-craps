@@ -1,10 +1,6 @@
 import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import boardLayout from '../assets/just_text.png';
-import Dice from './Dice';
-import DiceHistory from './DiceHistory';
 import ChipStack from './ChipStack';
-import DiceArea from './DiceArea';
-import styled from 'styled-components';
 
 // Add chip configuration
 const CHIPS_CONFIG = [
@@ -35,12 +31,6 @@ interface NumberArea {
 interface BettingAreaConfig {
   id: string;
   visible: boolean;
-}
-
-interface DiceRoll {
-  die1: number;
-  die2: number;
-  total: number;
 }
 
 interface Bet {
@@ -153,39 +143,6 @@ const DiceControls: React.FC<{
   );
 };
 
-interface ChipProps {
-  color: string;
-  selected?: boolean;
-  children: React.ReactNode;
-  onClick?: () => void;
-}
-
-const Chip: React.FC<ChipProps> = ({ color, selected, children, onClick }) => (
-  <div 
-    onClick={onClick}
-    className={`
-      relative
-      w-[clamp(2rem,4vw,3rem)]
-      h-[clamp(2rem,4vw,3rem)]
-      rounded-full
-      flex
-      items-center
-      justify-center
-      font-bold
-      text-[clamp(0.75rem,1.5vw,1rem)]
-      text-white
-      cursor-pointer
-      ${color}
-      ${selected ? 'ring-3 ring-white' : ''}
-      shadow-lg
-      hover:scale-110
-      transition-transform
-    `}
-  >
-    {children}
-  </div>
-);
-
 const NON_HIGHLIGHTING_AREAS = [
   'pass-line-chips',
   'dont-pass-chips',
@@ -222,19 +179,15 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [clickLog, setClickLog] = useState<string[]>([]);
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
-  const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
-  const [quickRoll, setQuickRoll] = useState(false);
   const [showDevToolsButton, setShowDevToolsButton] = useState(false);
   const [helpText, setHelpText] = useState<string | null>(null);
-  const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
-  const [resolvingBets, setResolvingBets] = useState<(Bet & { isWinning: boolean; position: { x: number; y: number } })[]>([]);
 
   // Constants based on your measurements for 4
   const numberWidth = 29.92 - 21.67;  // ~8.25%
   const numberSpacing = 8.5;  // Spacing between each number section
   
   // Configuration for which areas to show
-  const [areaConfig, setAreaConfig] = useState<BettingAreaConfig[]>([
+  const [areaConfig] = useState<BettingAreaConfig[]>([
     { id: 'number-full', visible: false },  // Hide full number rectangles
     { id: 'place', visible: true },
     { id: 'buy', visible: true },
@@ -734,14 +687,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   const copyToClipboard = () => {
     const text = clickLog.join('\n');
     navigator.clipboard.writeText(text);
-  };
-
-  const toggleAreaVisibility = (areaType: string) => {
-    setAreaConfig(prev => prev.map(config => 
-      config.id === areaType 
-        ? { ...config, visible: !config.visible }
-        : config
-    ));
   };
 
   const handleAreaClick = (areaId: string, rect: DOMRect) => {

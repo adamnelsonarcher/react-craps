@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { motion, animate as frameAnimate, useMotionValue, useTransform } from 'framer-motion';
 
 export interface AnimatedBalanceProps {

@@ -11,6 +11,7 @@ interface Bet {
 
 interface GameStateProps {
   isRolling: boolean;
+  rollId: number;
   diceTotal: number;
   die1: number;
   die2: number;
@@ -35,7 +36,7 @@ const PointMarker: React.FC<PointMarkerProps> = ({ point, position, isOn }) => {
   const currentPercentPosition = isOn ? position : offPosition;
 
   const updatePosition = useCallback(() => {
-    const gameBoard = document.querySelector('.aspect-\\[2\\/1\\]');
+    const gameBoard = document.querySelector(String.raw`.aspect-\[2\/1\]`);
     if (gameBoard) {
       const rect = gameBoard.getBoundingClientRect();
       const x = rect.left + (rect.width * currentPercentPosition.x / 100);
@@ -73,6 +74,7 @@ const PointMarker: React.FC<PointMarkerProps> = ({ point, position, isOn }) => {
 
 const GameState: React.FC<GameStateProps> = ({ 
   isRolling, 
+  rollId,
   diceTotal,
   die1,
   die2,
@@ -86,9 +88,6 @@ const GameState: React.FC<GameStateProps> = ({
 }) => {
   const [point, setPoint] = React.useState<number | null>(null);
   const [isComingOut, setIsComingOut] = React.useState(true);
-  const prevRoll = React.useRef({ die1: 0, die2: 0, timestamp: 0 });
-  const [lastWinTimestamp, setLastWinTimestamp] = React.useState(0);
-  const [hasRolled, setHasRolled] = React.useState(false);
 
   // Point marker positions for each number (moved up to avoid overlap)
   const markerPositions: Record<number, { x: number; y: number }> = {
@@ -100,229 +99,158 @@ const GameState: React.FC<GameStateProps> = ({
     10: { x: 68.42, y: -4 },  // Above the 10
   };
 
-  // Add function to determine winning areas based on the roll
-  const determineWinningAreas = (total: number, isComingOut: boolean, point: number | null): WinningArea[] => {
+  // Determines which bet areas win/lose for a given roll.
+  // Keep this in-sync with the bet `areaId`s defined in `CrapsTable.tsx`.
+  const determineWinningAreas = useCallback((total: number, isComingOut: boolean, point: number | null): WinningArea[] => {
     const winningAreas: WinningArea[] = [];
     const losingAreas: WinningArea[] = [];
 
-    // Pass line bets - handle come out roll first
+    const win = (id: string) => winningAreas.push({ id, type: 'win' });
+    const lose = (id: string) => losingAreas.push({ id, type: 'lose' });
+    const winMany = (...ids: string[]) => ids.forEach(win);
+    const loseMany = (...ids: string[]) => ids.forEach(lose);
+
+    const isPointNumber = [4, 5, 6, 8, 9, 10].includes(total);
+    const pointNumbers: Array<4 | 5 | 6 | 8 | 9 | 10> = [4, 5, 6, 8, 9, 10];
+
+    // Pass line / don't pass
+    // Note: actual bets are stored on `pass-line-chips` / `dont-pass-chips` (see `CrapsTable.tsx`)
     if (isComingOut) {
       if (total === 7 || total === 11) {
-        // Natural - pass line wins, don't pass loses
-        winningAreas.push(
-          { id: 'pass-line', type: 'win' },
-          { id: 'pass-line-chips', type: 'win' }
-        );
-        losingAreas.push(
-          { id: 'dont-pass', type: 'lose' },
-          { id: 'dont-pass-chips', type: 'lose' }
-        );
-      } else if (total === 2 || total === 3 || total === 12) {
-        // Craps - pass line loses, don't pass wins (except push on 12)
-        losingAreas.push(
-          { id: 'pass-line', type: 'lose' },
-          { id: 'pass-line-chips', type: 'lose' }
-        );
-        winningAreas.push(
-          { id: 'dont-pass', type: 'win' },
-        );
+        win('pass-line-chips');
+        lose('dont-pass-chips');
+      } else if (total === 2 || total === 3) {
+        lose('pass-line-chips');
+        win('dont-pass-chips');
+      } else if (total === 12) {
+        lose('pass-line-chips');
+        // don't pass pushes on 12 (no win/lose)
       }
     } else if (point !== null) {
-
-      winningAreas.push({ id: `place-${total}`, type: 'win' });
-      winningAreas.push({ id: `buy-${total}`, type: 'win' });
-      winningAreas.push({ id: `come-${total}`, type: 'win' });
-      losingAreas.push({ id: `lay-${total}`, type: 'lose' });
-
       if (total === point) {
-        winningAreas.push(
-          { id: 'pass-line', type: 'win' },
-          { id: 'pass-line-chips', type: 'win' }
-        );
-        losingAreas.push({ id: 'dont-pass', type: 'lose' });
-        losingAreas.push({ id: 'dont-pass-chips', type: 'lose' });
-        losingAreas.push({ id: 'dont-come', type: 'lose' });
-        losingAreas.push({ id: 'dont-come-chips', type: 'lose' });
+        win('pass-line-chips');
+        lose('dont-pass-chips');
       } else if (total === 7) {
-        losingAreas.push(
-          { id: 'pass-line', type: 'lose' },
-          { id: 'pass-line-chips', type: 'lose' }
-        );
-        winningAreas.push({ id: 'dont-pass', type: 'win' });
-        // All place bets lose on seven
-        [4, 5, 6, 8, 9, 10].forEach(num => {
-          losingAreas.push({ id: `place-${num}`, type: 'lose' });
-          losingAreas.push({ id: `buy-${num}`, type: 'lose' });
-          winningAreas.push({ id: `lay-${num}`, type: 'win' });
-        });
-      } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
-        // Point number rolled - check if we can move the bet to the come/don't come point
-        const comeBets = bets.filter(bet => bet.areaId === 'come');
-        const dontComeBets = bets.filter(bet => bet.areaId === 'dont-come');
+        lose('pass-line-chips');
+        win('dont-pass-chips');
+      }
+    }
 
-        // Move come bets if target isn't animating
-        comeBets.forEach(bet => {
+    // Place / buy / lay
+    if (total === 7) {
+      pointNumbers.forEach(num => {
+        loseMany(`place-${num}`, `buy-${num}`);
+        win(`lay-${num}`);
+      });
+    } else if (isPointNumber) {
+      winMany(`place-${total}`, `buy-${total}`);
+      lose(`lay-${total}`);
+    }
+
+    // One-roll proposition bets
+    if (total === 7) win('any-7');
+    else lose('any-7');
+
+    if (total === 2 || total === 3 || total === 12) win('any-craps');
+    else lose('any-craps');
+
+    if (total === 2) win('roll-2');
+    else lose('roll-2');
+
+    if (total === 3) win('roll-3');
+    else lose('roll-3');
+
+    if (total === 12) win('roll-12');
+    else lose('roll-12');
+
+    if (total === 11) winMany('roll-11-1', 'roll-11-2');
+    else loseMany('roll-11-1', 'roll-11-2');
+
+    // Field (one-roll)
+    if ([2, 3, 4, 9, 10, 11, 12].includes(total)) {
+      win('field');
+    } else {
+      lose('field');
+    }
+
+    // Hard ways: resolve only on 7 or the hard-way number
+    if (total === 7) {
+      loseMany('hard-4', 'hard-6', 'hard-8', 'hard-10');
+    } else if (total === 4) {
+      if (die1 === 2 && die2 === 2) win('hard-4');
+      else lose('hard-4');
+    } else if (total === 6) {
+      if (die1 === 3 && die2 === 3) win('hard-6');
+      else lose('hard-6');
+    } else if (total === 8) {
+      if (die1 === 4 && die2 === 4) win('hard-8');
+      else lose('hard-8');
+    } else if (total === 10) {
+      if (die1 === 5 && die2 === 5) win('hard-10');
+      else lose('hard-10');
+    }
+
+    // Come / don't come "base" bets resolve on next roll after being placed
+    // These can only be placed once a table point exists (`point !== null`)
+    if (point !== null) {
+      if (total === 7 || total === 11) {
+        win('come');
+        lose('dont-come');
+      } else if (total === 2 || total === 3) {
+        lose('come');
+        win('dont-come');
+      } else if (total === 12) {
+        lose('come');
+        // don't come pushes on 12
+      } else if (isPointNumber) {
+        // Move come/don't-come bets to their own point numbers (if present)
+        const comeBet = bets.find(bet => bet.areaId === 'come');
+        const dontComeBet = bets.find(bet => bet.areaId === 'dont-come');
+
+        if (comeBet) {
           const targetId = `come-${total}`;
-          if (!animatingBets.has(targetId)) {  // Only move if target isn't animating
+          if (!animatingBets.has(targetId)) {
             onMoveBet?.({
               fromId: 'come',
               toId: targetId,
-              amount: bet.amount,
-              color: bet.color,
-              count: bet.count
+              amount: comeBet.amount,
+              color: comeBet.color,
+              count: comeBet.count
             });
           }
-        });
+        }
 
-        // Move don't come bets if target isn't animating
-        dontComeBets.forEach(bet => {
+        if (dontComeBet) {
           const targetId = `dont-come-${total}`;
-          if (!animatingBets.has(targetId)) {  // Only move if target isn't animating
+          if (!animatingBets.has(targetId)) {
             onMoveBet?.({
               fromId: 'dont-come',
               toId: targetId,
-              amount: bet.amount,
-              color: bet.color,
-              count: bet.count
+              amount: dontComeBet.amount,
+              color: dontComeBet.color,
+              count: dontComeBet.count
             });
           }
-        });
-      }
-    }
-
-    // Any 7 - Only wins on 7 during come-out roll
-    if (total === 7) {  // Any 7 should win on ANY 7, not just during come-out
-      winningAreas.push({ id: 'any-7', type: 'win' });
-    } else {
-      losingAreas.push({ id: 'any-7', type: 'lose' });
-    }
-
-    // Any Craps
-    if ([2, 3, 12].includes(total)) {
-      winningAreas.push({ id: 'any-craps', type: 'win' });
-    } else {
-      losingAreas.push({ id: 'any-craps', type: 'lose' });
-    }
-
-    // Individual number bets
-    // Snake Eyes (2)
-    if (total === 2) {
-      winningAreas.push({ id: 'roll-2', type: 'win' });
-    } else {
-      losingAreas.push({ id: 'roll-2', type: 'lose' });
-    }
-
-    // Three (Ace-Deuce)
-    if (total === 3) {
-      winningAreas.push({ id: 'roll-3', type: 'win' });
-    } else {
-      losingAreas.push({ id: 'roll-3', type: 'lose' });
-    }
-
-    // Twelve (Boxcars)
-    if (total === 12) {
-      winningAreas.push({ id: 'roll-12', type: 'win' });
-    } else {
-      losingAreas.push({ id: 'roll-12', type: 'lose' });
-    }
-
-    // Eleven (Yo)
-    if (total === 11) {
-      winningAreas.push({ id: 'roll-11-1', type: 'win' });
-      winningAreas.push({ id: 'roll-11-2', type: 'win' });
-    } else {
-      losingAreas.push({ id: 'roll-11-1', type: 'lose' });
-      losingAreas.push({ id: 'roll-11-2', type: 'lose' });
-    }
-
-    // Hard ways
-    // Hard 4
-    if (total === 4 && die1 === 2 && die2 === 2) {
-      winningAreas.push({ id: 'hard-4', type: 'win' });
-    } else if (total === 7 || (total === 4 && (die1 !== die2))) {
-      losingAreas.push({ id: 'hard-4', type: 'lose' });
-    }
-
-    // Hard 6
-    if (total === 6 && die1 === 3 && die2 === 3) {
-      winningAreas.push({ id: 'hard-6', type: 'win' });
-    } else if (total === 7 || (total === 6 && (die1 !== 3 || die2 !== 3))) {
-      losingAreas.push({ id: 'hard-6', type: 'lose' });
-    }
-
-    // Hard 8
-    if (total === 8 && die1 === 4 && die2 === 4) {
-      winningAreas.push({ id: 'hard-8', type: 'win' });
-    } else if (total === 7 || (total === 8 && (die1 !== 4 || die2 !== 4))) {
-      losingAreas.push({ id: 'hard-8', type: 'lose' });
-    }
-
-    // Hard 10
-    if (total === 10 && die1 === 5 && die2 === 5) {
-      winningAreas.push({ id: 'hard-10', type: 'win' });
-    } else if (total === 7 || (total === 10 && (die1 !== 5 || die2 !== 5))) {
-      losingAreas.push({ id: 'hard-10', type: 'lose' });
-    }
-
-    // Field
-    if ([2, 3, 4, 9, 10, 11, 12].includes(total)) {
-      winningAreas.push({ 
-        id: 'field', 
-        type: 'win',
-        timestamp: Date.now()
-      });
-    } else {
-      losingAreas.push({ 
-        id: 'field', 
-        type: 'lose',
-        timestamp: Date.now()
-      });
-    }
-
-    // Come bets - only process when point is established (not coming out)
-    if (!isComingOut) {
-      if (total === 7 || total === 11) {
-        // Natural - come wins, don't come loses
-        winningAreas.push({ id: 'come', type: 'win' });
-        losingAreas.push({ id: 'dont-come', type: 'lose' });
-      } else if (total === 2 || total === 3 || total === 12) {
-        // Craps - come loses, don't come wins (except push on 12 for don't come)
-        losingAreas.push({ id: 'come', type: 'lose' });
-        if (total !== 12) {  // Don't come wins on 2 and 3, pushes on 12
-          winningAreas.push({ id: 'dont-come', type: 'win' });
         }
-      } else if ([4, 5, 6, 8, 9, 10].includes(total)) {
-        // Point number rolled - move the bet to the come point
-        const comeBets = bets.filter(bet => bet.areaId === 'come');
-        comeBets.forEach(bet => {
-          onMoveBet?.({
-            fromId: 'come',
-            toId: `come-${total}`,
-            amount: bet.amount,
-            color: bet.color,
-            count: bet.count
-          });
-        });
       }
     }
 
-    // Handle established come point bets
+    // Established come / don't-come point bets resolve regardless of come-out
     if (total === 7) {
-      // Seven out - all come point bets lose
-      [4, 5, 6, 8, 9, 10].forEach(num => {
-        losingAreas.push({ id: `come-${num}`, type: 'lose' });
-        winningAreas.push({ id: `dont-come-${num}`, type: 'win' });
+      pointNumbers.forEach(num => {
+        lose(`come-${num}`);
+        win(`dont-come-${num}`);
       });
-    } else {
-      winningAreas.push({ id: `come-${total}`, type: 'win' });
-      losingAreas.push({ id: `dont-come-${total}`, type: 'lose' });
+    } else if (isPointNumber) {
+      win(`come-${total}`);
+      lose(`dont-come-${total}`);
     }
 
     return [...winningAreas, ...losingAreas];
-  };
+  }, [animatingBets, bets, die1, die2, onMoveBet]);
 
   // Determine the outcome of a roll
-  const determineRollOutcome = (total: number, currentIsComingOut: boolean, currentPoint: number | null): RollOutcome => {
+  const determineRollOutcome = useCallback((total: number, currentIsComingOut: boolean, currentPoint: number | null): RollOutcome => {
     if (currentIsComingOut) {
       if (total === 7 || total === 11) {
         return { type: 'natural', isComingOut: true };
@@ -339,64 +267,52 @@ const GameState: React.FC<GameStateProps> = ({
       }
     }
     return { type: 'normal', isComingOut: currentIsComingOut };
-  };
+  }, []);
 
   React.useEffect(() => {
-    if (isRolling || !diceTotal) return;
+    // `rollId` comes from `App.tsx` and only increments when a user roll completes.
+    // This prevents the game from resolving on initial mount and avoids relying on
+    // fragile timing/hasRolled flags that can desync under StrictMode.
+    if (isRolling) return;
+    if (rollId <= 0) return;
 
-    const currentTimestamp = Date.now();
+    const outcome = determineRollOutcome(diceTotal, isComingOut, point);
 
-    // Check if this is actually a new roll by comparing timestamps
-    // Only skip if the roll happened within the last 50ms
-    if (currentTimestamp - prevRoll.current.timestamp < 50 &&
-        die1 === prevRoll.current.die1 && 
-        die2 === prevRoll.current.die2) {
-      return;
+    // Add timestamps so the UI can re-highlight the same area on back-to-back wins
+    const resolvedAreas = determineWinningAreas(diceTotal, isComingOut, point).map(area => ({
+      ...area,
+      timestamp: area.timestamp || Date.now()
+    }));
+
+    onWinningAreas?.(resolvedAreas);
+    onRollOutcome?.({ ...outcome, total: diceTotal });
+
+    if (outcome.type !== 'normal') {
+      setIsComingOut(outcome.isComingOut);
+      setPoint(outcome.point ?? null);
+      onStateChange?.(outcome.isComingOut, outcome.point ?? null);
+
+      if (outcome.type === 'point-made') onRollType?.('point-made');
+      else if (outcome.type === 'seven-out') onRollType?.('craps-out');
     }
-
-    // Set hasRolled to true when we get a new roll
-    setHasRolled(true);
-
-    // Update previous roll with timestamp
-    prevRoll.current = { die1, die2, timestamp: currentTimestamp };
-
-    // Only process winning areas if we've had an actual roll
-    if (hasRolled) {
-      // Determine the outcome of this roll
-      const outcome = determineRollOutcome(diceTotal, isComingOut, point);
-
-      // Determine winning areas and add timestamp to force update
-      const winningAreas = determineWinningAreas(diceTotal, isComingOut, point).map(area => ({
-        ...area,
-        timestamp: area.timestamp || Date.now()
-      }));
-      
-      // Update timestamp to force re-render of winning areas
-      setLastWinTimestamp(Date.now());
-      
-      // Pass winning areas to parent
-      onWinningAreas?.(winningAreas);
-      // Broadcast the roll outcome
-      onRollOutcome?.({
-        ...outcome,
-        total: diceTotal
-      });
-
-      // Update game state based on outcome
-      if (outcome.type !== 'normal') {
-        console.log(`Roll outcome: ${outcome.type}`);
-        setIsComingOut(outcome.isComingOut);
-        setPoint(outcome.point ?? null);
-        onStateChange?.(outcome.isComingOut, outcome.point ?? null);
-
-        if (outcome.type === 'point-made') {
-          onRollType?.('point-made');
-        } else if (outcome.type === 'seven-out') {
-          onRollType?.('craps-out');
-        }
-      }
-    }
-  }, [diceTotal, die1, die2, isRolling]);
+  }, [
+    rollId,
+    isRolling,
+    diceTotal,
+    die1,
+    die2,
+    isComingOut,
+    point,
+    bets,
+    animatingBets,
+    determineRollOutcome,
+    determineWinningAreas,
+    onMoveBet,
+    onWinningAreas,
+    onRollOutcome,
+    onRollType,
+    onStateChange
+  ]);
 
   return (
     <PointMarker 

@@ -19,7 +19,7 @@ const ProfitDisplay: React.FC<ProfitDisplayProps> = ({ amount, onComplete }) => 
         ease: "linear"
       });
     }
-  }, [amount]);
+  }, [amount, countingValue]);
 
   const formattedValue = useTransform(countingValue, (latest) => {
     return `+$${latest.toFixed(2)}`;

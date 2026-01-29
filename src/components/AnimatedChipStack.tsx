@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence, useAnimation, useMotionValue } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 
 interface AnimatedChipStackProps {
   amount: number;
@@ -13,11 +13,6 @@ interface AnimatedChipStackProps {
   onWaitComplete?: () => void;
   totalAmount?: number;
   showTotalAtBet?: boolean;
-}
-
-interface AnimationProgress {
-  x: number;
-  scale: number;
 }
 
 const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
@@ -35,14 +30,10 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
 }) => {
 
   const chipSize = '2.6rem';
-  const controls = useAnimation();
   const x = useMotionValue(0);
   const scale = useMotionValue(1);
 
   const [animationStage, setAnimationStage] = React.useState<'start' | 'atBet' | 'toBank'>('start');
-  
-  React.useEffect(() => {
-  }, [animationStage]);
 
   // Track animation progress
   React.useEffect(() => {
