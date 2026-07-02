@@ -436,22 +436,6 @@ const App: React.FC = () => {
 
   const diceTotal = dice.die1 + dice.die2;
 
-  useEffect(() => {
-    const updateContainerSize = () => {
-      const container = document.querySelector('.bg-felt-green');
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        document.documentElement.style.setProperty('--container-width', `${rect.width}px`);
-        document.documentElement.style.setProperty('--container-height', `${rect.height}px`);
-      }
-    };
-
-    window.addEventListener('resize', updateContainerSize);
-    updateContainerSize();
-
-    return () => window.removeEventListener('resize', updateContainerSize);
-  }, []);
-
   const content = isTooSmall ? (
     <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white p-8">
       <div className="text-center max-w-md">
@@ -472,16 +456,13 @@ const App: React.FC = () => {
           {/* Left side - the game board */}
           <div className="flex-[3.8] relative">
             {/* Game board */}
-            <div className="h-full bg-felt-green rounded-xl p-3 pt-14 pb-12 shadow-table relative">
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="relative" style={{
-                  width: 'min(100%, calc(var(--container-height) * 2))',
-                  height: 'min(100%, calc(var(--container-width) / 2))',
-                  maxHeight: 'calc(100vh - 240px)', // account for checkbox and betting bar
-                  aspectRatio: '2/1',
-                  transform: 'scale(min(1, calc((100vh - 240px) / 600)))',
-                  transformOrigin: 'center center'
-                }}>
+            <div className={`h-full bg-felt-green rounded-xl p-3 pt-14 pb-12 shadow-table min-h-0 relative
+                             ${deleteMode ? 'pointer-events-auto' : ''}`}>
+              <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden relative z-10">
+                {/* Fixed 2:1 board. The `aspect-[2/1]` class is also queried by GameState's
+                    point marker, so keep it as a class (not an inline aspectRatio). */}
+                <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-280px)]"
+                     style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}>
                   <CrapsTable
                     ref={tableRef}
                     selectedChipValue={selectedChipValue}
