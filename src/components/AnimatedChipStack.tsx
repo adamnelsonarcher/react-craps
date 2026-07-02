@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence, useAnimation, useMotionValue } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
 
 interface AnimatedChipStackProps {
   amount: number;
@@ -15,11 +15,6 @@ interface AnimatedChipStackProps {
   showTotalAtBet?: boolean;
 }
 
-interface AnimationProgress {
-  x: number;
-  scale: number;
-}
-
 const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   amount,
   color,
@@ -33,16 +28,12 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
   totalAmount,
   showTotalAtBet
 }) => {
+
   const chipSize = '2.6rem';
-  const controls = useAnimation();
   const x = useMotionValue(0);
   const scale = useMotionValue(1);
 
   const [animationStage, setAnimationStage] = React.useState<'start' | 'atBet' | 'toBank'>('start');
-  
-  React.useEffect(() => {
-    // console.log('Animation stage changed to:', animationStage);
-  }, [animationStage]);
 
   // Track animation progress
   React.useEffect(() => {
@@ -86,6 +77,11 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
     return Math.round(value).toLocaleString();  // Round to whole number for losing/moving chips
   };
 
+  // Add console logs to debug styling
+  //console.log('Chip color:', color);
+  //console.log('Is white chip?', color === 'bg-gray-200');
+  //console.log('Border class:', color === 'bg-gray-200' ? 'border-gray-600' : 'border-white');
+
   const variants = {
     initial: {
       x: isWinning ? window.innerWidth - 200 : position.x-30,
@@ -104,7 +100,7 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
         100,                      // Start from dice
         position.y-30,            // Move to bet
         position.y-30,            // Stay at bet briefly
-        window.innerHeight  // Move to bottom of screen
+        window.innerHeight - 100  // Move to bottom of screen
       ],
       opacity: [1, 1, 1, 1, 0],
       scale: [1, 1.1, 1.1, 0.8],
@@ -123,8 +119,8 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
       transition: { duration: 0.5, ease: "easeInOut" }
     },
     losing: {
-      x: position.x + 200,
-      y: position.y - 200,
+      x: position.x + 100,
+      y: position.y - 150,
       opacity: 0,
       scale: 0.8,
       rotate: -45,
@@ -153,14 +149,18 @@ const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
           width: chipSize, 
           height: chipSize,
           transform: 'translate(-50%, -50%)',
-          zIndex: 900,
+          zIndex: 9999,
           x,
-          scale
+          scale,
+          position: 'fixed',
+          pointerEvents: 'none',
+          left: 0,
+          top: 0,
         }}
         onAnimationComplete={onAnimationComplete}
       >
         <div className={`absolute ${color} rounded-full 
-                      border-2 ${color === 'bg-gray-200' ? 'border-gray-600' : 'border-white'} shadow-lg
+                      border-2 ${color === 'bg-white' ? 'border-gray-600' : 'border-white'} shadow-lg
                       transition-all duration-150
                       ring-1 ${color === 'bg-gray-200' ? 'ring-gray-600/20' : 'ring-white/20'}`}
           style={{

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface ChipConfig {
   value: number;
@@ -18,28 +18,28 @@ const Chip: React.FC<ChipProps> = ({ value, color, ringColor, isSelected, onClic
       className={`relative group ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} 
       onClick={onClick}
     >
-      <div className={`chip w-16 h-16 ${color} 
+      <div className={`chip w-[clamp(2.5rem,4vw,5rem)] h-[clamp(2.5rem,4vw,5rem)] ${color} 
                     flex items-center justify-center
-                    border-4 ${isSelected ? 'border-gold' : ringColor}
+                    border-[0.15rem] ${isSelected ? 'border-gold' : ringColor}
                     shadow-lg ${!disabled && 'hover:scale-110 active:scale-95'}
                     transition-all duration-150
-                    relative z-10
-                    ${isSelected ? 'ring-4 ring-gold ring-opacity-50' : ''}`}>
+                    relative z-10 rounded-full
+                    ${isSelected ? 'ring-2 ring-gold ring-opacity-50' : ''}`}>
         <div className="absolute inset-0 rounded-full
                     border-dashed border-2 border-white/20
                     rotate-45"></div>
         
         <div className="flex flex-col items-center">
-          <span className={`text-xl font-bold drop-shadow-lg
+          <span className={`text-[clamp(0.8rem,1.5vw,1.2rem)] font-bold drop-shadow-lg
                         ${color === 'bg-gray-200' ? 'text-black' : 'text-white'}`}>
             ${value}
           </span>
         </div>
       </div>
       
-      <div className={`absolute -bottom-1 left-1 w-16 h-16 rounded-full ${color} 
+      <div className={`absolute -bottom-1 left-1 w-full h-full rounded-full ${color} 
                     opacity-40 -z-10 blur-[1px]`}></div>
-      <div className={`absolute -bottom-2 left-2 w-16 h-16 rounded-full ${color} 
+      <div className={`absolute -bottom-2 left-2 w-full h-full rounded-full ${color} 
                     opacity-20 -z-20 blur-[2px]`}></div>
     </div>
   );
@@ -51,6 +51,7 @@ interface BettingControlsProps {
   onUndo: () => void;
   onClear: () => void;
   onToggleDelete: () => void;
+  onOpenSettings: () => void;
   deleteMode: boolean;
   bank: number;
   bankDisplay: React.ReactNode;
@@ -66,6 +67,7 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   onUndo,
   onClear,
   onToggleDelete,
+  onOpenSettings,
   deleteMode,
   bank,
   bankDisplay,
@@ -75,20 +77,32 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   onQuickRollChange,
 }) => {
   const chipConfigs: ChipConfig[] = [
-    { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-300' },
+    { value: 1, color: 'bg-gray-200', ringColor: 'border-gray-500' },
     { value: 5, color: 'bg-red-600', ringColor: 'border-red-300' },
-    { value: 10, color: 'bg-orange-500', ringColor: 'border-orange-300' },
     { value: 25, color: 'bg-green-600', ringColor: 'border-green-300' },
     { value: 50, color: 'bg-blue-600', ringColor: 'border-blue-300' },
     { value: 100, color: 'bg-gray-900', ringColor: 'border-gray-400' },
   ];
 
   return (
-    <div className="bg-gray-800/50 rounded-lg p-2 flex flex-col gap-2 backdrop-blur-sm min-h-0 w-full">
-      <div className="flex gap-2 items-center justify-between w-full">
-        {bankDisplay}
+    <div className="bg-gray-800/50 rounded-lg p-2 flex flex-col gap-2 backdrop-blur-sm min-h-0">
+      <div className="flex gap-[clamp(0.5rem,1vw,1rem)] items-start">
+        <div className="min-w-[clamp(150px,15vw,200px)] flex flex-col gap-1">
+          {bankDisplay}
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Open settings"
+            title="Settings"
+            className="self-start inline-flex items-center justify-center
+                       w-7 h-7 rounded bg-gray-700/70 hover:bg-gray-600
+                       text-white/90 text-sm leading-none"
+          >
+            ⚙
+          </button>
+        </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-[clamp(0.25rem,0.75vw,1rem)]">
           {chipConfigs.map((config) => {
             const isAffordable = bank >= config.value;
             return (
@@ -105,43 +119,47 @@ const BettingControls: React.FC<BettingControlsProps> = ({
 
         <div className="h-full w-px bg-gray-600/50" />
 
-        <div className="flex gap-2 h-full">
+
+        <div className="flex flex-wrap gap-[clamp(0.25rem,0.5vw,0.5rem)] h-full py-2">
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                       text-base px-6 h-full min-w-[120px] rounded"
+                    text-[clamp(0.7rem,1vw,1rem)] px-3 h-full rounded whitespace-nowrap"
             onClick={onUndo}
           >
             Undo Bet
           </button>
-          <button
-            onClick={onToggleDelete}
-            className={`btn ${deleteMode ? 'bg-red-600 hover:bg-red-800' : 'bg-gray-500 hover:bg-gray-600'} 
-                       text-base px-6 h-full min-w-[120px] rounded`}
-          >
-            {deleteMode ? 'Cancel' : 'Delete'}
-          </button>
+          <div data-delete-controls className="flex gap-[clamp(0.25rem,0.5vw,0.5rem)]">
+            <button
+              onClick={() => onToggleDelete()}
+              className={`btn text-white text-[clamp(0.7rem,1vw,1rem)] 
+                          px-3 h-full rounded whitespace-nowrap
+                          ${deleteMode 
+                            ? 'bg-red-600 hover:bg-red-700' 
+                            : 'bg-gray-500 hover:bg-gray-600'}`}
+            >
+              {deleteMode ? 'Cancel' : 'Delete'}
+            </button>
+          </div>
           <button
             className="btn bg-gray-500 text-white hover:bg-gray-600 
-                       text-base px-6 h-full min-w-[120px] rounded"
+                    text-[clamp(0.7rem,1vw,1rem)] px-3 h-full rounded whitespace-nowrap"
             onClick={onClear}
           >
             Clear All
           </button>
         </div>
 
-        <div className="h-full w-px bg-gray-600/50" />
-
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-[clamp(0.25rem,0.75vw,1rem)] items-center">
           <button
             onClick={() => !isRolling && onRoll()}
             disabled={isRolling}
             className={`btn bg-red-600 hover:bg-red-700 text-white font-bold
-                       text-base px-6 h-full min-w-[120px] rounded
+                       text-[clamp(0.7rem,1vw,1rem)] px-3 h-full rounded whitespace-nowrap
                        ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Roll Dice
           </button>
-          <label className="flex items-center gap-2 text-white cursor-pointer text-base whitespace-nowrap">
+          <label className="flex items-center gap-2 text-white cursor-pointer text-[clamp(0.7rem,1vw,1rem)] whitespace-nowrap">
             <input
               type="checkbox"
               checked={quickRoll}

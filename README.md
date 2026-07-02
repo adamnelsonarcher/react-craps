@@ -1,46 +1,60 @@
-# Getting Started with Create React App
+# React Craps
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A single-player craps table built with Create React App + TypeScript. The UI lets you place chips on common bets, roll dice (including “forced” rolls in dev tools), and watch bets animate as they win/lose/move.
 
-## Available Scripts
+## Running locally
 
-In the project directory, you can run:
+```bash
+npm install
+npm start
+```
 
-### `npm start`
+## How the app is structured
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **`src/index.tsx`**: React entry point (renders `App`).
+- **`src/App.tsx`**: “Orchestrator” component that owns almost all state (bank, active bets, roll history, animations).
+- **`src/components/CrapsTable.tsx`**: Table layout + click handling for placing/removing bets.
+- **`src/components/GameState.tsx`**: Game rules engine:
+  - tracks table **point** / **come-out** vs **point-on**
+  - resolves each roll into **winning/losing areas**
+  - emits **bet movement** events for come / don’t-come
+- **`src/utils/payouts.ts`**: Payout multipliers/commission for each bet ID.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Key data model concepts
 
-### `npm test`
+- **Bet IDs**: Everything keys off `areaId` strings (examples: `place-6`, `field`, `come`, `come-8`, `pass-line-chips`).
+  - Pass-line and don’t-pass are **stored as** `pass-line-chips` / `dont-pass-chips` (see `CrapsTable.tsx` mapping).
+  - Come-point and don’t-come-point bets are stored as `come-4/5/6/8/9/10` and `dont-come-4/5/6/8/9/10`.
+- **Resolution**: `GameState` emits a list of `{ id, type: 'win' | 'lose' }` and `App`:
+  - computes profit using `PAYOUT_TABLE`
+  - updates bank
+  - triggers animations and then removes/keeps the resolved bets
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Roll lifecycle (end-to-end)
 
-### `npm run build`
+1. User clicks Roll (or uses a forced roll via dev tools).
+2. `App` sets the dice and increments `rollId` when the roll completes.
+3. `GameState` listens to `rollId` and, for that roll:
+   - determines `RollOutcome` (natural/craps/point-set/seven-out/point-made/normal)
+   - determines winning/losing bet IDs and any come/don’t-come bet movement
+4. `App` calculates payouts and updates UI/animations accordingly.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Adjusting payouts / rules
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Payouts**: edit `src/utils/payouts.ts`.
+- **Rules** (win/lose/move logic): edit `src/components/GameState.tsx` (`determineWinningAreas` and `determineRollOutcome`).
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Dev tools (forced dice)
 
-### `npm run eject`
+There’s a small dev overlay in `CrapsTable.tsx` used for debugging coordinates and forcing dice:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+1. Open browser devtools console.
+2. Run: `window.enableDevTools()`
+3. Use the Dice Controls panel to set a specific roll.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Scripts
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+npm test
+npm run build
+```
