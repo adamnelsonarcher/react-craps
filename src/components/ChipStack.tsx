@@ -11,7 +11,7 @@ interface ChipStackProps {
   deletable?: boolean;
   deleteMode?: boolean;
   handleChipClick?: (areaId: string) => void;
-  handleAreaClick?: (areaId: string, rect: DOMRect) => void;
+  handleAreaClick?: (areaId: string) => void;
 }
 
 const CHIP_VALUES = [
@@ -69,11 +69,7 @@ const ChipStack: React.FC<ChipStackProps> = ({
         if (deleteMode && handleChipClick) {
           handleChipClick(areaId);
         } else if (handleAreaClick) {
-          const areaElement = document.querySelector(`[data-bet-id="${areaId}"]`);
-          if (areaElement) {
-            const rect = areaElement.getBoundingClientRect();
-            handleAreaClick(areaId, rect);
-          }
+          handleAreaClick(areaId);
         }
       }}
     >

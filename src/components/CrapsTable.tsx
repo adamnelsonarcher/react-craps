@@ -62,7 +62,6 @@ interface CrapsTableProps {
   betHistory: Bet[][];
   setBetHistory: (history: Bet[][] | ((prev: Bet[][]) => Bet[][])) => void;
   onPredeterminedRoll: (roll: { die1: number; die2: number }) => void;
-  onDeleteBet?: (betId: string) => void;
   deleteMode: boolean;
 }
 
@@ -171,7 +170,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
   betHistory,
   setBetHistory,
   onPredeterminedRoll,
-  onDeleteBet,
   deleteMode,
 }, ref) => {
   const [showDevTools, setShowDevTools] = useState(false);
@@ -960,84 +958,6 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
             </div>
           )}
         </div>
-        <div 
-          className={`absolute inset-0 ${isRolling ? 'pointer-events-none' : ''}`}
-          style={{ zIndex: 1 }}
-          onMouseMove={handleMouseMove}
-          onClick={handleGlobalClick}
-        >
-          {visibleBettingAreas.map((area) => {
-            const isWinning = winningAreas?.some(
-              winArea => winArea.id === area.id && winArea.type === 'win'
-            );
-            const shouldHighlight = isWinning && !NON_HIGHLIGHTING_AREAS.includes(area.id);
-
-            return (
-              <div
-                key={area.id}
-                className={`absolute cursor-pointer transition-all duration-200
-                            ${shouldHighlight ? 'animate-flash-win bg-[rgba(255,255,200,0.25)]' : ''}`}
-                data-bet-id={area.id}
-                style={{
-                  ...area.style,
-                  backgroundColor: !shouldHighlight && hoveredArea === area.id 
-                    ? (isAreaAccessible(area.id) 
-                        ? 'rgba(255, 255, 255, 0.1)' 
-                        : 'rgba(255, 0, 0, 0.1)')
-                    : 'transparent',
-                  border: hoveredArea === area.id 
-                    ? `2px solid ${isAreaAccessible(area.id) 
-                        ? 'rgba(255, 255, 255, 0.1)' 
-                        : 'rgba(255, 0, 0, 0.1)'}`
-                    : '2px solid transparent',
-                  pointerEvents: 'all',
-                }}
-                onMouseEnter={() => setHoveredArea(area.id)}
-                onMouseLeave={() => setHoveredArea(null)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (showDevTools) return;
-                  if (helpMode) {
-                    handleHelpClick(area.id);
-                  } else {
-                    handleAreaClick(area.id);
-                  }
-                }}
-              >
-                {/* Render chip stack if there's a bet */}
-                {bets.find(bet => bet.areaId === area.id) && !movingBetIds.has(area.id) && (
-                  <div onClick={(e) => {
-                    e.stopPropagation();
-                    if (deleteMode) {
-                      handleChipClick(area.id);
-                    }
-                  }}>
-                    <ChipStack 
-                      {...bets.find(bet => bet.areaId === area.id)!}
-                      position={
-                        area.id === 'pass-line' || area.id === 'dont-pass'
-                          ? 'custom'
-                          : area.id.startsWith('place-') ? 'bottom-offset'
-                          : 'center'
-                      }
-                      areaId={area.id}
-                      isOff={!point && (
-                        area.id.startsWith('place-') || 
-                        area.id.startsWith('buy-') || 
-                        area.id.startsWith('lay-')
-                      )}
-                      isLocked={point !== null && (
-                        area.id === 'pass-line-chips' || 
-                        area.id === 'dont-pass-chips'
-                      )}
-                      deletable={deleteMode && !isLockedBet(area.id, point)}
-                    />
-                  </div>
-                )}
-            </div>
-          )}
-        </div>
-
         {/* Betting areas */}
         <div 
           className={`absolute inset-0 ${isRolling ? 'pointer-events-none' : ''}`}
@@ -1079,8 +999,7 @@ const CrapsTable = forwardRef<CrapsTableRef, CrapsTableProps>(({
                   if (helpMode) {
                     handleHelpClick(area.id);
                   } else {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    handleAreaClick(area.id, rect);
+                    handleAreaClick(area.id);
                   }
                 }}
               >
