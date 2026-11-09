@@ -57,6 +57,11 @@ const getScreenCenter = (areaId: string, preferChips = true) => {
   return centerOf((preferChips && area?.querySelector('.chip-container')) || area) ?? { x: 0, y: 0 };
 };
 
+/**
+ * Root component. Owns all game state (bank, bets, point, dice, roll history) plus
+ * the purely visual state (chip animations, highlights, notices), and picks the
+ * desktop / compact (phone) / rotate layout. See "How a roll works" in the README.
+ */
 const App: React.FC = () => {
   const layoutMode = useLayoutMode();
   const isCompact = layoutMode === 'compact';

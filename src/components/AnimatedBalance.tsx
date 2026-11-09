@@ -7,6 +7,7 @@ export interface AnimatedBalanceProps {
   animate?: boolean;
 }
 
+/** A dollar amount (cents shown smaller) that counts up smoothly when `animate` is set. */
 const AnimatedBalance: React.FC<AnimatedBalanceProps> = ({ value, className, animate = false }) => {
   const motionValue = useMotionValue(value);
   

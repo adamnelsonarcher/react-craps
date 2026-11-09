@@ -6,6 +6,7 @@ interface DiceProps {
   size?: 'small' | 'large';
 }
 
+/** A single die face. `large` dice size themselves from the `--die-size` CSS variable. */
 const Dice: React.FC<DiceProps> = ({ value, isRolling, size = 'large' }) => {
   const gridPositions = Array(9).fill(0);
   

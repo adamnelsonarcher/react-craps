@@ -17,6 +17,7 @@ const clampNonNegativeInt = (value: number) => {
   return Math.max(0, Math.floor(value));
 };
 
+/** Settings dialog: edit the bank balance; also shows the game name, version and credits. */
 const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,

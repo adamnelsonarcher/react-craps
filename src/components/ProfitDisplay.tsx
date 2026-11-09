@@ -6,6 +6,7 @@ interface ProfitDisplayProps {
   onComplete?: () => void;
 }
 
+/** The big "+$12.50" that pops up over the table after a winning roll. Remount (via `key`) per roll. */
 const ProfitDisplay: React.FC<ProfitDisplayProps> = ({ amount, onComplete }) => {
   const countingValue = useMotionValue(0);
   
