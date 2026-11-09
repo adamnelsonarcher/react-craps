@@ -4,6 +4,8 @@ export interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   bank: number;
+  /** Offered as a one-click "start over" amount. */
+  startingBank: number;
   onSetBank: (newBank: number) => void;
 }
 
@@ -19,6 +21,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   bank,
+  startingBank,
   onSetBank
 }) => {
   const [draftBank, setDraftBank] = React.useState<string>(String(bank));
@@ -101,20 +104,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 setDraftBank(e.target.value);
                 setError(null);
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSave();
+              }}
+              autoFocus
               className="w-full rounded bg-gray-800 border border-white/10 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Bank balance"
             />
             <button
               type="button"
-              onClick={() => setDraftBank(String(bank))}
+              onClick={() => {
+                setDraftBank(String(startingBank));
+                setError(null);
+              }}
               className="px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm whitespace-nowrap"
+              title="Fill in the starting bank amount"
             >
-              Reset
+              ${startingBank.toLocaleString()}
             </button>
           </div>
           {error && <div className="text-xs text-red-300 mt-2">{error}</div>}
           <div className="text-xs text-gray-300 mt-2">
-            Sets your current bank amount. Values are rounded down to whole dollars.
+            Sets the money in your bank (chips already on the table aren't affected).
+            Values are rounded down to whole dollars. Your bank is saved in this browser.
           </div>
         </div>
 

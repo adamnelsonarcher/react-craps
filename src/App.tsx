@@ -1,587 +1,526 @@
-import React, { useState, useRef, useEffect } from 'react';
-import CrapsTable, { CrapsTableRef } from './components/CrapsTable';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import CrapsTable from './components/CrapsTable';
 import BettingControls from './components/BettingControls';
 import Dice from './components/Dice';
-import GameState from './components/GameState';
-import AnimatedChipStack from './components/AnimatedChipStack';
-import { RollOutcome, WinningArea, BetMovement, ResolvingBet } from './types/game';
-import { PAYOUT_TABLE } from './utils/payouts';
+import PointMarker from './components/PointMarker';
+import AnimatedChipStack, {
+  AnimatedChipStackProps,
+  CHIP_ANIMATION_SECONDS,
+} from './components/AnimatedChipStack';
 import ProfitDisplay from './components/ProfitDisplay';
 import AnimatedBalance from './components/AnimatedBalance';
-import { useScreenSize } from './hooks/useScreenSize';
 import SettingsModal from './components/SettingsModal';
+import { useScreenSize } from './hooks/useScreenSize';
+import { Bet, DicePair, RollRecord, WinningArea } from './types/game';
+import { bettingRestriction, isLockedBet, resolveRoll, staysUpAfterWin } from './game/rules';
+import { toAreaId, toBetId } from './game/tableLayout';
+import { calculateWinnings, roundToCents } from './utils/payouts';
+import { CHIPS } from './utils/chips';
+import { STORAGE_KEYS, loadNumber, save, useStoredBoolean } from './utils/storage';
 
-interface DiceRoll {
-  die1: number;
-  die2: number;
-  total: number;
-  type?: 'point-made' | 'craps-out' | 'normal';
-}
+export const STARTING_BANK = 1000;
 
-interface Bet {
-  areaId: string;
-  amount: number;
-  color: string;
-  count: number;
-}
+const ROLL_ANIMATION_MS = 1000;
+/** When a winning payout chip reaches its bet (30% of the 2.5s win animation). */
+const PAYOUT_ARRIVAL_MS = 750;
+/** When the payout chip leaves the bet again (70% of the win animation), in seconds. */
+const PAYOUT_LEAVES_S = 1.75;
+const WIN_HIGHLIGHT_MS = 3500;
+const NOTICE_MS = 2500;
+const MAX_ROLL_HISTORY = 50;
+const VISIBLE_ROLL_HISTORY = 15;
+
+type ChipAnimation = Omit<AnimatedChipStackProps, 'onAnimationComplete'> & {
+  id: number;
+  /** For `move` animations: the bet whose real chips stay hidden until the chip lands. */
+  hideBetId?: string;
+};
+
+const randomDie = () => Math.floor(Math.random() * 6) + 1;
+const randomRoll = (): DicePair => ({ die1: randomDie(), die2: randomDie() });
+const totalOf = (bets: Bet[]) => roundToCents(bets.reduce((sum, bet) => sum + bet.amount, 0));
+const formatMoney = (amount: number) =>
+  `$${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+
+/** Screen-space centre of a bet's chips (or of the area itself if it has none). */
+const getScreenCenter = (areaId: string, preferChips = true) => {
+  const area = document.querySelector(`[data-bet-id="${areaId}"]`);
+  const element = (preferChips && area?.querySelector('.chip-container')) || area;
+  if (!element) return { x: 0, y: 0 };
+  const rect = element.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+};
 
 const App: React.FC = () => {
   const isTooSmall = useScreenSize();
-  const [dice, setDice] = useState<{ die1: number; die2: number }>({ die1: 1, die2: 1 });
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  // Dice & table state
+  const [dice, setDice] = useState<DicePair>({ die1: 1, die2: 1 });
+  const [animationDice, setAnimationDice] = useState<DicePair>({ die1: 1, die2: 1 });
   const [isRolling, setIsRolling] = useState(false);
-  // Increments when a user roll completes; used to trigger resolution exactly once per roll.
-  const [rollId, setRollId] = useState(0);
-  const [rollHistory, setRollHistory] = useState<DiceRoll[]>([]);
-  const [selectedChipValue, setSelectedChipValue] = useState<number | null>(null);
-  const tableRef = useRef<CrapsTableRef>(null);
-  const [quickRoll, setQuickRoll] = useState(false);
-  const [animationDice, setAnimationDice] = useState({ die1: 1, die2: 1 });
-  const [animationInterval, setAnimationInterval] = useState<NodeJS.Timeout | null>(null);
-  const [bank, setBank] = useState(1000);
-  const [helpMode, setHelpMode] = useState(false);
-  const [bets, setBets] = useState<Bet[]>([]);
   const [point, setPoint] = useState<number | null>(null);
-  const [winningBets, setWinningBets] = useState<ResolvingBet[]>([]);
-  const [losingBets, setLosingBets] = useState<ResolvingBet[]>([]);
-  const [animatingBets, setAnimatingBets] = useState<Set<string>>(new Set());
-  const [winningAreas, setWinningAreas] = useState<WinningArea[]>([]);
-  const winningAreasTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [movingBets, setMovingBets] = useState<(Bet & {
-    fromPosition: { x: number; y: number };
-    toPosition: { x: number; y: number };
-    initialPosition?: { x: number; y: number };
-  })[]>([]);
-  const [movingBetIds, setMovingBetIds] = useState<Set<string>>(new Set());
+  const [rollHistory, setRollHistory] = useState<RollRecord[]>([]);
+
+  // Money & bets
+  const [bank, setBank] = useState(() => loadNumber(STORAGE_KEYS.bankroll, STARTING_BANK));
+  const [bets, setBets] = useState<Bet[]>([]);
+  /** Snapshots of `bets` before each change since the last roll, for Undo. */
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);
-  const [keepWinningBets, setKeepWinningBets] = useState(false);
-  const [lastProfit, setLastProfit] = useState(0);
+  const [selectedChipValue, setSelectedChipValue] = useState<number | null>(5);
+
+  // Preferences & modes
+  const [quickRoll, setQuickRoll] = useStoredBoolean(STORAGE_KEYS.quickRoll, false);
+  const [keepWinningBets, setKeepWinningBets] = useStoredBoolean(STORAGE_KEYS.keepWinningBets, false);
+  const [helpMode, setHelpMode] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
-  const [waitingBets, setWaitingBets] = useState<(Bet & {
-    position: { x: number; y: number };
-    targetPosition: { x: number; y: number };
-  })[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [notice, setNotice] = useState<{ id: number; message: string } | null>(null);
 
-  // Clicking anywhere outside a chip while in delete mode exits delete mode.
-  const handleGlobalClick = (e: React.MouseEvent) => {
-    if (deleteMode) {
-      const clickedOnChip = (e.target as HTMLElement).closest('.chip-container');
-      if (!clickedOnChip) {
-        setDeleteMode(false);
-      }
-    }
-  };
+  // Purely visual state (the game logic never reads these)
+  const [winningAreas, setWinningAreas] = useState<WinningArea[]>([]);
+  const [ghostBets, setGhostBets] = useState<Bet[]>([]);
+  const [chipAnimations, setChipAnimations] = useState<ChipAnimation[]>([]);
+  const [lastProfit, setLastProfit] = useState({ rollId: 0, amount: 0 });
 
-  const handleRoll = (forcedRoll?: { die1: number; die2: number }) => {
-    if (isRolling) return;
+  const totalWager = totalOf(bets);
+  const hiddenBetIds = useMemo(
+    () => new Set(chipAnimations.flatMap(animation => (animation.hideBetId ? [animation.hideBetId] : []))),
+    [chipAnimations]
+  );
 
-    const rollDice = () => {
-      // Make sure we have valid numbers for both dice
-      if (forcedRoll && typeof forcedRoll.die1 === 'number' && typeof forcedRoll.die2 === 'number') {
-        return {
-          ...forcedRoll,
-          total: forcedRoll.die1 + forcedRoll.die2
-        };
-      }
-
-      // Default random roll
-      const die1 = Math.floor(Math.random() * 6) + 1;
-      const die2 = Math.floor(Math.random() * 6) + 1;
-      const total = die1 + die2;
-      return { die1, die2, total };
-    };
-
-    // Store the roll result before animation starts
-    const roll = rollDice();
-
-    if (quickRoll) {
-      setDice({ die1: roll.die1, die2: roll.die2 });
-      setRollId(prev => prev + 1);
-    } else {
-      setIsRolling(true);
-
-      const interval = setInterval(() => {
-        setAnimationDice({
-          die1: Math.floor(Math.random() * 6) + 1,
-          die2: Math.floor(Math.random() * 6) + 1
-        });
-      }, 100);
-
-      setAnimationInterval(interval);
-
-      setTimeout(() => {
-        clearInterval(interval);
-        setAnimationInterval(null);
-        setDice({ die1: roll.die1, die2: roll.die2 });
-        setRollId(prev => prev + 1);
-        setIsRolling(false);
-      }, 1000);
-    }
-  };
-
-  const handleRollOutcome = (outcome: RollOutcome & { total: number }) => {
-    setRollHistory(prev => [{
-      die1: dice.die1,
-      die2: dice.die2,
-      total: outcome.total,
-      type: outcome.type === 'point-made' ? 'point-made'
-          : outcome.type === 'seven-out' ? 'craps-out'
-          : 'normal'
-    }, ...prev]);
-
-    // Clear bet history after each roll
-    setBetHistory([]);
-  };
-
-  // Cleanup interval on unmount
-  React.useEffect(() => {
-    return () => {
-      if (animationInterval) {
-        clearInterval(animationInterval);
-      }
-    };
-  }, [animationInterval]);
-
-  const calculateTotalWager = (bets: Bet[]) => {
-    return bets.reduce((total, bet) => total + bet.amount, 0);
-  };
-
-  const handleGameStateChange = (newIsComingOut: boolean, newPoint: number | null) => {
-    setPoint(newPoint);
-  };
-
-  const handleWinningAreas = (areas: WinningArea[]) => {
-    // Clear any existing timeout
-    if (winningAreasTimeout.current) {
-      clearTimeout(winningAreasTimeout.current);
-    }
-
-    setWinningAreas(areas);
-
-    // Calculate dice total
-    const total = dice.die1 + dice.die2;
-
-    let totalProfit = 0; // Track total profit for this roll
-
-    // Process winning bets first
-    const winningAreas = areas.filter(area => area.type === 'win');
-    if (winningAreas.length > 0) {
-      const newWinningBets = bets.filter(bet =>
-        winningAreas.some(area => area.id === bet.areaId)
-      );
-
-      // After mapping and before setting state
-      const mappedWinningBets = newWinningBets.map(bet => {
-        const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
-        const chipElement = betElement?.querySelector('.absolute');
-        const tableElement = document.querySelector('.bg-felt-green');
-
-        if (chipElement && tableElement) {
-          const chipRect = chipElement.getBoundingClientRect();
-
-          // Calculate winnings before removing the bet
-          const payout = PAYOUT_TABLE[bet.areaId as keyof typeof PAYOUT_TABLE];
-          if (payout) {
-            let winAmount = 0;
-
-            if (typeof payout === 'number') {
-              winAmount = bet.amount * payout;
-            } else if ('base' in payout) {
-              if (bet.areaId === 'field') {
-                const baseWin = bet.amount * payout.base;
-                if (total === 2) {
-                  winAmount = bet.amount * payout['2'];
-                } else if (total === 12) {
-                  winAmount = bet.amount * payout['12'];
-                } else {
-                  winAmount = baseWin;
-                }
-              }
-            } else if ('multiplier' in payout) {
-              winAmount = bet.amount * payout.multiplier;
-              const commission = bet.amount * payout.commission;
-              winAmount -= commission;
-            }
-
-            // Add to total profit and bank
-            totalProfit += winAmount;
-            if (keepWinningBets && !bet.areaId.startsWith('come-') && !bet.areaId.startsWith('dont-come-')) {
-              setBank(prev => prev + winAmount);
-            } else {
-              setBank(prev => prev + bet.amount + winAmount);
-            }
-
-            return {
-              ...bet,
-              isWinning: true,
-              position: {
-                x: chipRect.left + (chipRect.width / 2),
-                y: chipRect.top + (chipRect.height / 2)
-              },
-              winAmount: winAmount,
-              totalAmount: bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-')
-                ? bet.amount + winAmount
-                : (keepWinningBets ? winAmount : bet.amount + winAmount),
-              showTotalAtBet: bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-')
-                ? true
-                : !keepWinningBets
-            } as ResolvingBet;
-          }
-        }
-        return null;
-      }).filter((bet): bet is ResolvingBet => bet !== null);
-
-      setWinningBets(mappedWinningBets);
-
-      // Set the profit for display
-      setLastProfit(totalProfit);
-
-      // Add ALL winning bets to animation first
-      setAnimatingBets(new Set(mappedWinningBets.map(bet => bet.areaId)));
-
-      // Then filter which ones should be removed from the table
-      const betsToRemove = mappedWinningBets.filter(bet =>
-        bet.areaId.startsWith('come-') ||
-        bet.areaId.startsWith('dont-come-') ||
-        !keepWinningBets
-      );
-
-      if (betsToRemove.length > 0) {
-        // Delay bet removal until animation reaches betting spot
-        setTimeout(() => {
-          setBets(currentBets => {
-            // Create a map of bets to remove by areaId
-            const betsToRemoveMap = new Map<string, ResolvingBet>();
-            betsToRemove.forEach(bet => {
-              // For come/don't-come bets that are moving, don't add them to removal map
-              if (
-                (bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-')) &&
-                (movingBetIds.has('come') || movingBetIds.has('dont-come'))
-              ) {
-                return;
-              }
-              betsToRemoveMap.set(bet.areaId, bet);
-            });
-
-            // Filter out bets that should be removed
-            return currentBets.filter(bet => {
-              // If this is a come/don't-come point bet and we're moving a new bet there,
-              // keep the existing bet
-              if ((bet.areaId.startsWith('come-') || bet.areaId.startsWith('dont-come-')) &&
-                  (movingBetIds.has('come') || movingBetIds.has('dont-come'))) {
-                return true;
-              }
-              // Otherwise, remove if it's in our removal map
-              return !betsToRemoveMap.has(bet.areaId);
-            });
-          });
-        }, 750);
-      }
-    }
-
-    // Process losing bets (existing code)
-    const losingAreas = areas.filter(area => area.type === 'lose');
-    if (losingAreas.length > 0) {
-      const newLosingBets = bets.filter(bet =>
-        losingAreas.some(area => area.id === bet.areaId)
-      ).map(bet => {
-        const betElement = document.querySelector(`[data-bet-id="${bet.areaId}"]`);
-        const chipElement = betElement?.querySelector('.absolute'); // Get the chip stack container
-        const tableElement = document.querySelector('.bg-felt-green');
-
-        if (chipElement && tableElement) {
-          const chipRect = chipElement.getBoundingClientRect();
-
-          return {
-            ...bet,
-            isWinning: false,
-            position: {
-              x: chipRect.left + (chipRect.width / 2),
-              y: chipRect.top + (chipRect.height / 2)
-            }
-          };
-        }
-
-        return {
-          ...bet,
-          isWinning: false,
-          position: { x: 0, y: 0 }
-        };
-      });
-
-      setLosingBets(newLosingBets);
-      setAnimatingBets(new Set(newLosingBets.map(bet => bet.areaId)));
-
-      // Remove only the losing bets from the table
-      setBets(currentBets =>
-        currentBets.filter(bet => !losingAreas.some(area => area.id === bet.areaId))
-      );
-    }
-
-    // Store the new timeout
-    winningAreasTimeout.current = setTimeout(() => {
-      setWinningAreas([]);
-      winningAreasTimeout.current = null;
-    }, 3500);
-  };
-
-  // Clean up on unmount
+  // Remember the bankroll (chips on the table are returned on reload).
   useEffect(() => {
+    save(STORAGE_KEYS.bankroll, roundToCents(bank + totalWager));
+  }, [bank, totalWager]);
+
+  // ---- Timers -------------------------------------------------------------
+  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const rollInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const later = useCallback((fn: () => void, ms: number) => {
+    const timer = setTimeout(() => {
+      timers.current.delete(timer);
+      fn();
+    }, ms);
+    timers.current.add(timer);
+  }, []);
+
+  useEffect(() => {
+    const pending = timers.current;
     return () => {
-      if (winningAreasTimeout.current) {
-        clearTimeout(winningAreasTimeout.current);
-      }
+      pending.forEach(clearTimeout);
+      if (rollInterval.current) clearInterval(rollInterval.current);
     };
   }, []);
 
-  const handleBetMovement = (movement: BetMovement) => {
-    if (movingBetIds.has(movement.fromId)) return;
+  const showNotice = useCallback((message: string) => {
+    const id = Date.now();
+    setNotice({ id, message });
+    later(() => setNotice(current => (current?.id === id ? null : current)), NOTICE_MS);
+  }, [later]);
 
-    const fromElement = document.querySelector(`[data-bet-id="${movement.fromId}"]`);
-    const toElement = document.querySelector(`[data-bet-id="${movement.toId}"]`);
-    const fromChip = fromElement?.querySelector('.chip-container');
+  // ---- Rolling ------------------------------------------------------------
 
-    // Check if there's an existing bet in the target area
-    const existingBet = bets.find(bet => bet.areaId === movement.toId);
+  // Latest table state, read when a roll lands (the roll timer outlives the render that started it).
+  const tableState = useRef({ bets, point, keepWinningBets });
+  tableState.current = { bets, point, keepWinningBets };
+  const isRollingRef = useRef(false);
+  const rollCount = useRef(0);
+  const animationCount = useRef(0);
 
-    if (fromChip && toElement) {
-      const fromRect = fromChip.getBoundingClientRect();
-      const toRect = toElement.getBoundingClientRect();
+  /**
+   * Apply a roll: resolve every bet, update bank/bets/point immediately, then kick
+   * off the chip animations. Bets are settled synchronously so a quick follow-up
+   * roll or bet can never see half-resolved state.
+   */
+  const completeRoll = useCallback((roll: DicePair) => {
+    const { bets: currentBets, point: currentPoint, keepWinningBets: keepUp } = tableState.current;
+    const total = roll.die1 + roll.die2;
+    const { outcome, results, movements } = resolveRoll(roll.die1, roll.die2, currentPoint, currentBets);
+    const resultById = new Map(results.map(result => [result.id, result.type]));
+    const nextId = () => ++animationCount.current;
 
-      // Mark this bet as moving
-      setMovingBetIds(prev => new Set(prev).add(movement.fromId));
+    const animations: ChipAnimation[] = [];
+    const paidBets: Bet[] = [];
+    let nextBets: Bet[] = [];
+    let returnedToBank = 0;
+    let profit = 0;
 
-      if (existingBet) {
-        // Add to waiting bets if there's an existing bet
-        setWaitingBets(prev => [...prev, {
-          areaId: movement.fromId,
-          amount: movement.amount,
-          color: movement.color,
-          count: movement.count,
-          position: {
-            x: fromRect.left + (fromRect.width / 2),
-            y: fromRect.top + (fromRect.height / 2)
-          },
-          targetPosition: {
-            x: toRect.left + (toRect.width / 2),
-            y: toRect.top + (toRect.height / 2)
-          }
-        }]);
-
-        // Remove original bet only when waiting animation starts
-        setBets(currentBets =>
-          currentBets.filter(bet => bet.areaId !== movement.fromId)
-        );
+    for (const bet of currentBets) {
+      const result = resultById.get(bet.areaId);
+      if (result === 'lose') {
+        animations.push({
+          id: nextId(), kind: 'lose', amount: bet.amount, betAmount: bet.amount,
+          position: getScreenCenter(bet.areaId),
+        });
+      } else if (result === 'win') {
+        const winnings = calculateWinnings(bet.areaId, bet.amount, total);
+        const staysUp = staysUpAfterWin(bet.areaId, keepUp, outcome.point);
+        profit += winnings;
+        returnedToBank += staysUp ? winnings : bet.amount + winnings;
+        animations.push({
+          id: nextId(), kind: 'win', amount: winnings, betAmount: bet.amount,
+          position: getScreenCenter(bet.areaId),
+          totalAmount: staysUp ? undefined : roundToCents(bet.amount + winnings),
+        });
+        if (staysUp) nextBets.push(bet);
+        else paidBets.push(bet);
       } else {
-        // If no existing bet, proceed with immediate movement
-        setMovingBets(prev => [...prev, {
-          areaId: movement.fromId,
-          amount: movement.amount,
-          color: movement.color,
-          count: movement.count,
-          fromPosition: {
-            x: fromRect.left + (fromRect.width / 2),
-            y: fromRect.top + (fromRect.height / 2)
-          },
-          toPosition: {
-            x: toRect.left + (toRect.width / 2),
-            y: toRect.top + (toRect.height / 2)
-          }
-        }]);
-
-        // Remove original bet when movement starts
-        setBets(currentBets =>
-          currentBets.filter(bet => bet.areaId !== movement.fromId)
-        );
-
-        // Add the new bet after movement completes
-        setTimeout(() => {
-          handleBetPlacement(movement, toRect);
-        }, 500);
+        nextBets.push(bet);
       }
-    } else {
-      handleBetMovementImmediate(movement);
+    }
+
+    // Come / don't-come bets travel to their number.
+    for (const movement of movements) {
+      const moving = nextBets.find(bet => bet.areaId === movement.fromId);
+      if (!moving) continue;
+      nextBets = nextBets.filter(bet => bet !== moving);
+      const existing = nextBets.find(bet => bet.areaId === movement.toId);
+      nextBets = existing
+        ? nextBets.map(bet => (bet === existing ? { ...bet, amount: bet.amount + moving.amount } : bet))
+        : [...nextBets, { areaId: movement.toId, amount: moving.amount }];
+
+      // If the number already had a bet (which just got paid), wait for its payout to clear.
+      const targetWasOccupied = currentBets.some(bet => bet.areaId === movement.toId);
+      animations.push({
+        id: nextId(), kind: 'move', amount: moving.amount, betAmount: moving.amount,
+        position: getScreenCenter(movement.fromId),
+        toPosition: getScreenCenter(movement.toId, false),
+        delay: targetWasOccupied ? PAYOUT_LEAVES_S : 0,
+        hideBetId: movement.toId,
+      });
+    }
+
+    const rollId = ++rollCount.current;
+    setDice(roll);
+    setPoint(outcome.point);
+    setBets(nextBets);
+    setBetHistory([]);
+    if (returnedToBank > 0) setBank(current => roundToCents(current + returnedToBank));
+    setLastProfit({ rollId, amount: roundToCents(profit) });
+    setRollHistory(prev => [
+      {
+        id: rollId,
+        ...roll,
+        total,
+        type: outcome.type === 'point-made' ? 'point-made' as const
+          : outcome.type === 'seven-out' ? 'seven-out' as const
+          : 'normal' as const,
+      },
+      ...prev,
+    ].slice(0, MAX_ROLL_HISTORY));
+
+    setWinningAreas(results);
+    later(() => setWinningAreas(current => (current === results ? [] : current)), WIN_HIGHLIGHT_MS);
+
+    // Keep paid bets drawn on the table until the payout chip reaches them.
+    if (paidBets.length > 0) {
+      setGhostBets(prev => [...prev.filter(ghost => !paidBets.some(bet => bet.areaId === ghost.areaId)), ...paidBets]);
+      later(() => setGhostBets(prev => prev.filter(ghost => !paidBets.includes(ghost))), PAYOUT_ARRIVAL_MS);
+    }
+    if (animations.length > 0) {
+      setChipAnimations(prev => [...prev, ...animations]);
+      // Safety net: drop the overlays even if an animation never reports completion
+      // (animations pause while the tab is hidden), so hidden chips always reappear.
+      const ids = new Set(animations.map(animation => animation.id));
+      const longestSeconds = Math.max(
+        ...animations.map(animation => (animation.delay ?? 0) + CHIP_ANIMATION_SECONDS[animation.kind])
+      );
+      later(
+        () => setChipAnimations(prev => prev.filter(animation => !ids.has(animation.id))),
+        longestSeconds * 1000 + 1000
+      );
+    }
+  }, [later]);
+
+  const handleRoll = useCallback((forcedRoll?: DicePair) => {
+    if (isRollingRef.current) return;
+    const roll = forcedRoll ?? randomRoll();
+
+    if (quickRoll) {
+      completeRoll(roll);
+      return;
+    }
+
+    isRollingRef.current = true;
+    setIsRolling(true);
+    rollInterval.current = setInterval(() => setAnimationDice(randomRoll()), 100);
+    later(() => {
+      if (rollInterval.current) clearInterval(rollInterval.current);
+      rollInterval.current = null;
+      isRollingRef.current = false;
+      setIsRolling(false);
+      completeRoll(roll);
+    }, ROLL_ANIMATION_MS);
+  }, [quickRoll, completeRoll, later]);
+
+  // ---- Betting ------------------------------------------------------------
+
+  const placeBet = (areaId: string) => {
+    if (isRollingRef.current) return;
+    if (deleteMode) {
+      showNotice('Delete mode: click a chip to take it down');
+      return;
+    }
+    const restriction = bettingRestriction(areaId, point);
+    if (restriction) {
+      showNotice(restriction);
+      return;
+    }
+    if (selectedChipValue === null) {
+      showNotice('Pick a chip first');
+      return;
+    }
+    if (selectedChipValue > bank) {
+      showNotice(`Not enough in the bank for a $${selectedChipValue} chip`);
+      return;
+    }
+
+    const betId = toBetId(areaId);
+    const chipValue = selectedChipValue;
+    setBetHistory(prev => [...prev, bets]);
+    setBank(current => roundToCents(current - chipValue));
+    setBets(prev => (prev.some(bet => bet.areaId === betId)
+      ? prev.map(bet => (bet.areaId === betId ? { ...bet, amount: bet.amount + chipValue } : bet))
+      : [...prev, { areaId: betId, amount: chipValue }]));
+  };
+
+  const handleChipClick = (betId: string) => {
+    if (isRollingRef.current) return;
+    if (!deleteMode) {
+      placeBet(toAreaId(betId));
+      return;
+    }
+    if (isLockedBet(betId, point)) {
+      showNotice('This bet is locked until it wins or loses');
+      return;
+    }
+    const bet = bets.find(b => b.areaId === betId);
+    if (!bet) return;
+    setBetHistory(prev => [...prev, bets]);
+    setBank(current => roundToCents(current + bet.amount));
+    setBets(prev => prev.filter(b => b.areaId !== betId));
+  };
+
+  const handleUndo = () => {
+    if (isRollingRef.current || betHistory.length === 0) return;
+    const previous = betHistory[betHistory.length - 1];
+    const refund = totalOf(bets) - totalOf(previous);
+    setBank(current => roundToCents(current + refund));
+    setBets(previous);
+    setBetHistory(prev => prev.slice(0, -1));
+  };
+
+  const handleClear = () => {
+    if (isRollingRef.current) return;
+    const removable = bets.filter(bet => !isLockedBet(bet.areaId, point));
+    if (removable.length === 0) return;
+    setBetHistory(prev => [...prev, bets]);
+    setBank(current => roundToCents(current + totalOf(removable)));
+    setBets(bets.filter(bet => isLockedBet(bet.areaId, point)));
+  };
+
+  const selectChip = (value: number) => {
+    if (value > bank) return;
+    setSelectedChipValue(value);
+  };
+
+  const isBroke = bank < CHIPS[0].value && bets.length === 0 && !isRolling;
+
+  // ---- Keyboard shortcuts -------------------------------------------------
+  const keyHandler = useRef<(e: KeyboardEvent) => void>();
+  keyHandler.current = (e: KeyboardEvent) => {
+    if (isTooSmall || isSettingsOpen || e.altKey) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+
+    const key = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && key !== 'z') return;
+
+    if (e.code === 'Space') {
+      e.preventDefault();
+      handleRoll();
+    } else if (key === 'u' || key === 'z') {
+      e.preventDefault();
+      handleUndo();
+    } else if (/^[1-5]$/.test(key)) {
+      selectChip(CHIPS[Number(key) - 1].value);
+    } else if (key === 'escape') {
+      setDeleteMode(false);
+      setHelpMode(false);
+    }
+  };
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => keyHandler.current?.(e);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  // ---- Render -------------------------------------------------------------
+
+  if (isTooSmall) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white p-8">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold mb-4">Screen Too Small</h1>
+          <p className="text-gray-300">
+            RollSim needs a screen at least 768×600 — craps is hard to play on a tiny table.
+            Try a bigger window, or turn your device sideways.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const removeAnimation = (id: number) =>
+    setChipAnimations(prev => prev.filter(animation => animation.id !== id));
+
+  // In delete mode, clicking anywhere that isn't a chip exits delete mode.
+  const handleGlobalClick = (e: React.MouseEvent) => {
+    if (deleteMode && !(e.target as HTMLElement).closest('.chip-container')) {
+      setDeleteMode(false);
     }
   };
 
-  const handleBetMovementImmediate = (movement: BetMovement) => {
-    setBets(currentBets => {
-      const remainingBets = currentBets.filter(bet => bet.areaId !== movement.fromId);
-      const newBet = {
-        areaId: movement.toId,
-        amount: movement.amount,
-        color: movement.color,
-        count: movement.count
-      };
-      return [...remainingBets, newBet];
-    });
-  };
-
-  const handleBetPlacement = (movement: BetMovement, rect: DOMRect) => {
-    setBets(currentBets => [...currentBets, {
-      areaId: movement.toId,
-      amount: movement.amount,
-      color: movement.color,
-      count: movement.count
-    }]);
-
-    // Clean up moving states
-    setMovingBets(prev => prev.filter(bet => bet.areaId !== movement.fromId));
-    setMovingBetIds(prev => {
-      const next = new Set(prev);
-      next.delete(movement.fromId);
-      return next;
-    });
-  };
-
-  const diceTotal = dice.die1 + dice.die2;
-
-  const content = isTooSmall ? (
-    <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white p-8">
-      <div className="text-center max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Screen Too Small</h1>
-        <p className="text-gray-300">
-          This app was built for larger screens. It would be hard to play craps on a small screen anyways.
-        </p>
-      </div>
-    </div>
-  ) : (
+  return (
     <div
       className="relative h-screen w-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden"
       onClick={handleGlobalClick}
     >
       <div className="flex-1 flex gap-4 p-2 max-h-screen relative">
-        {/* Main container */}
         <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto">
-          {/* Left side - the game board */}
+          {/* Left side: the table */}
           <div className="flex-[3.8] relative">
-            {/* Game board */}
-            <div className={`h-full bg-felt-green rounded-xl p-3 pt-14 pb-12 shadow-table min-h-0 relative
-                             ${deleteMode ? 'pointer-events-auto' : ''}`}>
+            <div className="h-full bg-felt-green rounded-xl p-3 pt-14 pb-12 shadow-table min-h-0 relative">
               <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden relative z-10">
-                {/* Fixed 2:1 board. The `aspect-[2/1]` class is also queried by GameState's
-                    point marker, so keep it as a class (not an inline aspectRatio). */}
-                <div className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-280px)]"
-                     style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}>
+                {/* Fixed 2:1 board, constrained by the viewport height */}
+                <div
+                  ref={boardRef}
+                  className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-280px)]"
+                  style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}
+                >
+                  <PointMarker point={point} boardRef={boardRef} />
                   <CrapsTable
-                    ref={tableRef}
-                    selectedChipValue={selectedChipValue}
-                    bank={bank}
-                    setBank={setBank}
-                    helpMode={helpMode}
-                    setHelpMode={setHelpMode}
+                    boardRef={boardRef}
                     bets={bets}
-                    setBets={setBets}
-                    dice={dice}
-                    setDice={setDice}
-                    isRolling={isRolling}
+                    ghostBets={ghostBets}
+                    hiddenBetIds={hiddenBetIds}
                     point={point}
                     winningAreas={winningAreas}
-                    movingBetIds={movingBetIds}
-                    betHistory={betHistory}
-                    setBetHistory={setBetHistory}
-                    onPredeterminedRoll={(roll) => handleRoll(roll)}
+                    isRolling={isRolling}
+                    helpMode={helpMode}
+                    onToggleHelp={() => setHelpMode(mode => !mode)}
                     deleteMode={deleteMode}
+                    onAreaClick={placeBet}
+                    onChipClick={handleChipClick}
+                    onForcedRoll={handleRoll}
                   />
 
-                  {/* Roll Dice button on the board */}
+                  {/* Roll button on the table */}
                   <button
-                    onClick={() => !isRolling && handleRoll()}
+                    type="button"
+                    onClick={() => handleRoll()}
                     disabled={isRolling}
+                    title="Roll the dice (Space)"
                     className={`absolute right-[5.74%] top-[24%]
                                bg-[#1a472a] hover:bg-[#143621] text-white font-bold rounded
                                ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}
-                               shadow-lg text-sm z-20`}
+                               shadow-lg z-20`}
                     style={{
                       width: 'clamp(40px, 10.09%, 120px)',
                       height: 'clamp(20px, 5.78%, 60px)',
-                      fontSize: 'clamp(0.5rem, 1.5vw, 1rem)'
+                      fontSize: 'clamp(0.5rem, 1.5vw, 1rem)',
                     }}
                   >
                     Roll Dice
                   </button>
 
-                  {/* Dice, scaled proportionally */}
-                  <div className="absolute top-[10%] right-[5%] flex gap-4 z-10"
-                       style={{ transform: 'scale(clamp(0.5, 1vmin / 10, 1.25))' }}>
-                    <Dice
-                      value={isRolling ? animationDice.die1 : dice.die1}
-                      isRolling={isRolling}
-                      size="large"
-                    />
-                    <Dice
-                      value={isRolling ? animationDice.die2 : dice.die2}
-                      isRolling={isRolling}
-                      size="large"
-                    />
+                  {/* Dice */}
+                  <div
+                    className="absolute top-[10%] right-[5%] flex gap-4 z-10"
+                    aria-live="polite"
+                    aria-label={isRolling ? 'Rolling…' : `Rolled ${dice.die1 + dice.die2}`}
+                  >
+                    <Dice value={isRolling ? animationDice.die1 : dice.die1} isRolling={isRolling} size="large" />
+                    <Dice value={isRolling ? animationDice.die2 : dice.die2} isRolling={isRolling} size="large" />
                   </div>
-                  <GameState
-                    isRolling={isRolling}
-                    rollId={rollId}
-                    diceTotal={dice.die1 + dice.die2}
-                    die1={dice.die1}
-                    die2={dice.die2}
-                    bets={bets}
-                    onStateChange={handleGameStateChange}
-                    onRollOutcome={handleRollOutcome}
-                    onWinningAreas={handleWinningAreas}
-                    onMoveBet={handleBetMovement}
-                    animatingBets={animatingBets}
-                  />
+
                   <ProfitDisplay
-                    amount={lastProfit}
-                    onComplete={() => setLastProfit(0)}
+                    key={lastProfit.rollId}
+                    amount={lastProfit.amount}
+                    onComplete={() => setLastProfit(current => ({ ...current, amount: 0 }))}
                   />
+
+                  {/* Notices (why a bet wasn't placed, etc.) */}
+                  {notice && (
+                    <div
+                      key={notice.id}
+                      role="status"
+                      className="absolute bottom-14 left-[40%] -translate-x-1/2 z-[950] pointer-events-none
+                                 bg-black/80 text-white px-4 py-2 rounded-full text-sm font-semibold
+                                 whitespace-nowrap shadow-lg border border-white/20"
+                    >
+                      {notice.message}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Keep Winning Bets checkbox */}
               <label className="absolute bottom-[20%] left-[2%]
                                 flex items-center gap-2 text-white cursor-pointer text-base
-                                bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none">
-                <div className="flex items-center gap-2 pointer-events-none">
-                  <input
-                    type="checkbox"
-                    checked={keepWinningBets}
-                    onChange={(e) => setKeepWinningBets(e.target.checked)}
-                    className="w-4 h-4 rounded pointer-events-auto"
-                  />
-                  <span>Keep Winning Bets Up</span>
-                </div>
+                                bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none"
+                     title="When a bet wins, leave it on the table and only collect the winnings">
+                <input
+                  type="checkbox"
+                  checked={keepWinningBets}
+                  onChange={(e) => setKeepWinningBets(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                />
+                <span>Keep Winning Bets Up</span>
               </label>
             </div>
 
-            {/* Betting Controls - full screen width positioning with max width */}
-            <div className={`fixed bottom-0 left-0 right-0 mb-2 mt-4 z-50 px-2
-                            ${helpMode ? 'pointer-events-none' : ''}`}>
-              <div className="flex gap-2 items-stretch bg-gray-800/90 backdrop-blur-sm rounded-lg px-2
-                                mx-auto min-w-[600px] max-w-[1500px] w-[98vw]"
-                   style={{
-                     height: 'clamp(60px, 15vh, 100px)',
-                     transform: 'scale(clamp(0.8, 1vw / 16, 1))',
-                     transformOrigin: 'center bottom'
-                   }}>
+            {/* Betting controls: fixed bar along the bottom of the screen */}
+            <div className="fixed bottom-0 left-0 right-0 mb-2 mt-4 z-50 px-2">
+              <div
+                className="flex gap-2 items-stretch bg-gray-800/90 backdrop-blur-sm rounded-lg px-2
+                           mx-auto min-w-[600px] max-w-[1500px] w-[98vw]"
+                style={{ height: 'clamp(60px, 15vh, 100px)' }}
+              >
                 <BettingControls
-                  onChipSelect={setSelectedChipValue}
+                  onChipSelect={selectChip}
                   selectedChipValue={selectedChipValue}
-                  onUndo={() => tableRef.current?.handleUndo()}
-                  onClear={() => tableRef.current?.handleClear()}
-                  onToggleDelete={() => setDeleteMode(!deleteMode)}
+                  onUndo={handleUndo}
+                  onClear={handleClear}
+                  onToggleDelete={() => setDeleteMode(mode => !mode)}
                   onOpenSettings={() => setIsSettingsOpen(true)}
                   deleteMode={deleteMode}
+                  disabled={isRolling}
+                  canUndo={betHistory.length > 0}
                   bank={bank}
-                  onRoll={handleRoll}
+                  onRoll={() => handleRoll()}
                   isRolling={isRolling}
                   quickRoll={quickRoll}
                   onQuickRollChange={setQuickRoll}
                   bankDisplay={
                     <div className="flex flex-col justify-center w-[150px]">
                       <span className="text-xl text-green-400 font-bold whitespace-nowrap">
-                        Bank: <AnimatedBalance value={bank} animate={lastProfit > 0} />
+                        Bank: <AnimatedBalance value={bank} animate={lastProfit.amount > 0} />
                       </span>
-                      <span className="text-xl text-yellow-400 font-bold whitespace-nowrap">
-                        Wager: ${calculateTotalWager(bets).toLocaleString()}
-                      </span>
+                      {isBroke ? (
+                        <button
+                          type="button"
+                          onClick={() => setBank(STARTING_BANK)}
+                          className="mt-1 self-start rounded bg-yellow-500 hover:bg-yellow-400 text-black
+                                     font-bold text-xs px-2 py-1 whitespace-nowrap"
+                        >
+                          Out of chips — Rebuy {formatMoney(STARTING_BANK)}
+                        </button>
+                      ) : (
+                        <span className="text-xl text-yellow-400 font-bold whitespace-nowrap">
+                          Wager: {formatMoney(totalWager)}
+                        </span>
+                      )}
                     </div>
                   }
                 />
@@ -589,146 +528,42 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Right side - Roll History */}
-          <div className="w-18 bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
+          {/* Right side: roll history */}
+          <div className="bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
             <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
-            <div className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
-              {rollHistory.length === 0 ? (
-                <div className="flex justify-center items-center gap-1 p-0.5 rounded-md h-[2.5rem] opacity-0">
-                  <Dice value={1} isRolling={false} size="small" />
-                  <Dice value={1} isRolling={false} size="small" />
-                </div>
-              ) : (
-                rollHistory.slice(0, Math.min(15, rollHistory.length)).map((roll, index) => (
-                  <div
-                    key={`roll-${rollHistory.length - index}`}
-                    className={`flex justify-center items-center gap-1
-                               ${index === 0 ? 'animate-slideIn' : ''}
-                               p-0.5 rounded-md
-                               ${roll.type === 'craps-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
-                               ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
-                  >
-                    <Dice value={roll.die1} isRolling={false} size="small" />
-                    <Dice value={roll.die2} isRolling={false} size="small" />
-                  </div>
-                ))
-              )}
-            </div>
+            <ol className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
+              {rollHistory.slice(0, VISIBLE_ROLL_HISTORY).map((roll, index) => (
+                <li
+                  key={roll.id}
+                  title={`Rolled ${roll.total}${roll.type === 'point-made' ? ' — point made' : roll.type === 'seven-out' ? ' — seven out' : ''}`}
+                  className={`flex justify-center items-center gap-1 p-0.5 rounded-md
+                             ${index === 0 ? 'animate-slideIn' : ''}
+                             ${roll.type === 'seven-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
+                             ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
+                >
+                  <Dice value={roll.die1} isRolling={false} size="small" />
+                  <Dice value={roll.die2} isRolling={false} size="small" />
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </div>
 
-      {helpMode && (
-        <div className="fixed inset-0 cursor-help pointer-events-none" />
-      )}
-
-      {/* Winning bet animations */}
-      {winningBets.map((bet, index) => (
-        <AnimatedChipStack
-          key={`winning-${bet.areaId}-${index}`}
-          amount={bet.winAmount || bet.amount}
-          color={bet.color}
-          position={bet.position}
-          isWinning={true}
-          totalAmount={bet.totalAmount}
-          showTotalAtBet={bet.showTotalAtBet}
-          onAnimationComplete={() => {
-            setAnimatingBets(prev => {
-              const next = new Set(prev);
-              next.delete(bet.areaId);
-              return next;
-            });
-            setWinningBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-          }}
-        />
-      ))}
-
-      {/* Losing bet animations */}
-      {losingBets.map((bet, index) => (
-        <AnimatedChipStack
-          key={`losing-${bet.areaId}-${index}`}
-          amount={bet.amount}
-          color={bet.color}
-          position={bet.position}
-          isWinning={false}
-          onAnimationComplete={() => {
-            setAnimatingBets(prev => {
-              const next = new Set(prev);
-              next.delete(bet.areaId);
-              return next;
-            });
-            setLosingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-          }}
-        />
-      ))}
-
-      {/* Moving bet animations */}
-      {movingBets.map((bet, index) => (
-        <AnimatedChipStack
-          key={`moving-${bet.areaId}-${index}`}
-          amount={bet.amount}
-          color={bet.color}
-          position={bet.fromPosition}
-          toPosition={bet.toPosition}
-          isMoving={true}
-          onAnimationComplete={() => {
-            setMovingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-            setMovingBetIds(prev => {
-              const next = new Set(prev);
-              next.delete(bet.areaId);
-              return next;
-            });
-          }}
-        />
-      ))}
-
-      {/* Waiting bet animations */}
-      {waitingBets.map((bet, index) => (
-        <AnimatedChipStack
-          key={`waiting-${bet.areaId}-${index}`}
-          amount={bet.amount}
-          color={bet.color}
-          position={bet.position}
-          isWaiting={true}
-          onWaitComplete={() => {
-            // Wait for winning animation to complete before starting movement
-            setTimeout(() => {
-              // Start the movement animation
-              setMovingBets(prev => [...prev, {
-                ...bet,
-                fromPosition: bet.position,
-                toPosition: bet.targetPosition
-              }]);
-              setWaitingBets(prev => prev.filter(b => b.areaId !== bet.areaId));
-
-              // Add the new bet after movement completes
-              setTimeout(() => {
-                handleBetPlacement(
-                  {
-                    fromId: bet.areaId,
-                    toId: bet.areaId.replace('come', `come-${diceTotal}`),
-                    amount: bet.amount,
-                    color: bet.color,
-                    count: bet.count
-                  },
-                  { left: bet.targetPosition.x, top: bet.targetPosition.y, width: 0, height: 0 } as DOMRect
-                );
-              }, 500);
-            }, 1500);  // Wait for winning animation to complete
-          }}
-        />
+      {/* Chip animations (screen-space overlays) */}
+      {chipAnimations.map(({ id, hideBetId, ...animation }) => (
+        <AnimatedChipStack key={id} {...animation} onAnimationComplete={() => removeAnimation(id)} />
       ))}
 
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         bank={bank}
+        startingBank={STARTING_BANK}
         onSetBank={setBank}
       />
     </div>
   );
-
-  return content;
 };
 
 export default App;

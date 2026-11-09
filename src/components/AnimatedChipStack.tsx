@@ -1,182 +1,132 @@
 import React from 'react';
-import { motion, AnimatePresence, useMotionValue } from 'framer-motion';
+import { motion, useMotionValue } from 'framer-motion';
+import { chipForAmount, isLightChip } from '../utils/chips';
+import { CHIP_SIZE, formatChipAmount } from './ChipStack';
 
-interface AnimatedChipStackProps {
+export type ChipAnimationKind = 'win' | 'lose' | 'move';
+
+export interface AnimatedChipStackProps {
+  kind: ChipAnimationKind;
+  /** Amount shown on the chip (the winnings for `win`, the bet for `lose`/`move`). */
   amount: number;
-  color: string;
+  /** Original bet size; decides the chip colour. */
+  betAmount: number;
+  /** Screen position (px) of the bet the animation is about. */
   position: { x: number; y: number };
+  /** Destination (px) for `move` animations. */
   toPosition?: { x: number; y: number };
-  isWinning?: boolean;
-  isMoving?: boolean;
-  isWaiting?: boolean;
-  onAnimationComplete?: () => void;
-  onWaitComplete?: () => void;
+  /** Seconds to wait before a `move` animation starts. */
+  delay?: number;
+  /** For `win`: amount shown once the payout reaches the bet (bet + winnings, if the bet comes down). */
   totalAmount?: number;
-  showTotalAtBet?: boolean;
+  onAnimationComplete?: () => void;
 }
 
+// Half the chip size in px, used to centre the chip on a point.
+const HALF_CHIP = 30;
+
+/** Animation lengths in seconds (a `move` also waits for its `delay` first). */
+export const CHIP_ANIMATION_SECONDS: Record<ChipAnimationKind, number> = {
+  win: 2.5,
+  lose: 1.2,
+  move: 0.5,
+};
+
+/**
+ * Screen-space chip animation:
+ * - `win`: payout flies from the dice to the bet, pauses, then flies to the bank.
+ * - `lose`: the bet spins away and fades out.
+ * - `move`: a come / don't-come bet slides to its number.
+ */
 const AnimatedChipStack: React.FC<AnimatedChipStackProps> = ({
+  kind,
   amount,
-  color,
+  betAmount,
   position,
   toPosition,
-  isWinning,
-  isMoving,
-  isWaiting,
-  onAnimationComplete,
-  onWaitComplete,
+  delay = 0,
   totalAmount,
-  showTotalAtBet
+  onAnimationComplete,
 }) => {
-
-  const chipSize = '2.6rem';
   const x = useMotionValue(0);
-  const scale = useMotionValue(1);
+  const [arrivedAtBet, setArrivedAtBet] = React.useState(false);
 
-  const [animationStage, setAnimationStage] = React.useState<'start' | 'atBet' | 'toBank'>('start');
-
-  // Track animation progress
+  // For winning chips, switch the label to the total once the payout reaches the bet.
   React.useEffect(() => {
-    const unsubscribeX = x.onChange(latest => {
-      const currentScale = scale.get()
-
-      if (Math.abs(latest - (position.x-30)) < 1 && currentScale > 1) {
-        //console.log('Setting atBet stage');
-        setAnimationStage('atBet');
-      } else if (latest < 250) {  // Changed condition for bank stage
-        //console.log('Setting toBank stage');
-        setAnimationStage('toBank');
-      }
+    if (kind !== 'win' || totalAmount === undefined) return;
+    const target = position.x - HALF_CHIP;
+    return x.on('change', latest => {
+      if (Math.abs(latest - target) < 1) setArrivedAtBet(true);
     });
+  }, [kind, totalAmount, position.x, x]);
 
-    return () => {
-      unsubscribeX();
-    };
-  }, [x, scale, position.x, animationStage]);
+  const displayAmount = arrivedAtBet && totalAmount !== undefined ? totalAmount : amount;
 
-  const displayAmount = React.useMemo(() => {
-    if (!showTotalAtBet || !totalAmount) return amount;
-    
-    switch(animationStage) {
-      case 'start':
-        return amount;
-      case 'atBet':
-        return totalAmount;
-      case 'toBank':
-        return totalAmount;
-      default:
-        return amount;
-    }
-  }, [amount, totalAmount, animationStage, showTotalAtBet]);
-
-  // Format amount based on animation type
-  const formatAmount = (value: number) => {
-    if (isWinning) {
-      return value.toFixed(2);  // Only show decimals for winning chips
-    }
-    return Math.round(value).toLocaleString();  // Round to whole number for losing/moving chips
-  };
-
-  // Add console logs to debug styling
-  //console.log('Chip color:', color);
-  //console.log('Is white chip?', color === 'bg-gray-200');
-  //console.log('Border class:', color === 'bg-gray-200' ? 'border-gray-600' : 'border-white');
+  const chip = chipForAmount(betAmount);
+  const light = isLightChip(chip);
 
   const variants = {
     initial: {
-      x: isWinning ? window.innerWidth - 200 : position.x-30,
-      y: isWinning ? 100 : position.y-30,
-      opacity: 1,
-      scale: 1
-    },
-    winning: {
-      x: [
-        window.innerWidth - 200,  // Start from dice
-        position.x-30,            // Move to bet
-        position.x-30,            // Stay at bet briefly
-        300                       // Move to new bank location (left side)
-      ],
-      y: [
-        100,                      // Start from dice
-        position.y-30,            // Move to bet
-        position.y-30,            // Stay at bet briefly
-        window.innerHeight - 100  // Move to bottom of screen
-      ],
-      opacity: [1, 1, 1, 1, 0],
-      scale: [1, 1.1, 1.1, 0.8],
-      transition: { 
-        duration: 2.5,
-        times: [0, 0.3, 0.7, 0.8, 1],
-        ease: "easeInOut"
-      }
-    },
-    moving: {
-      x: toPosition ? toPosition.x-30 : 0,
-      y: toPosition ? toPosition.y-30 : 0,
+      x: kind === 'win' ? window.innerWidth - 200 : position.x - HALF_CHIP,
+      y: kind === 'win' ? 100 : position.y - HALF_CHIP,
       opacity: 1,
       scale: 1,
-      rotate: 0,
-      transition: { duration: 0.5, ease: "easeInOut" }
     },
-    losing: {
+    win: {
+      x: [window.innerWidth - 200, position.x - HALF_CHIP, position.x - HALF_CHIP, 300],
+      y: [100, position.y - HALF_CHIP, position.y - HALF_CHIP, window.innerHeight - 100],
+      opacity: [1, 1, 1, 1, 0],
+      scale: [1, 1.1, 1.1, 0.8],
+      transition: { duration: CHIP_ANIMATION_SECONDS.win, times: [0, 0.3, 0.7, 0.8, 1], ease: 'easeInOut' },
+    },
+    move: {
+      x: (toPosition?.x ?? position.x) - HALF_CHIP,
+      y: (toPosition?.y ?? position.y) - HALF_CHIP,
+      opacity: 1,
+      scale: 1,
+      transition: { duration: CHIP_ANIMATION_SECONDS.move, ease: 'easeInOut', delay },
+    },
+    lose: {
       x: position.x + 100,
       y: position.y - 150,
       opacity: 0,
       scale: 0.8,
       rotate: -45,
-      transition: { duration: 1.2, ease: "easeInOut" }
-    },
-    waiting: {
-      x: position.x-30,
-      y: position.y-30,
-      opacity: 1,
-      scale: 1,
-      transition: { 
-        duration: 1.5,
-        onComplete: () => onWaitComplete?.()
-      }
+      transition: { duration: CHIP_ANIMATION_SECONDS.lose, ease: 'easeInOut' },
     },
   };
 
   return (
-    <AnimatePresence>
-      <motion.div
-        className="fixed"
-        initial="initial"
-        animate={isWaiting ? "waiting" : (isMoving ? "moving" : (isWinning ? "winning" : "losing"))}
-        variants={variants}
-        style={{ 
-          width: chipSize, 
-          height: chipSize,
-          transform: 'translate(-50%, -50%)',
-          zIndex: 9999,
-          x,
-          scale,
-          position: 'fixed',
-          pointerEvents: 'none',
-          left: 0,
-          top: 0,
-        }}
-        onAnimationComplete={onAnimationComplete}
-      >
-        <div className={`absolute ${color} rounded-full 
-                      border-2 ${color === 'bg-white' ? 'border-gray-600' : 'border-white'} shadow-lg
-                      transition-all duration-150
-                      ring-1 ${color === 'bg-gray-200' ? 'ring-gray-600/20' : 'ring-white/20'}`}
-          style={{
-            width: chipSize,
-            height: chipSize,
-          }}
-        />
-        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 
-                      bg-black/80 text-white px-1.5 py-0 rounded text-sm
-                      whitespace-nowrap z-50 font-bold
-                      border border-white/30 select-none">
-          ${formatAmount(displayAmount)}
-        </div>
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      initial="initial"
+      animate={kind}
+      variants={variants}
+      style={{
+        width: CHIP_SIZE,
+        height: CHIP_SIZE,
+        zIndex: 9999,
+        x,
+        position: 'fixed',
+        pointerEvents: 'none',
+        left: 0,
+        top: 0,
+      }}
+      onAnimationComplete={onAnimationComplete}
+      aria-hidden="true"
+    >
+      <div
+        className={`absolute ${chip.color} rounded-full border-2 shadow-lg ring-1
+                    ${light ? 'border-gray-600 ring-gray-600/20' : 'border-white ring-white/20'}`}
+        style={{ width: CHIP_SIZE, height: CHIP_SIZE }}
+      />
+      <div className="absolute top-1.5 left-1/2 -translate-x-1/2
+                    bg-black/80 text-white px-1.5 py-0 rounded text-sm
+                    whitespace-nowrap z-50 font-bold
+                    border border-white/30 select-none">
+        ${kind === 'win' ? displayAmount.toFixed(2) : formatChipAmount(displayAmount)}
+      </div>
+    </motion.div>
   );
 };
 
-export default AnimatedChipStack; 
+export default AnimatedChipStack;

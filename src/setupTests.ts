@@ -33,7 +33,7 @@ jest.mock('framer-motion', () => {
       set: (v: any) => {
         current = v;
       },
-      onChange: () => () => {}
+      on: () => () => {}
     };
   };
 
