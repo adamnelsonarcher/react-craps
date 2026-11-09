@@ -72,6 +72,32 @@ test('refuses line bets once a point is set and explains why', () => {
   expect(screen.getByText(/Wager: \$0/)).toBeInTheDocument();
 });
 
+describe('on a phone', () => {
+  const setViewport = (width: number, height: number) => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: height });
+  };
+  const original = { width: window.innerWidth, height: window.innerHeight };
+  afterEach(() => setViewport(original.width, original.height));
+
+  test('plays in landscape with the controls in a side panel', () => {
+    setViewport(844, 390);
+    render(<App />);
+    expect(screen.getByRole('complementary', { name: /betting controls/i })).toBeInTheDocument();
+
+    fireEvent.click(area('Pass Line'));
+    queueRolls([5, 6]);
+    roll();
+    expect(bankroll()).toBe(1005);
+  });
+
+  test('asks to rotate when held upright', () => {
+    setViewport(390, 844);
+    render(<App />);
+    expect(screen.getByText(/turn your phone sideways/i)).toBeInTheDocument();
+  });
+});
+
 test('undo returns the last chip to the bank', () => {
   render(<App />);
   fireEvent.click(area('Field'));

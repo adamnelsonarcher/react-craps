@@ -10,7 +10,7 @@ import AnimatedChipStack, {
 import ProfitDisplay from './components/ProfitDisplay';
 import AnimatedBalance from './components/AnimatedBalance';
 import SettingsModal from './components/SettingsModal';
-import { useScreenSize } from './hooks/useScreenSize';
+import { useElementWidth, useLayoutMode } from './hooks/useLayout';
 import { Bet, DicePair, RollRecord, WinningArea } from './types/game';
 import { bettingRestriction, isLockedBet, resolveRoll, staysUpAfterWin } from './game/rules';
 import { toAreaId, toBetId } from './game/tableLayout';
@@ -42,18 +42,34 @@ const totalOf = (bets: Bet[]) => roundToCents(bets.reduce((sum, bet) => sum + be
 const formatMoney = (amount: number) =>
   `$${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
-/** Screen-space centre of a bet's chips (or of the area itself if it has none). */
-const getScreenCenter = (areaId: string, preferChips = true) => {
-  const area = document.querySelector(`[data-bet-id="${areaId}"]`);
-  const element = (preferChips && area?.querySelector('.chip-container')) || area;
-  if (!element) return { x: 0, y: 0 };
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+/** Screen-space centre of an element, or `undefined` if it isn't rendered. */
+const centerOf = (element: Element | null | undefined) => {
+  if (!element) return undefined;
   const rect = element.getBoundingClientRect();
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 };
 
+/** Screen-space centre of a bet's chips (or of the area itself if it has none). */
+const getScreenCenter = (areaId: string, preferChips = true) => {
+  const area = document.querySelector(`[data-bet-id="${areaId}"]`);
+  return centerOf((preferChips && area?.querySelector('.chip-container')) || area) ?? { x: 0, y: 0 };
+};
+
 const App: React.FC = () => {
-  const isTooSmall = useScreenSize();
+  const layoutMode = useLayoutMode();
+  const isCompact = layoutMode === 'compact';
   const boardRef = useRef<HTMLDivElement>(null);
+  const diceRef = useRef<HTMLDivElement>(null);
+  const bankRef = useRef<HTMLSpanElement>(null);
+
+  // Chips and dice scale with the table so small (phone) tables stay readable.
+  const boardWidth = useElementWidth(boardRef, layoutMode);
+  const scaleVars = {
+    '--chip-size': `${clamp(boardWidth * 0.04, 22, 41.6)}px`,
+    '--die-size': `${clamp(boardWidth * 0.06, 28, 72)}px`,
+  } as React.CSSProperties;
 
   // Dice & table state
   const [dice, setDice] = useState<DicePair>({ die1: 1, die2: 1 });
@@ -145,6 +161,9 @@ const App: React.FC = () => {
     let nextBets: Bet[] = [];
     let returnedToBank = 0;
     let profit = 0;
+    // Payouts fly from the dice to the bet, then on to the bank display.
+    const dicePosition = centerOf(diceRef.current);
+    const bankPosition = centerOf(bankRef.current);
 
     for (const bet of currentBets) {
       const result = resultById.get(bet.areaId);
@@ -161,6 +180,8 @@ const App: React.FC = () => {
         animations.push({
           id: nextId(), kind: 'win', amount: winnings, betAmount: bet.amount,
           position: getScreenCenter(bet.areaId),
+          fromPosition: dicePosition,
+          bankPosition,
           totalAmount: staysUp ? undefined : roundToCents(bet.amount + winnings),
         });
         if (staysUp) nextBets.push(bet);
@@ -330,7 +351,7 @@ const App: React.FC = () => {
   // ---- Keyboard shortcuts -------------------------------------------------
   const keyHandler = useRef<(e: KeyboardEvent) => void>();
   keyHandler.current = (e: KeyboardEvent) => {
-    if (isTooSmall || isSettingsOpen || e.altKey) return;
+    if (layoutMode === 'rotate' || isSettingsOpen || e.altKey) return;
     const target = e.target as HTMLElement | null;
     if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
 
@@ -358,14 +379,17 @@ const App: React.FC = () => {
 
   // ---- Render -------------------------------------------------------------
 
-  if (isTooSmall) {
+  if (layoutMode === 'rotate') {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white p-8">
-        <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold mb-4">Screen Too Small</h1>
+      <div
+        className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8"
+        style={{ height: '100dvh' }}
+      >
+        <div className="text-center max-w-xs">
+          <div className="text-6xl mb-6 inline-block animate-rotate-hint" aria-hidden="true">📱</div>
+          <h1 className="text-2xl font-bold mb-2">Turn your phone sideways</h1>
           <p className="text-gray-300">
-            RollSim needs a screen at least 768×600 — craps is hard to play on a tiny table.
-            Try a bigger window, or turn your device sideways.
+            The craps table needs a landscape screen. Rotate your phone to start rolling.
           </p>
         </div>
       </div>
@@ -382,9 +406,212 @@ const App: React.FC = () => {
     }
   };
 
+  const board = (
+    <div
+      ref={boardRef}
+      className={`w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full
+                  ${isCompact ? 'max-h-full max-w-[calc((100vh-3.5rem)*2)]' : 'max-h-[calc(100vh-280px)]'}`}
+      // Keep the 2:1 board inside the available height. `dvh` tracks mobile browser
+      // toolbars; browsers without it ignore this and use the class above.
+      style={{ maxWidth: isCompact ? 'calc((100dvh - 3.5rem) * 2)' : 'calc((100vh - 280px) * 2)' }}
+    >
+      <PointMarker point={point} boardRef={boardRef} />
+      <CrapsTable
+        boardRef={boardRef}
+        bets={bets}
+        ghostBets={ghostBets}
+        hiddenBetIds={hiddenBetIds}
+        point={point}
+        winningAreas={winningAreas}
+        isRolling={isRolling}
+        helpMode={helpMode}
+        onToggleHelp={() => setHelpMode(mode => !mode)}
+        deleteMode={deleteMode}
+        onAreaClick={placeBet}
+        onChipClick={handleChipClick}
+        onForcedRoll={handleRoll}
+      />
+
+      {/* Roll button on the table */}
+      <button
+        type="button"
+        onClick={() => handleRoll()}
+        disabled={isRolling}
+        title="Roll the dice (Space)"
+        className={`absolute right-[5.74%] top-[24%]
+                   bg-[#1a472a] hover:bg-[#143621] text-white font-bold rounded
+                   ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}
+                   shadow-lg z-20`}
+        style={{
+          width: 'clamp(40px, 10.09%, 120px)',
+          height: 'clamp(20px, 5.78%, 60px)',
+          fontSize: 'clamp(0.5rem, 1.5vw, 1rem)',
+        }}
+      >
+        Roll Dice
+      </button>
+
+      {/* Dice */}
+      <div
+        ref={diceRef}
+        className="absolute top-[10%] right-[5%] flex gap-[clamp(0.5rem,1.5vw,1rem)] z-10"
+        aria-live="polite"
+        aria-label={isRolling ? 'Rolling…' : `Rolled ${dice.die1 + dice.die2}`}
+      >
+        <Dice value={isRolling ? animationDice.die1 : dice.die1} isRolling={isRolling} size="large" />
+        <Dice value={isRolling ? animationDice.die2 : dice.die2} isRolling={isRolling} size="large" />
+      </div>
+
+      <ProfitDisplay
+        key={lastProfit.rollId}
+        amount={lastProfit.amount}
+        onComplete={() => setLastProfit(current => ({ ...current, amount: 0 }))}
+      />
+
+      {/* Notices (why a bet wasn't placed, etc.) */}
+      {notice && (
+        <div
+          key={notice.id}
+          role="status"
+          className={`absolute left-[40%] -translate-x-1/2 z-[950] pointer-events-none
+                     bg-black/80 text-white px-4 py-2 rounded-full font-semibold
+                     whitespace-nowrap shadow-lg border border-white/20
+                     ${isCompact ? 'bottom-10 text-xs' : 'bottom-14 text-sm'}`}
+        >
+          {notice.message}
+        </div>
+      )}
+    </div>
+  );
+
+  const bankDisplay = (
+    <div className={`flex flex-col justify-center ${isCompact ? 'min-w-0' : 'w-[150px]'}`}>
+      <span className={`${isCompact ? 'text-sm' : 'text-xl'} text-green-400 font-bold whitespace-nowrap`}>
+        Bank:{' '}
+        <span ref={bankRef}>
+          <AnimatedBalance value={bank} animate={lastProfit.amount > 0} />
+        </span>
+      </span>
+      {isBroke ? (
+        <button
+          type="button"
+          onClick={() => setBank(STARTING_BANK)}
+          className="mt-1 self-start rounded bg-yellow-500 hover:bg-yellow-400 text-black
+                     font-bold text-xs px-2 py-1 whitespace-nowrap"
+        >
+          {isCompact ? 'Rebuy' : 'Out of chips — Rebuy'} {formatMoney(STARTING_BANK)}
+        </button>
+      ) : (
+        <span className={`${isCompact ? 'text-sm' : 'text-xl'} text-yellow-400 font-bold whitespace-nowrap`}>
+          Wager: {formatMoney(totalWager)}
+        </span>
+      )}
+    </div>
+  );
+
+  const keepWinningToggle = (className: string) => (
+    <label
+      className={`flex items-center gap-2 text-white cursor-pointer select-none ${className}`}
+      title="When a bet wins, leave it on the table and only collect the winnings"
+    >
+      <input
+        type="checkbox"
+        checked={keepWinningBets}
+        onChange={(e) => setKeepWinningBets(e.target.checked)}
+        className="w-4 h-4 rounded"
+      />
+      <span>Keep Winning Bets Up</span>
+    </label>
+  );
+
+  const rollTitle = (roll: RollRecord) =>
+    `Rolled ${roll.total}${roll.type === 'point-made' ? ' — point made' : roll.type === 'seven-out' ? ' — seven out' : ''}`;
+
+  const controlsProps = {
+    onChipSelect: selectChip,
+    selectedChipValue,
+    onUndo: handleUndo,
+    onClear: handleClear,
+    onToggleDelete: () => setDeleteMode(mode => !mode),
+    onOpenSettings: () => setIsSettingsOpen(true),
+    deleteMode,
+    disabled: isRolling,
+    canUndo: betHistory.length > 0,
+    bank,
+    bankDisplay,
+    onRoll: () => handleRoll(),
+    isRolling,
+    quickRoll,
+    onQuickRollChange: setQuickRoll,
+  };
+
+  const overlays = (
+    <>
+      {/* Chip animations (screen-space overlays) */}
+      {chipAnimations.map(({ id, hideBetId, ...animation }) => (
+        <AnimatedChipStack key={id} {...animation} onAnimationComplete={() => removeAnimation(id)} />
+      ))}
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        bank={bank}
+        startingBank={STARTING_BANK}
+        onSetBank={setBank}
+      />
+    </>
+  );
+
+  if (isCompact) {
+    // Phones in landscape / short screens: table on the left, controls in a side panel.
+    return (
+      <div
+        className="relative h-screen w-screen flex gap-2 bg-gradient-to-br from-gray-900 to-gray-800
+                   overflow-hidden touch-manipulation select-none
+                   py-2 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))]"
+        style={{ ...scaleVars, height: '100dvh' }}
+        onClick={handleGlobalClick}
+      >
+        <main className="flex-1 min-w-0 h-full bg-felt-green rounded-xl px-2 pt-7 pb-2 shadow-table relative">
+          <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 relative z-10">
+            {board}
+          </div>
+        </main>
+
+        <aside className="w-[9.5rem] shrink-0 h-full bg-gray-800/90 rounded-lg p-2" aria-label="Betting controls">
+          <BettingControls layout="panel" {...controlsProps}>
+            {keepWinningToggle('text-xs leading-tight')}
+            {rollHistory.length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-gray-400 mb-1">Last rolls</div>
+                <ol className="flex flex-wrap gap-1" aria-label="Recent rolls">
+                  {rollHistory.slice(0, 5).map(roll => (
+                    <li
+                      key={roll.id}
+                      title={rollTitle(roll)}
+                      className={`w-6 h-6 rounded text-xs font-bold flex items-center justify-center
+                                  ${roll.type === 'seven-out' ? 'bg-red-600 text-white'
+                                    : roll.type === 'point-made' ? 'bg-yellow-500 text-black'
+                                    : 'bg-gray-700 text-white'}`}
+                    >
+                      {roll.total}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </BettingControls>
+        </aside>
+
+        {overlays}
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative h-screen w-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden"
+      style={scaleVars}
       onClick={handleGlobalClick}
     >
       <div className="flex-1 flex gap-4 p-2 max-h-screen relative">
@@ -393,91 +620,11 @@ const App: React.FC = () => {
           <div className="flex-[3.8] relative">
             <div className="h-full bg-felt-green rounded-xl p-3 pt-14 pb-12 shadow-table min-h-0 relative">
               <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden relative z-10">
-                {/* Fixed 2:1 board, constrained by the viewport height */}
-                <div
-                  ref={boardRef}
-                  className="w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full max-h-[calc(100vh-280px)]"
-                  style={{ maxWidth: 'calc((100vh - 280px) * 2)' }}
-                >
-                  <PointMarker point={point} boardRef={boardRef} />
-                  <CrapsTable
-                    boardRef={boardRef}
-                    bets={bets}
-                    ghostBets={ghostBets}
-                    hiddenBetIds={hiddenBetIds}
-                    point={point}
-                    winningAreas={winningAreas}
-                    isRolling={isRolling}
-                    helpMode={helpMode}
-                    onToggleHelp={() => setHelpMode(mode => !mode)}
-                    deleteMode={deleteMode}
-                    onAreaClick={placeBet}
-                    onChipClick={handleChipClick}
-                    onForcedRoll={handleRoll}
-                  />
-
-                  {/* Roll button on the table */}
-                  <button
-                    type="button"
-                    onClick={() => handleRoll()}
-                    disabled={isRolling}
-                    title="Roll the dice (Space)"
-                    className={`absolute right-[5.74%] top-[24%]
-                               bg-[#1a472a] hover:bg-[#143621] text-white font-bold rounded
-                               ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}
-                               shadow-lg z-20`}
-                    style={{
-                      width: 'clamp(40px, 10.09%, 120px)',
-                      height: 'clamp(20px, 5.78%, 60px)',
-                      fontSize: 'clamp(0.5rem, 1.5vw, 1rem)',
-                    }}
-                  >
-                    Roll Dice
-                  </button>
-
-                  {/* Dice */}
-                  <div
-                    className="absolute top-[10%] right-[5%] flex gap-4 z-10"
-                    aria-live="polite"
-                    aria-label={isRolling ? 'Rolling…' : `Rolled ${dice.die1 + dice.die2}`}
-                  >
-                    <Dice value={isRolling ? animationDice.die1 : dice.die1} isRolling={isRolling} size="large" />
-                    <Dice value={isRolling ? animationDice.die2 : dice.die2} isRolling={isRolling} size="large" />
-                  </div>
-
-                  <ProfitDisplay
-                    key={lastProfit.rollId}
-                    amount={lastProfit.amount}
-                    onComplete={() => setLastProfit(current => ({ ...current, amount: 0 }))}
-                  />
-
-                  {/* Notices (why a bet wasn't placed, etc.) */}
-                  {notice && (
-                    <div
-                      key={notice.id}
-                      role="status"
-                      className="absolute bottom-14 left-[40%] -translate-x-1/2 z-[950] pointer-events-none
-                                 bg-black/80 text-white px-4 py-2 rounded-full text-sm font-semibold
-                                 whitespace-nowrap shadow-lg border border-white/20"
-                    >
-                      {notice.message}
-                    </div>
-                  )}
-                </div>
+                {board}
               </div>
 
-              <label className="absolute bottom-[20%] left-[2%]
-                                flex items-center gap-2 text-white cursor-pointer text-base
-                                bg-black/40 px-3 py-1.5 rounded backdrop-blur-sm z-30 select-none"
-                     title="When a bet wins, leave it on the table and only collect the winnings">
-                <input
-                  type="checkbox"
-                  checked={keepWinningBets}
-                  onChange={(e) => setKeepWinningBets(e.target.checked)}
-                  className="w-4 h-4 rounded"
-                />
-                <span>Keep Winning Bets Up</span>
-              </label>
+              {keepWinningToggle(`absolute bottom-[20%] left-[2%] text-base bg-black/40 px-3 py-1.5 rounded
+                                  backdrop-blur-sm z-30`)}
             </div>
 
             {/* Betting controls: fixed bar along the bottom of the screen */}
@@ -487,43 +634,7 @@ const App: React.FC = () => {
                            mx-auto min-w-[600px] max-w-[1500px] w-[98vw]"
                 style={{ height: 'clamp(60px, 15vh, 100px)' }}
               >
-                <BettingControls
-                  onChipSelect={selectChip}
-                  selectedChipValue={selectedChipValue}
-                  onUndo={handleUndo}
-                  onClear={handleClear}
-                  onToggleDelete={() => setDeleteMode(mode => !mode)}
-                  onOpenSettings={() => setIsSettingsOpen(true)}
-                  deleteMode={deleteMode}
-                  disabled={isRolling}
-                  canUndo={betHistory.length > 0}
-                  bank={bank}
-                  onRoll={() => handleRoll()}
-                  isRolling={isRolling}
-                  quickRoll={quickRoll}
-                  onQuickRollChange={setQuickRoll}
-                  bankDisplay={
-                    <div className="flex flex-col justify-center w-[150px]">
-                      <span className="text-xl text-green-400 font-bold whitespace-nowrap">
-                        Bank: <AnimatedBalance value={bank} animate={lastProfit.amount > 0} />
-                      </span>
-                      {isBroke ? (
-                        <button
-                          type="button"
-                          onClick={() => setBank(STARTING_BANK)}
-                          className="mt-1 self-start rounded bg-yellow-500 hover:bg-yellow-400 text-black
-                                     font-bold text-xs px-2 py-1 whitespace-nowrap"
-                        >
-                          Out of chips — Rebuy {formatMoney(STARTING_BANK)}
-                        </button>
-                      ) : (
-                        <span className="text-xl text-yellow-400 font-bold whitespace-nowrap">
-                          Wager: {formatMoney(totalWager)}
-                        </span>
-                      )}
-                    </div>
-                  }
-                />
+                <BettingControls layout="bar" {...controlsProps} />
               </div>
             </div>
           </div>
@@ -535,7 +646,7 @@ const App: React.FC = () => {
               {rollHistory.slice(0, VISIBLE_ROLL_HISTORY).map((roll, index) => (
                 <li
                   key={roll.id}
-                  title={`Rolled ${roll.total}${roll.type === 'point-made' ? ' — point made' : roll.type === 'seven-out' ? ' — seven out' : ''}`}
+                  title={rollTitle(roll)}
                   className={`flex justify-center items-center gap-1 p-0.5 rounded-md
                              ${index === 0 ? 'animate-slideIn' : ''}
                              ${roll.type === 'seven-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
@@ -550,18 +661,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Chip animations (screen-space overlays) */}
-      {chipAnimations.map(({ id, hideBetId, ...animation }) => (
-        <AnimatedChipStack key={id} {...animation} onAnimationComplete={() => removeAnimation(id)} />
-      ))}
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        bank={bank}
-        startingBank={STARTING_BANK}
-        onSetBank={setBank}
-      />
+      {overlays}
     </div>
   );
 };

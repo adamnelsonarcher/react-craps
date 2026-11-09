@@ -11,7 +11,8 @@ const Dice: React.FC<DiceProps> = ({ value, isRolling, size = 'large' }) => {
   
   const sizeClasses = {
     small: 'w-[clamp(1.5rem,4vw,2.1rem)] h-[clamp(1.5rem,4vw,2.1rem)]',
-    large: 'w-[clamp(3.5rem,7vw,4.5rem)] h-[clamp(3.5rem,7vw,4.5rem)]'
+    // `--die-size` is set by App from the table's width.
+    large: 'w-[var(--die-size,4.5rem)] h-[var(--die-size,4.5rem)]'
   };
 
   const paddingClasses = {

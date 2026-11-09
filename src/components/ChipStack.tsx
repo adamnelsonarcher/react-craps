@@ -1,7 +1,10 @@
 import React from 'react';
 import { chipForAmount, chipStackCount, isLightChip } from '../utils/chips';
 
-export const CHIP_SIZE = '2.6rem';
+/** Chip diameter. `--chip-size` is set by App from the table's width so chips scale with it. */
+export const CHIP_SIZE = 'var(--chip-size, 2.6rem)';
+/** Font size for the dollar label on a chip (kept readable on small tables). */
+export const CHIP_LABEL_FONT_SIZE = 'max(10px, calc(var(--chip-size, 2.6rem) * 0.34))';
 
 interface ChipStackProps {
   amount: number;
@@ -15,6 +18,8 @@ interface ChipStackProps {
   deletable?: boolean;
   /** Purely visual copy of a bet that was just paid (no interaction). */
   ghost?: boolean;
+  /** Label under deletable chips (e.g. "TAP TO DELETE" on touch screens). */
+  deleteLabel?: string;
   onClick?: () => void;
 }
 
@@ -30,6 +35,7 @@ const ChipStack: React.FC<ChipStackProps> = ({
   isLocked = false,
   deletable = false,
   ghost = false,
+  deleteLabel = 'CLICK TO DELETE',
   onClick,
 }) => {
   const chip = chipForAmount(amount);
@@ -62,10 +68,11 @@ const ChipStack: React.FC<ChipStackProps> = ({
         />
       ))}
 
-      <div className="absolute top-1.5 left-1/2 -translate-x-1/2
-                    bg-black/80 text-white px-1.5 py-0 rounded text-sm
+      <div className="absolute top-[15%] left-1/2 -translate-x-1/2
+                    bg-black/80 text-white px-1.5 py-0 rounded leading-tight
                     whitespace-nowrap z-50 font-bold
-                    border border-white/30 select-none">
+                    border border-white/30 select-none"
+           style={{ fontSize: CHIP_LABEL_FONT_SIZE }}>
         ${formatChipAmount(amount)}
       </div>
 
@@ -90,7 +97,7 @@ const ChipStack: React.FC<ChipStackProps> = ({
         <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2
                       bg-red-500/80 text-white px-2 py-0.5 rounded-full text-xs
                       font-bold whitespace-nowrap select-none z-50">
-          CLICK TO DELETE
+          {deleteLabel}
         </div>
       )}
     </div>

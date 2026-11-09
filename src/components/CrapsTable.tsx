@@ -3,9 +3,10 @@ import boardLayout from '../assets/just_text.png';
 import ChipStack from './ChipStack';
 import DevTools from './DevTools';
 import { BETTING_AREAS, BettingArea, toAreaId, toBetId } from '../game/tableLayout';
-import { HELP_INTRO, getBetDescription } from '../game/betDescriptions';
+import { getBetDescription, getHelpIntro } from '../game/betDescriptions';
 import { bettingRestriction, isLockedBet, isOffOnComeOut } from '../game/rules';
 import { Bet, DicePair, WinningArea } from '../types/game';
+import { useCanHover } from '../hooks/useLayout';
 
 interface CrapsTableProps {
   /** The board element (used to position overlays). */
@@ -50,6 +51,8 @@ const CrapsTable: React.FC<CrapsTableProps> = ({
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
   const [helpAreaId, setHelpAreaId] = useState<string | null>(null);
   const [devToolsActive, setDevToolsActive] = useState(false);
+  // Touch screens have no hover: skip hover tints/labels (taps show a notice instead).
+  const canHover = useCanHover();
 
   const betById = useMemo(() => new Map(bets.map(bet => [bet.areaId, bet])), [bets]);
   const ghostById = useMemo(() => new Map(ghostBets.map(bet => [bet.areaId, bet])), [ghostBets]);
@@ -58,9 +61,9 @@ const CrapsTable: React.FC<CrapsTableProps> = ({
     [winningAreas]
   );
 
-  const hovered = BETTING_AREAS.find(area => area.id === hoveredArea);
+  const hovered = canHover ? BETTING_AREAS.find(area => area.id === hoveredArea) : undefined;
   const hoveredRestriction = hovered ? bettingRestriction(hovered.id, point) : null;
-  const helpText = helpMode ? (helpAreaId ? getBetDescription(helpAreaId) : HELP_INTRO) : null;
+  const helpText = helpMode ? (helpAreaId ? getBetDescription(helpAreaId) : getHelpIntro(!canHover)) : null;
 
   const handleAreaClick = (areaId: string) => {
     if (devToolsActive) return;
@@ -155,7 +158,7 @@ const CrapsTable: React.FC<CrapsTableProps> = ({
             const ghost = showBet ? undefined : ghostById.get(area.id);
             const marker = isMarkerArea(area);
             const highlight = !marker && winningIds.has(toBetId(area.id));
-            const isHovered = hoveredArea === area.id && !marker;
+            const isHovered = canHover && hoveredArea === area.id && !marker;
             const blocked = bettingRestriction(area.id, point) !== null;
             const tint = blocked && !helpMode ? 'rgba(255, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
             const chipPosition = area.id.startsWith('place-') ? 'bottom-offset' : 'center';
@@ -198,6 +201,7 @@ const CrapsTable: React.FC<CrapsTableProps> = ({
                     isOff={point === null && isOffOnComeOut(area.id)}
                     isLocked={point !== null && (area.id === 'pass-line-chips' || area.id === 'dont-pass-chips')}
                     deletable={deleteMode && !isLockedBet(area.id, point)}
+                    deleteLabel={canHover ? 'CLICK TO DELETE' : 'TAP TO DELETE'}
                     onClick={() => handleChipClick(area.id)}
                   />
                 )}

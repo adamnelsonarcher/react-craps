@@ -71,15 +71,19 @@ const BUY_PAYOUTS = '4 and 10 pay 2:1\n5 and 9 pay 3:2\n6 and 8 pay 6:5';
 const LAY_PAYOUTS = '4 and 10 pay 1:2\n5 and 9 pay 2:3\n6 and 8 pay 5:6';
 const OFF_ON_COME_OUT = 'Off (not working) on the come-out roll.';
 
-export const HELP_INTRO =
-  'Help mode\n' +
-  'Click any betting area to learn how it works.\n' +
+const KEYBOARD_SHORTCUTS =
   ' \n' +
   'Keyboard shortcuts:\n' +
   'Space: roll the dice\n' +
   '1-5: pick a chip ($1, $5, $25, $50, $100)\n' +
   'U: undo your last bet\n' +
   'Esc: leave help or delete mode';
+
+/** Text shown when help mode opens. Touch screens get "tap" wording and no keyboard shortcuts. */
+export const getHelpIntro = (touch: boolean): string =>
+  touch
+    ? 'Help mode\nTap any betting area to learn how it works.'
+    : `Help mode\nClick any betting area to learn how it works.\n${KEYBOARD_SHORTCUTS}`;
 
 /** Help text for a betting area, or `null` if there isn't any. */
 export function getBetDescription(areaId: string): string | null {

@@ -25,7 +25,8 @@ module.exports = {
       },
       animation: {
         'flash-win': 'flash-win 3s ease-out',
-        slideIn: 'slideIn 0.3s ease-out forwards'
+        slideIn: 'slideIn 0.3s ease-out forwards',
+        'rotate-hint': 'rotate-hint 2.4s ease-in-out infinite'
       },
       height: {
         'screen': '100vh',
@@ -37,6 +38,11 @@ module.exports = {
         'craps': '2.5 / 1',
       },
       keyframes: {
+        'rotate-hint': {
+          '0%, 20%': { transform: 'rotate(0deg)' },
+          '50%, 80%': { transform: 'rotate(-90deg)' },
+          '100%': { transform: 'rotate(0deg)' }
+        },
         slideIn: {
           '0%': { transform: 'translateY(-100%)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' }

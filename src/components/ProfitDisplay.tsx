@@ -41,9 +41,11 @@ const ProfitDisplay: React.FC<ProfitDisplayProps> = ({ amount, onComplete }) => 
             ease: "easeOut"
           }}
           onAnimationComplete={onComplete}
-          className="absolute bottom-16 left-[30%] transform -translate-x-1/2
-                     text-5xl font-bold text-green-400 z-[1000]
-                     bg-black/30 px-6 py-3 rounded-lg backdrop-blur-sm
+          // Scales with the table (3rem on a full-size table)
+          style={{ fontSize: 'calc(var(--chip-size, 2.6rem) * 1.15)' }}
+          className="absolute bottom-[12%] left-[30%] transform -translate-x-1/2
+                     font-bold text-green-400 z-[1000] pointer-events-none
+                     bg-black/30 px-[0.5em] py-[0.25em] rounded-lg backdrop-blur-sm
                      shadow-lg border border-green-500/30
                      flex items-center gap-2"
         >

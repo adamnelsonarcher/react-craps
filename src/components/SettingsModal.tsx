@@ -71,7 +71,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="relative w-[min(520px,90vw)] rounded-xl bg-gray-900 text-white shadow-2xl border border-white/10"
+        className="relative w-[min(520px,90vw)] max-h-[90vh] overflow-y-auto rounded-xl bg-gray-900 text-white shadow-2xl border border-white/10"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <div>

@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "RollSim",
+  "name": "RollSim - Interactive Craps Simulator",
+  "description": "Practice craps risk-free: place bets, roll the dice, and learn the game.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,7 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "landscape",
+  "theme_color": "#35654d",
+  "background_color": "#111827"
 }
