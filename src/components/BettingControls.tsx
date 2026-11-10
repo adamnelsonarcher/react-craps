@@ -68,6 +68,8 @@ interface BettingControlsProps {
   isRolling: boolean;
   quickRoll: boolean;
   onQuickRollChange: (value: boolean) => void;
+  keepWinningBets: boolean;
+  onKeepWinningBetsChange: (value: boolean) => void;
   /** Extra content for the bottom of the `panel` layout. */
   children?: React.ReactNode;
 }
@@ -93,10 +95,12 @@ const BettingControls: React.FC<BettingControlsProps> = ({
   isRolling,
   quickRoll,
   onQuickRollChange,
+  keepWinningBets,
+  onKeepWinningBetsChange,
   children,
 }) => {
   const isPanel = layout === 'panel';
-  const actionSize = isPanel ? 'text-xs px-1 py-1.5' : 'text-[clamp(0.7rem,1vw,1rem)] px-3 h-full';
+  const actionSize = isPanel ? 'text-xs px-1 py-1.5' : 'text-[clamp(0.75rem,1vw,1rem)] px-[clamp(0.5rem,1vw,1rem)] h-full';
 
   const settingsButton = (
     <button
@@ -104,9 +108,8 @@ const BettingControls: React.FC<BettingControlsProps> = ({
       onClick={onOpenSettings}
       aria-label="Open settings"
       title="Settings"
-      className="self-start inline-flex items-center justify-center shrink-0
-                 w-7 h-7 rounded bg-gray-700/70 hover:bg-gray-600
-                 text-white/90 text-sm leading-none"
+      className={`inline-flex items-center justify-center shrink-0 rounded bg-gray-700/70 hover:bg-gray-600
+                  text-white/90 leading-none ${isPanel ? 'w-7 h-7 text-sm' : 'w-9 h-9 text-lg'}`}
     >
       ⚙
     </button>
@@ -173,26 +176,34 @@ const BettingControls: React.FC<BettingControlsProps> = ({
       disabled={isRolling}
       title="Roll the dice (Space)"
       className={`${actionButtonClass} bg-red-600 hover:bg-red-700 font-bold
-                  ${isPanel ? 'w-full py-2.5 text-base' : 'text-[clamp(0.7rem,1vw,1rem)] px-3 h-full'}`}
+                  ${isPanel ? 'w-full py-2.5 text-base'
+                    : 'h-full px-[clamp(1rem,2.5vw,2.5rem)] text-[clamp(0.9rem,1.3vw,1.3rem)] shadow-lg'}`}
     >
       Roll Dice
     </button>
   );
 
-  const quickRollToggle = (
+  const toggle = (label: string, title: string, checked: boolean, onChange: (value: boolean) => void) => (
     <label
-      className={`flex items-center gap-2 text-white cursor-pointer whitespace-nowrap
-                  ${isPanel ? 'text-xs' : 'text-[clamp(0.7rem,1vw,1rem)]'}`}
-      title="Skip the dice animation"
+      className={`flex items-center gap-2 text-white cursor-pointer select-none
+                  ${isPanel ? 'text-xs leading-tight' : 'text-[clamp(0.75rem,1vw,1rem)] whitespace-nowrap'}`}
+      title={title}
     >
       <input
         type="checkbox"
-        checked={quickRoll}
-        onChange={(e) => onQuickRollChange(e.target.checked)}
-        className="w-4 h-4 rounded"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="w-4 h-4 rounded shrink-0"
       />
-      Quick Roll
+      {label}
     </label>
+  );
+  const quickRollToggle = toggle('Quick Roll', 'Skip the dice animation', quickRoll, onQuickRollChange);
+  const keepWinningToggle = toggle(
+    'Keep Winning Bets Up',
+    'When a bet wins, leave it on the table and only collect the winnings',
+    keepWinningBets,
+    onKeepWinningBetsChange
   );
 
   if (isPanel) {
@@ -206,29 +217,32 @@ const BettingControls: React.FC<BettingControlsProps> = ({
           {quickRollToggle}
           {settingsButton}
         </div>
+        {keepWinningToggle}
         {children}
       </div>
     );
   }
 
+  const divider = <div className="self-stretch my-[12%] w-px bg-gray-600/60 shrink-0" aria-hidden="true" />;
+
+  // Bar: one row along the bottom of the screen, using the full width.
   return (
-    <div className="bg-gray-800/50 rounded-lg p-2 flex flex-col gap-2 backdrop-blur-sm min-h-0">
-      <div className="flex gap-[clamp(0.5rem,1vw,1rem)] items-start">
-        <div className="min-w-[clamp(150px,15vw,200px)] flex flex-col gap-1">
-          {bankDisplay}
-          {settingsButton}
-        </div>
+    <div className="flex items-center gap-[clamp(0.5rem,1.5vw,1.5rem)] h-full w-full min-w-0">
+      <div className="flex items-center gap-2 shrink-0">
+        {bankDisplay}
+        {settingsButton}
+      </div>
+      {divider}
+      {chipRack}
+      {divider}
+      <div className="flex gap-[clamp(0.25rem,0.5vw,0.5rem)] h-[55%]">{editButtons}</div>
 
-        {chipRack}
-
-        <div className="h-full w-px bg-gray-600/50" />
-
-        <div className="flex flex-wrap gap-[clamp(0.25rem,0.5vw,0.5rem)] h-full py-2">{editButtons}</div>
-
-        <div className="flex gap-[clamp(0.25rem,0.75vw,1rem)] items-center h-full py-2">
-          {rollButton}
+      <div className="ml-auto flex items-center gap-[clamp(0.5rem,1.5vw,1.5rem)] h-[65%] shrink-0">
+        <div className="flex flex-col gap-1.5">
           {quickRollToggle}
+          {keepWinningToggle}
         </div>
+        {rollButton}
       </div>
     </div>
   );

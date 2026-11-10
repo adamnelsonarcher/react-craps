@@ -146,14 +146,17 @@ export const toBetId = (areaId: string): string =>
 export const toAreaId = (betId: string): string =>
   betId === 'pass-line-chips' ? 'pass-line' : betId === 'dont-pass-chips' ? 'dont-pass' : betId;
 
-/** Point marker ("puck") position above each number, as % of the board. */
-export const POINT_MARKER_POSITIONS: Record<number, { x: number; y: number }> = {
-  4: { x: 25.92, y: -4 },
-  5: { x: 34.42, y: -4 },
-  6: { x: 42.92, y: -4 },
-  8: { x: 51.42, y: -4 },
-  9: { x: 59.92, y: -4 },
-  10: { x: 68.42, y: -4 },
+/**
+ * Horizontal position (% of the board width) of the point marker ("puck") above each
+ * number. The puck always sits just above the board's top edge.
+ */
+export const POINT_MARKER_X: Record<number, number> = {
+  4: 25.92,
+  5: 34.42,
+  6: 42.92,
+  8: 51.42,
+  9: 59.92,
+  10: 68.42,
 };
-/** Where the puck sits when it's OFF (come-out roll). */
-export const POINT_MARKER_OFF_POSITION = { x: 6, y: -4 };
+/** Where the puck sits when it's OFF (come-out roll), above the Pass Line. */
+export const POINT_MARKER_OFF_X = 6;

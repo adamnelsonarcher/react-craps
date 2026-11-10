@@ -1,70 +1,41 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { POINT_MARKER_OFF_POSITION, POINT_MARKER_POSITIONS } from '../game/tableLayout';
+import React from 'react';
+import { POINT_MARKER_OFF_X, POINT_MARKER_X } from '../game/tableLayout';
 
 interface PointMarkerProps {
   /** Current point, or `null` during the come-out roll. */
   point: number | null;
-  /** The board element the marker is positioned against. */
-  boardRef: React.RefObject<HTMLElement>;
 }
 
+/** Puck diameter: scales with the chips (and so with the table). */
+const PUCK_SIZE = 'clamp(24px, calc(var(--chip-size, 2.6rem) * 1.1), 52px)';
+
 /**
- * The ON/OFF puck. Rendered in a portal with fixed positioning so it can sit just
- * above the board edge and slide between numbers.
+ * The ON/OFF puck. Rendered inside the board: horizontally in board percentages (so it
+ * always lines up with its number however the board is sized or moved), and vertically
+ * just above the board's top edge (the felt's top padding leaves room for it).
  */
-const PointMarker: React.FC<PointMarkerProps> = ({ point, boardRef }) => {
-  // `null` until measured, so the puck doesn't slide in from the corner on load.
-  const [screenPosition, setScreenPosition] = useState<{ x: number; y: number } | null>(null);
+const PointMarker: React.FC<PointMarkerProps> = ({ point }) => {
   const isOn = point !== null;
-  const { x: percentX, y: percentY } =
-    (isOn && POINT_MARKER_POSITIONS[point]) || POINT_MARKER_OFF_POSITION;
+  const x = (isOn && POINT_MARKER_X[point]) || POINT_MARKER_OFF_X;
 
-  const updatePosition = useCallback(() => {
-    const board = boardRef.current;
-    if (!board) return;
-    const rect = board.getBoundingClientRect();
-    setScreenPosition({
-      x: rect.left + (rect.width * percentX) / 100,
-      y: rect.top + (rect.height * percentY) / 100,
-    });
-  }, [boardRef, percentX, percentY]);
-
-  useEffect(() => {
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-
-    // The board also changes size without a window resize (e.g. while the layout settles).
-    const board = boardRef.current;
-    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updatePosition) : null;
-    if (board && observer) observer.observe(board);
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      observer?.disconnect();
-    };
-  }, [boardRef, updatePosition]);
-
-  if (!screenPosition) return null;
-
-  return ReactDOM.createPortal(
+  return (
     <div
-      className={`fixed w-[clamp(1.75rem,3vw,3rem)] h-[clamp(1.75rem,3vw,3rem)]
-                 rounded-full flex items-center justify-center
-                 border-[0.2rem] transform -translate-x-1/2 -translate-y-1/2
-                 font-bold transition-all duration-1000 ease-in-out pointer-events-none
+      className={`absolute z-30 rounded-full flex items-center justify-center
+                 border-[0.2rem] -translate-x-1/2
+                 font-bold transition-[left,top] duration-1000 ease-in-out pointer-events-none select-none
                  ${isOn ? 'bg-white border-black text-black' : 'bg-black border-white text-white'}`}
       style={{
-        left: `${screenPosition.x}px`,
-        top: `${screenPosition.y}px`,
-        fontSize: 'clamp(0.6rem, 1.2vw, 1rem)',
+        left: `${x}%`,
+        top: `calc(-1 * ${PUCK_SIZE} - 0.375rem)`,
+        width: PUCK_SIZE,
+        height: PUCK_SIZE,
+        fontSize: `calc(${PUCK_SIZE} * 0.32)`,
       }}
       role="status"
       aria-label={isOn ? `Point is ${point}` : 'Point is off (come-out roll)'}
     >
       {isOn ? 'ON' : 'OFF'}
-    </div>,
-    document.body
+    </div>
   );
 };
 

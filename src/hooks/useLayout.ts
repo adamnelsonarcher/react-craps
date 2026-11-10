@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react';
+import { RefObject, useEffect, useLayoutEffect, useState } from 'react';
 
 /**
  * - `desktop`: big screens — table with a control bar along the bottom.
@@ -54,16 +54,21 @@ export function useMediaQuery(query: string): boolean {
 export const useCanHover = () => useMediaQuery('(hover: hover)');
 
 /**
- * Width in px of an element, kept up to date as it resizes. Pass `key` when the
- * element behind the ref can be swapped for a different one (e.g. a layout change).
+ * Size in px of an element's content box, kept up to date as it resizes. Measured
+ * before paint, so nothing renders at a wrong size first. Pass `key` when the element
+ * behind the ref can be swapped for a different one (e.g. a layout change).
  */
-export function useElementWidth(ref: RefObject<HTMLElement>, key?: unknown): number {
-  const [width, setWidth] = useState(0);
+export function useElementSize(ref: RefObject<HTMLElement>, key?: unknown) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const update = () => setWidth(element.getBoundingClientRect().width);
+    const update = () => {
+      const width = element.clientWidth - paddingX(element);
+      const height = element.clientHeight - paddingY(element);
+      setSize(prev => (prev.width === width && prev.height === height ? prev : { width, height }));
+    };
     update();
 
     if (typeof ResizeObserver === 'undefined') {
@@ -75,5 +80,14 @@ export function useElementWidth(ref: RefObject<HTMLElement>, key?: unknown): num
     return () => observer.disconnect();
   }, [ref, key]);
 
-  return width;
+  return size;
 }
+
+const paddingX = (element: HTMLElement) => {
+  const style = window.getComputedStyle(element);
+  return (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+};
+const paddingY = (element: HTMLElement) => {
+  const style = window.getComputedStyle(element);
+  return (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
+};

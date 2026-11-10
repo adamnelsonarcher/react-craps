@@ -123,9 +123,11 @@ src/
 - **The rules engine is pure.** `resolveRoll(die1, die2, point, bets)` in
   `src/game/rules.ts` returns the roll outcome (new point), every area that won or
   lost, and any come / don't-come moves. It has no React or DOM code and is unit tested.
-- **Scaling.** The board is a 2:1 image with percentage-positioned hotspots. `App`
-  measures the board and sets `--chip-size` / `--die-size` CSS variables so chips
-  and dice scale with it.
+- **Sizing.** The board is a 2:1 image with percentage-positioned hotspots. `App`
+  measures the space the layout gives the table and sizes the board to the largest
+  2:1 box that fits, then sets `--chip-size` / `--die-size` CSS variables so chips,
+  dice and the puck scale with it. Everything on the board (puck included) is
+  positioned in board percentages, so nothing drifts when the window changes.
 
 ### How a roll works
 

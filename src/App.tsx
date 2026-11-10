@@ -10,7 +10,7 @@ import AnimatedChipStack, {
 import ProfitDisplay from './components/ProfitDisplay';
 import AnimatedBalance from './components/AnimatedBalance';
 import SettingsModal from './components/SettingsModal';
-import { useElementWidth, useLayoutMode } from './hooks/useLayout';
+import { useElementSize, useLayoutMode } from './hooks/useLayout';
 import { Bet, DicePair, RollRecord, WinningArea } from './types/game';
 import { bettingRestriction, isLockedBet, resolveRoll, staysUpAfterWin } from './game/rules';
 import { toAreaId, toBetId } from './game/tableLayout';
@@ -70,11 +70,16 @@ const App: React.FC = () => {
   const diceRef = useRef<HTMLDivElement>(null);
   const bankRef = useRef<HTMLSpanElement>(null);
 
-  // Chips and dice scale with the table so small (phone) tables stay readable.
-  const boardWidth = useElementWidth(boardRef, layoutMode);
+  // The board is a 2:1 image: make it as big as fits in the space the layout gives it.
+  const fitRef = useRef<HTMLDivElement>(null);
+  const available = useElementSize(fitRef, layoutMode);
+  const boardWidth = Math.max(0, Math.floor(Math.min(available.width, available.height * 2)));
+  const boardHeight = Math.floor(boardWidth / 2);
+
+  // Chips and dice scale with the table, so they look the same at any size.
   const scaleVars = {
-    '--chip-size': `${clamp(boardWidth * 0.04, 22, 41.6)}px`,
-    '--die-size': `${clamp(boardWidth * 0.06, 28, 72)}px`,
+    '--chip-size': `${clamp(boardWidth * 0.036, 22, 56)}px`,
+    '--die-size': `${clamp(boardWidth * 0.06, 28, 96)}px`,
   } as React.CSSProperties;
 
   // Dice & table state
@@ -444,15 +449,8 @@ const App: React.FC = () => {
   };
 
   const board = (
-    <div
-      ref={boardRef}
-      className={`w-full aspect-[2/1] relative min-w-0 min-h-0 max-w-full
-                  ${isCompact ? 'max-h-full max-w-[calc((100vh-3.5rem)*2)]' : 'max-h-[calc(100vh-280px)]'}`}
-      // Keep the 2:1 board inside the available height. `dvh` tracks mobile browser
-      // toolbars; browsers without it ignore this and use the class above.
-      style={{ maxWidth: isCompact ? 'calc((100dvh - 3.5rem) * 2)' : 'calc((100vh - 280px) * 2)' }}
-    >
-      <PointMarker point={point} boardRef={boardRef} />
+    <div ref={boardRef} className="relative shrink-0" style={{ width: boardWidth, height: boardHeight }}>
+      <PointMarker point={point} />
       <CrapsTable
         boardRef={boardRef}
         bets={bets}
@@ -469,21 +467,17 @@ const App: React.FC = () => {
         onForcedRoll={handleRoll}
       />
 
-      {/* Roll button on the table */}
+      {/* Roll button on the table, under the dice */}
       <button
         type="button"
         onClick={() => handleRoll()}
         disabled={isRolling}
         title="Roll the dice (Space)"
-        className={`absolute right-[5.74%] top-[24%]
+        className={`absolute right-[5.74%] top-[24%] w-[10.09%] h-[5.78%]
                    bg-[#1a472a] hover:bg-[#143621] text-white font-bold rounded
                    ${isRolling ? 'opacity-50 cursor-not-allowed' : ''}
-                   shadow-lg z-20`}
-        style={{
-          width: 'clamp(40px, 10.09%, 120px)',
-          height: 'clamp(20px, 5.78%, 60px)',
-          fontSize: 'clamp(0.5rem, 1.5vw, 1rem)',
-        }}
+                   shadow-lg z-20 whitespace-nowrap`}
+        style={{ fontSize: 'max(0.55rem, calc(var(--chip-size) * 0.4))' }}
       >
         Roll Dice
       </button>
@@ -491,7 +485,8 @@ const App: React.FC = () => {
       {/* Dice */}
       <div
         ref={diceRef}
-        className="absolute top-[10%] right-[5%] flex gap-[clamp(0.5rem,1.5vw,1rem)] z-10"
+        className="absolute top-[10%] right-[5%] flex z-10"
+        style={{ gap: 'calc(var(--die-size) * 0.25)' }}
         aria-live="polite"
         aria-label={isRolling ? 'Rolling…' : `Rolled ${dice.die1 + dice.die2}`}
       >
@@ -521,9 +516,16 @@ const App: React.FC = () => {
     </div>
   );
 
+  /** Fills the felt; the board is sized to fit inside it and centred. */
+  const boardSpace = (
+    <div ref={fitRef} className="w-full h-full min-w-0 min-h-0 flex items-center justify-center relative z-10">
+      {board}
+    </div>
+  );
+
   const bankDisplay = (
-    <div className={`flex flex-col justify-center ${isCompact ? 'min-w-0' : 'w-[150px]'}`}>
-      <span className={`${isCompact ? 'text-sm' : 'text-xl'} text-green-400 font-bold whitespace-nowrap`}>
+    <div className={`flex flex-col justify-center ${isCompact ? 'min-w-0' : ''}`}>
+      <span className={`${isCompact ? 'text-sm' : 'text-[clamp(1rem,1.3vw,1.5rem)]'} text-green-400 font-bold whitespace-nowrap`}>
         Bank:{' '}
         <span ref={bankRef}>
           <AnimatedBalance value={bank} animate={lastProfit.amount > 0} />
@@ -539,26 +541,11 @@ const App: React.FC = () => {
           {isCompact ? 'Rebuy' : 'Out of chips — Rebuy'} {formatMoney(startingBank)}
         </button>
       ) : (
-        <span className={`${isCompact ? 'text-sm' : 'text-xl'} text-yellow-400 font-bold whitespace-nowrap`}>
+        <span className={`${isCompact ? 'text-sm' : 'text-[clamp(1rem,1.3vw,1.5rem)]'} text-yellow-400 font-bold whitespace-nowrap`}>
           Wager: {formatMoney(totalWager)}
         </span>
       )}
     </div>
-  );
-
-  const keepWinningToggle = (className: string) => (
-    <label
-      className={`flex items-center gap-2 text-white cursor-pointer select-none ${className}`}
-      title="When a bet wins, leave it on the table and only collect the winnings"
-    >
-      <input
-        type="checkbox"
-        checked={keepWinningBets}
-        onChange={(e) => setKeepWinningBets(e.target.checked)}
-        className="w-4 h-4 rounded"
-      />
-      <span>Keep Winning Bets Up</span>
-    </label>
   );
 
   const rollTitle = (roll: RollRecord) =>
@@ -580,6 +567,8 @@ const App: React.FC = () => {
     isRolling,
     quickRoll,
     onQuickRollChange: setQuickRoll,
+    keepWinningBets,
+    onKeepWinningBetsChange: setKeepWinningBets,
   };
 
   const overlays = (
@@ -613,15 +602,12 @@ const App: React.FC = () => {
         style={{ ...scaleVars, height: '100dvh' }}
         onClick={handleGlobalClick}
       >
-        <main className="flex-1 min-w-0 h-full bg-felt-green rounded-xl px-2 pt-7 pb-2 shadow-table relative">
-          <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 relative z-10">
-            {board}
-          </div>
+        <main className="flex-1 min-w-0 h-full bg-felt-green rounded-xl px-2 pt-8 pb-2 shadow-table relative">
+          {boardSpace}
         </main>
 
         <aside className="w-[9.5rem] shrink-0 h-full bg-gray-800/90 rounded-lg p-2" aria-label="Betting controls">
           <BettingControls layout="panel" {...controlsProps}>
-            {keepWinningToggle('text-xs leading-tight')}
             {rollHistory.length > 0 && (
               <div>
                 <div className="text-[10px] uppercase tracking-wide text-gray-400 mb-1">Last rolls</div>
@@ -649,57 +635,47 @@ const App: React.FC = () => {
     );
   }
 
+  // Desktop: table (with roll history beside it) filling the screen, controls bar below.
   return (
     <div
-      className="relative h-screen w-screen flex flex-col bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden"
+      className="relative h-screen w-screen flex flex-col gap-2 p-2 bg-gradient-to-br from-gray-900 to-gray-800 overflow-hidden"
       style={scaleVars}
       onClick={handleGlobalClick}
     >
-      <div className="flex-1 flex gap-4 p-2 max-h-screen relative">
-        <div className="flex flex-row gap-4 h-full max-w-[1800px] mx-auto">
-          {/* Left side: the table */}
-          <div className="flex-[3.8] relative">
-            <div className="h-full bg-felt-green rounded-xl p-3 pt-14 pb-12 shadow-table min-h-0 relative">
-              <div className="w-full h-full flex items-center justify-center min-w-0 min-h-0 overflow-hidden relative z-10">
-                {board}
-              </div>
+      <div className="flex-1 min-h-0 flex gap-2">
+        {/* Top padding leaves room for the puck, which sits just above the board */}
+        <main className="flex-1 min-w-0 h-full bg-felt-green rounded-xl px-4 pt-16 pb-4 shadow-table relative">
+          {boardSpace}
+        </main>
 
-              {keepWinningToggle(`absolute bottom-[20%] left-[2%] text-base bg-black/40 px-3 py-1.5 rounded
-                                  backdrop-blur-sm z-30`)}
-            </div>
-
-            {/* Betting controls: fixed bar along the bottom of the screen */}
-            <div className="fixed bottom-0 left-0 right-0 mb-2 mt-4 z-50 px-2">
-              <div
-                className="flex gap-2 items-stretch bg-gray-800/90 backdrop-blur-sm rounded-lg px-2
-                           mx-auto min-w-[600px] max-w-[1500px] w-[98vw]"
-                style={{ height: 'clamp(60px, 15vh, 100px)' }}
+        <aside
+          className="w-[92px] shrink-0 h-full bg-gray-800/75 rounded-lg p-1 shadow-lg overflow-hidden"
+          aria-label="Roll history"
+        >
+          <h2 className="text-white font-bold text-xs mt-1 mb-2 text-center">Roll History</h2>
+          <ol className="flex flex-col items-center gap-1">
+            {rollHistory.slice(0, VISIBLE_ROLL_HISTORY).map((roll, index) => (
+              <li
+                key={roll.id}
+                title={rollTitle(roll)}
+                className={`flex justify-center items-center gap-1 p-0.5 rounded-md
+                           ${index === 0 ? 'animate-slideIn' : ''}
+                           ${roll.type === 'seven-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
+                           ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
               >
-                <BettingControls layout="bar" {...controlsProps} />
-              </div>
-            </div>
-          </div>
+                <Dice value={roll.die1} isRolling={false} size="small" />
+                <Dice value={roll.die2} isRolling={false} size="small" />
+              </li>
+            ))}
+          </ol>
+        </aside>
+      </div>
 
-          {/* Right side: roll history */}
-          <div className="bg-gray-800/75 rounded-lg p-1 shadow-lg backdrop-blur-sm h-full overflow-hidden">
-            <h2 className="text-white font-bold text-xs mb-1 text-center">Roll History</h2>
-            <ol className="flex flex-col items-center gap-1 h-[calc(100%-1.5rem)]">
-              {rollHistory.slice(0, VISIBLE_ROLL_HISTORY).map((roll, index) => (
-                <li
-                  key={roll.id}
-                  title={rollTitle(roll)}
-                  className={`flex justify-center items-center gap-1 p-0.5 rounded-md
-                             ${index === 0 ? 'animate-slideIn' : ''}
-                             ${roll.type === 'seven-out' ? 'bg-red-600/20 ring-1 ring-red-600' : ''}
-                             ${roll.type === 'point-made' ? 'bg-yellow-500/20 ring-1 ring-yellow-500' : ''}`}
-                >
-                  <Dice value={roll.die1} isRolling={false} size="small" />
-                  <Dice value={roll.die2} isRolling={false} size="small" />
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
+      <div
+        className="shrink-0 bg-gray-800/90 rounded-lg px-[clamp(0.75rem,1.5vw,1.5rem)]"
+        style={{ height: 'clamp(72px, 12vh, 104px)' }}
+      >
+        <BettingControls layout="bar" {...controlsProps} />
       </div>
 
       {overlays}
