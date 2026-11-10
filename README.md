@@ -24,10 +24,11 @@ how that bet works and what it pays.
 | Clear All | Takes down every bet that isn't locked. |
 | Quick Roll | Skips the dice animation. |
 | Keep Winning Bets Up | When a bet wins, leave it on the table and only collect the winnings. |
-| ⚙ Settings | Set your bank balance, or reset it to $1,000. |
+| ⚙ Settings | Change your bank balance, set your starting balance, or **Reset board** to start over (clears all bets, the point and roll history, and sets your bank to the starting balance). |
 
-Your bank (plus any chips on the table), Quick Roll and Keep Winning Bets Up are
-remembered between visits. If you go broke, a **Rebuy** button appears.
+Your bank (plus any chips on the table), starting balance, Quick Roll and Keep
+Winning Bets Up are remembered between visits. If you go broke, a **Rebuy** button
+refills your bank to the starting balance ($1,000 unless you change it).
 
 ### Keyboard shortcuts
 

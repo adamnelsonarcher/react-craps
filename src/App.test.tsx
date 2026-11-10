@@ -72,6 +72,49 @@ test('refuses line bets once a point is set and explains why', () => {
   expect(screen.getByText(/Wager: \$0/)).toBeInTheDocument();
 });
 
+describe('settings', () => {
+  const openSettings = () => fireEvent.click(screen.getByRole('button', { name: /open settings/i }));
+  const startingBalanceInput = () => screen.getByLabelText(/starting balance/i);
+
+  test('reset board clears the table and starts over with the chosen starting balance', () => {
+    render(<App />);
+    queueRolls([4, 2]);
+    roll(); // point is 6
+    fireEvent.click(area('Place Eight'));
+    expect(screen.getByLabelText(/point is 6/i)).toBeInTheDocument();
+
+    openSettings();
+    fireEvent.change(startingBalanceInput(), { target: { value: '500' } });
+    fireEvent.click(screen.getByRole('button', { name: /reset board/i }));
+    fireEvent.click(screen.getByRole('button', { name: /yes, reset the board/i }));
+
+    expect(bankroll()).toBe(500);
+    expect(window.localStorage.getItem(STORAGE_KEYS.startingBank)).toBe('500');
+    expect(screen.getByText(/Wager: \$0/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/point is off/i)).toBeInTheDocument();
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0); // roll history cleared
+  });
+
+  test('saving sets the bank and the starting balance used for rebuys', () => {
+    render(<App />);
+    openSettings();
+    fireEvent.change(screen.getByLabelText(/bank balance/i), { target: { value: '0' } });
+    fireEvent.change(startingBalanceInput(), { target: { value: '250' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /rebuy \$250/i }));
+    expect(bankroll()).toBe(250);
+  });
+
+  test('rejects a starting balance below $1', () => {
+    render(<App />);
+    openSettings();
+    fireEvent.change(startingBalanceInput(), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    expect(screen.getByRole('alert')).toHaveTextContent(/at least \$1/i);
+  });
+});
+
 describe('on a phone', () => {
   const setViewport = (width: number, height: number) => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });

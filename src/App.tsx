@@ -16,9 +16,10 @@ import { bettingRestriction, isLockedBet, resolveRoll, staysUpAfterWin } from '.
 import { toAreaId, toBetId } from './game/tableLayout';
 import { calculateWinnings, roundToCents } from './utils/payouts';
 import { CHIPS } from './utils/chips';
-import { STORAGE_KEYS, loadNumber, save, useStoredBoolean } from './utils/storage';
+import { STORAGE_KEYS, loadNumber, save, useStoredBoolean, useStoredNumber } from './utils/storage';
 
-export const STARTING_BANK = 1000;
+/** Starting balance until the player picks their own in Settings. */
+export const DEFAULT_STARTING_BANK = 1000;
 
 const ROLL_ANIMATION_MS = 1000;
 /** When a winning payout chip reaches its bet (30% of the 2.5s win animation). */
@@ -84,7 +85,9 @@ const App: React.FC = () => {
   const [rollHistory, setRollHistory] = useState<RollRecord[]>([]);
 
   // Money & bets
-  const [bank, setBank] = useState(() => loadNumber(STORAGE_KEYS.bankroll, STARTING_BANK));
+  /** Used by "Reset board" and the Rebuy button; set in Settings. */
+  const [startingBank, setStartingBank] = useStoredNumber(STORAGE_KEYS.startingBank, DEFAULT_STARTING_BANK);
+  const [bank, setBank] = useState(() => loadNumber(STORAGE_KEYS.bankroll, startingBank));
   const [bets, setBets] = useState<Bet[]>([]);
   /** Snapshots of `bets` before each change since the last roll, for Undo. */
   const [betHistory, setBetHistory] = useState<Bet[][]>([]);
@@ -279,6 +282,35 @@ const App: React.FC = () => {
       completeRoll(roll);
     }, ROLL_ANIMATION_MS);
   }, [quickRoll, completeRoll, later]);
+
+  /**
+   * Start over: stop any roll in progress, take every bet off the table (without
+   * refunding it), clear the point, history and animations, and set the bank to
+   * `newStartingBank` (which also becomes the saved starting balance).
+   */
+  const resetBoard = (newStartingBank: number) => {
+    timers.current.forEach(clearTimeout);
+    timers.current.clear();
+    if (rollInterval.current) clearInterval(rollInterval.current);
+    rollInterval.current = null;
+    isRollingRef.current = false;
+
+    setIsRolling(false);
+    setDice({ die1: 1, die2: 1 });
+    setPoint(null);
+    setRollHistory([]);
+    setBets([]);
+    setBetHistory([]);
+    setGhostBets([]);
+    setChipAnimations([]);
+    setWinningAreas([]);
+    setLastProfit(current => ({ ...current, amount: 0 }));
+    setDeleteMode(false);
+    setHelpMode(false);
+    setStartingBank(newStartingBank);
+    setBank(newStartingBank);
+    showNotice(`Board reset — you have ${formatMoney(newStartingBank)}`);
+  };
 
   // ---- Betting ------------------------------------------------------------
 
@@ -500,11 +532,11 @@ const App: React.FC = () => {
       {isBroke ? (
         <button
           type="button"
-          onClick={() => setBank(STARTING_BANK)}
+          onClick={() => setBank(startingBank)}
           className="mt-1 self-start rounded bg-yellow-500 hover:bg-yellow-400 text-black
                      font-bold text-xs px-2 py-1 whitespace-nowrap"
         >
-          {isCompact ? 'Rebuy' : 'Out of chips — Rebuy'} {formatMoney(STARTING_BANK)}
+          {isCompact ? 'Rebuy' : 'Out of chips — Rebuy'} {formatMoney(startingBank)}
         </button>
       ) : (
         <span className={`${isCompact ? 'text-sm' : 'text-xl'} text-yellow-400 font-bold whitespace-nowrap`}>
@@ -561,8 +593,12 @@ const App: React.FC = () => {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         bank={bank}
-        startingBank={STARTING_BANK}
-        onSetBank={setBank}
+        startingBank={startingBank}
+        onSave={(settings) => {
+          setBank(settings.bank);
+          setStartingBank(settings.startingBank);
+        }}
+        onResetBoard={resetBoard}
       />
     </>
   );

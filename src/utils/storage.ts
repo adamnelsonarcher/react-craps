@@ -8,6 +8,8 @@ import { useEffect, useState } from 'react';
 export const STORAGE_KEYS = {
   /** Bank plus any chips on the table, so a refresh returns your bets to you. */
   bankroll: 'rollsim.bankroll',
+  /** Balance used when the board is reset or you rebuy after going broke. */
+  startingBank: 'rollsim.startingBank',
   quickRoll: 'rollsim.quickRoll',
   keepWinningBets: 'rollsim.keepWinningBets',
 } as const;
@@ -44,6 +46,13 @@ export function loadBoolean(key: string, fallback: boolean): boolean {
 /** `useState` for a boolean preference that's remembered between visits. */
 export function useStoredBoolean(key: string, fallback: boolean) {
   const [value, setValue] = useState(() => loadBoolean(key, fallback));
+  useEffect(() => save(key, value), [key, value]);
+  return [value, setValue] as const;
+}
+
+/** `useState` for a non-negative number preference that's remembered between visits. */
+export function useStoredNumber(key: string, fallback: number) {
+  const [value, setValue] = useState(() => loadNumber(key, fallback));
   useEffect(() => save(key, value), [key, value]);
   return [value, setValue] as const;
 }
